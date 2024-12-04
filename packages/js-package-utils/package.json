@@ -1,0 +1,37 @@
+{
+  "name": "mage-obsidian",
+  "version": "1.0.0",
+  "description": "Mage Obsidian Ultis",
+  "main": "./src/scripts/buildThemes.js",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "keywords": [
+    "Magento",
+    "MageObsidian"
+  ],
+  "author": "Jeanmarcos Juarez",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "mage-obsidian:build-themes": "./src/scripts/buildThemes.js"
+  },
+  "imports": {
+    "#utils/*": "./src/utils/*",
+    "#config/*": "./src/config/*",
+    "#service/*": "./src/service/*"
+  },
+  "exports": {
+    ".": "./src/scripts/buildThemes.js",
+    "./service/": "./src/service/",
+    "./utils/": "./src/utils/",
+    "./config/": "./src/config/"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "deepmerge": "^4.3.1",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "readline-sync": "^1.4.10"
+  }
+}

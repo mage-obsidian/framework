@@ -1,0 +1,53 @@
+{
+    "modules": {
+        "Vendor_ModuleNameA": {
+            "src": "magento_scenarios\/app\/code\/Vendor\/ModuleNameA"
+        },
+        "Vendor_ModuleNameB": {
+            "src": "magento_scenarios\/app\/code\/Vendor\/ModuleNameB"
+        },
+        "Vendor_ModuleNameC": {
+            "src": "magento_scenarios\/app\/code\/Vendor\/ModuleNameC"
+        }
+    },
+    "themes": {
+        "Vendor\/theme-a": {
+            "src": "magento_scenarios\/app\/design\/frontend\/Vendor\/theme-a",
+            "parent": null
+        },
+        "Vendor\/theme-b": {
+          "src": "magento_scenarios\/app\/design\/frontend\/Vendor\/theme-b",
+          "parent": "Vendor\/theme-a"
+        },
+        "Vendor\/theme-c": {
+          "src": "magento_scenarios\/app\/design\/frontend\/Vendor\/theme-c",
+          "parent": "Vendor\/theme-b"
+        },
+        "Vendor\/theme-d": {
+          "src": "magento_scenarios\/app\/design\/frontend\/Vendor\/theme-d",
+          "parent": null
+        }
+    },
+    "allModules": [
+      "Vendor_ModuleNameA",
+      "Vendor_ModuleNameB",
+      "Vendor_ModuleNameC"
+    ],
+    "VUE_COMPONENTS_PATH": "components",
+    "JS_PATH": "js",
+    "FOLDERS_TO_WATCH": [
+        "components",
+        "js"
+    ],
+    "ALLOWED_EXTENSIONS": [
+        "js",
+        "vue",
+        "cjs",
+        "ts"
+    ],
+    "MODULE_CSS_EXTEND_FILE": "module.extend.css",
+    "MODULE_CONFIG_FILE": "module.config.cjs",
+    "THEME_CONFIG_FILE": "theme.config.cjs",
+    "THEME_TAILWIND_SOURCE_FILE": "tailwind.source.css",
+    "LIB_PATH": "lib"
+}

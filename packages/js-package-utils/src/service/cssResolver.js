@@ -7,7 +7,7 @@ import fs from "fs/promises";
 
 const { getMagentoConfig, getModuleDefinition, getThemeDefinition } = configResolver;
 const MODULE_CSS_EXTEND_FILE = getMagentoConfig().MODULE_CSS_EXTEND_FILE;
-const THEME_TAILWIND_SOURCE_FILE = getMagentoConfig().THEME_TAILWIND_SOURCE_FILE;
+const THEME_CSS_SOURCE_FILE = getMagentoConfig().THEME_CSS_SOURCE_FILE;
 async function getThemeImports(themeName, themeConfig) {
     if (!themeConfig) {
         themeConfig = themeResolver.getThemeConfig(themeName);
@@ -19,7 +19,7 @@ async function getThemeImports(themeName, themeConfig) {
     if (themeConfig.includeCssSourceFromParentThemes && themeDefinition.parent) {
         imports += await getThemeImports(themeDefinition.parent, themeConfig);
     }
-    imports += `@import "${path.join(themePath, THEME_MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_TAILWIND_SOURCE_FILE)}";\n`;
+    imports += `@import "${path.join(themePath, THEME_MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_CSS_SOURCE_FILE)}";\n`;
     return imports;
 }
 

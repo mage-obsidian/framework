@@ -45,6 +45,6 @@
     "MODULE_CSS_EXTEND_FILE": "module.extend.css",
     "MODULE_CONFIG_FILE": "module.config.cjs",
     "THEME_CONFIG_FILE": "theme.config.cjs",
-    "THEME_TAILWIND_SOURCE_FILE": "theme.source.css",
+    "THEME_CSS_SOURCE_FILE": "theme.source.css",
     "LIB_PATH": "lib"
 }

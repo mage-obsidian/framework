@@ -16,7 +16,7 @@ async function getThemeImports(themeName, themeConfig) {
     const themePath = themeDefinition.src;
 
     let imports = '';
-    if (themeConfig.includeTailwindConfigFromParentThemes && themeDefinition.parent) {
+    if (themeConfig.includeCssSourceFromParentThemes && themeDefinition.parent) {
         imports += await getThemeImports(themeDefinition.parent, themeConfig);
     }
     imports += `@import "${path.join(themePath, THEME_MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_TAILWIND_SOURCE_FILE)}";\n`;

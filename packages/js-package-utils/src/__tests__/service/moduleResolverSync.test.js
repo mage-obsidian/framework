@@ -14,10 +14,10 @@ let scenarios = [
                 expected: {
                     tailwind: {
                         content: [
-                            'magento_scenarios/app/code/Vendor/ModuleNameA/templates/**/*.phtml',
-                            'magento_scenarios/app/code/Vendor/ModuleNameA/web/from_theme',
-                            'magento_scenarios/app/code/Vendor/ModuleNameB/templates/**/*.phtml',
-                            'magento_scenarios/app/code/Vendor/ModuleNameC/templates/**/*.phtml'
+                            'magento_scenarios/app/code/Vendor/ModuleNameA/view/frontend/templates/**/*.phtml',
+                            'magento_scenarios/app/code/Vendor/ModuleNameA/view/frontend/web/from_theme',
+                            'magento_scenarios/app/code/Vendor/ModuleNameB/view/frontend/templates/**/*.phtml',
+                            'magento_scenarios/app/code/Vendor/ModuleNameC/view/frontend/templates/**/*.phtml'
                         ]
                     }
                 }
@@ -27,10 +27,10 @@ let scenarios = [
                 expected: {
                     tailwind: {
                         content: [
-                            'magento_scenarios/app/code/Vendor/ModuleNameA/templates/**/*.phtml',
-                            'magento_scenarios/app/code/Vendor/ModuleNameA/web/from_theme',
-                            'magento_scenarios/app/code/Vendor/ModuleNameB/templates/**/*.phtml',
-                            'magento_scenarios/app/code/Vendor/ModuleNameC/templates/**/*.phtml'
+                            'magento_scenarios/app/code/Vendor/ModuleNameA/view/frontend/templates/**/*.phtml',
+                            'magento_scenarios/app/code/Vendor/ModuleNameA/view/frontend/web/from_theme',
+                            'magento_scenarios/app/code/Vendor/ModuleNameB/view/frontend/templates/**/*.phtml',
+                            'magento_scenarios/app/code/Vendor/ModuleNameC/view/frontend/templates/**/*.phtml'
                         ]
                     }
                 }
@@ -48,8 +48,8 @@ let scenarios = [
                         theme: { extend: {} },
                         plugins: [],
                         content: [
-                            'magento_scenarios/app/code/Vendor/ModuleNameA/templates/**/*.phtml',
-                            'magento_scenarios/app/code/Vendor/ModuleNameB/templates/**/*.phtml'
+                            'magento_scenarios/app/code/Vendor/ModuleNameA/view/frontend/templates/**/*.phtml',
+                            'magento_scenarios/app/code/Vendor/ModuleNameB/view/frontend/templates/**/*.phtml'
                         ]
                     }
                 }

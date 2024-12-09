@@ -70,7 +70,7 @@ function getModuleConfigByThemeConfig(themeName, themeConfig) {
         } else if (moduleConfig.tailwind && moduleConfig.tailwind.content) {
             const moduleSrc = configResolver.getMagentoConfig().modules[moduleName].src;
             moduleConfig.tailwind.content = moduleConfig.tailwind.content.map((content) =>
-                path.join(moduleSrc, 'web', content)
+                path.join(moduleSrc, 'view/frontend/web', content)
             );
         }
         modulesConfig = deepmerge(modulesConfig, moduleConfig);

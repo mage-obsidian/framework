@@ -5,13 +5,6 @@ import configResolver from "./configResolver.cjs";
 export default function customResolverPlugin() {
     const allComponents = moduleResolver.getAllJsVueFilesWithInheritanceCached();
     const validComponentExtensions = configResolver.getMagentoConfig().ALLOWED_EXTENSIONS;
-    const extensionsPattern = validComponentExtensions.map((ext) =>
-        ext.replace('.', '')
-    ).join("|");
-    const dynamicRegex = new RegExp(
-        `(["'])([\\w\\d]+::[\\w\\d/]+\\.(${extensionsPattern}))\\1`,
-        "g"
-    );
 
     const hasValidExtension = (filePath) =>
         validComponentExtensions.some((ext) => filePath.endsWith(ext));

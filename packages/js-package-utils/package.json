@@ -1,6 +1,6 @@
 {
   "name": "mage-obsidian",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Mage Obsidian Ultis",
   "main": "./src/scripts/buildThemes.js",
   "scripts": {

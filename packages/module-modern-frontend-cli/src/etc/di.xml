@@ -4,8 +4,13 @@
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">
-                <item name="mage-obsidian-modern-frontend:command" xsi:type="object">
-                    MageObsidian\ModernFrontendCli\Console\Command\FrontendConfigCommand
+                <item
+                    name="mage-obsidian-modern-frontend:config:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\FrontendConfigCommand
+                </item>
+                <item
+                    name="mage-obsidian-modern-frontend:hmr:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\FrontendHmrCommand
                 </item>
             </argument>
         </arguments>

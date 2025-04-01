@@ -20,6 +20,12 @@ use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
 
 class FrontendConfigCommand extends Command
 {
+    /**
+     * FrontendConfigCommand constructor.
+     *
+     * @param State $state
+     * @param ConfigManager $configManager
+     */
     public function __construct(
         private readonly State $state,
         private readonly ConfigManager $configManager
@@ -27,6 +33,11 @@ class FrontendConfigCommand extends Command
         parent::__construct();
     }
 
+    /**
+     * Configures the command.
+     *
+     * @return void
+     */
     protected function configure(): void
     {
         $this->setName('mage-obsidian:frontend:config')
@@ -43,18 +54,8 @@ class FrontendConfigCommand extends Command
                  InputOption::VALUE_NONE,
                  'Display the current configuration of compatible modules and themes.'
              )
-             ->addOption(
-                 'modules',
-                 null,
-                 InputOption::VALUE_NONE,
-                 'Display only the modules configuration.'
-             )
-             ->addOption(
-                 'themes',
-                 null,
-                 InputOption::VALUE_NONE,
-                 'Display only the themes configuration.'
-             );
+             ->addOption('modules', null, InputOption::VALUE_NONE, 'Display only the modules configuration.')
+             ->addOption('themes', null, InputOption::VALUE_NONE, 'Display only the themes configuration.');
 
         parent::configure();
     }
@@ -62,15 +63,14 @@ class FrontendConfigCommand extends Command
     /**
      * Executes the command.
      *
-     * @throws FileSystemException
-     * @throws LocalizedException
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     *
+     * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new CustomSymfonyStyle(
-            $input,
-            $output
-        );
+        $io = new CustomSymfonyStyle($input, $output);
         $generateOption = $input->getOption('generate');
         $showOption = $input->getOption('show');
         $modulesOption = $input->getOption('modules');
@@ -84,11 +84,7 @@ class FrontendConfigCommand extends Command
                     $io->note('Configuration file not found. Generating it now...');
                     $this->generateConfig($io);
                 }
-                $this->showConfig(
-                    $io,
-                    $modulesOption,
-                    $themesOption
-                );
+                $this->showConfig($io, $modulesOption, $themesOption);
             } elseif ($generateOption) {
                 $this->generateConfig($io);
             } else {
@@ -115,13 +111,9 @@ class FrontendConfigCommand extends Command
 
         // Display details in a table
         $configPaths = $this->configManager->getConfigFilePath();
-        $tableRows = array_map(fn($filePath) => [$filePath],
-            $configPaths);
+        $tableRows = array_map(fn($filePath) => [$filePath], $configPaths);
 
-        $io->table(
-            ['Files Generated'],
-            $tableRows
-        );
+        $io->table(['Files Generated'], $tableRows);
     }
 
     /**
@@ -140,17 +132,11 @@ class FrontendConfigCommand extends Command
         }
 
         if ($modulesOption) {
-            $this->showModulesConfig(
-                $io,
-                $configData
-            );
+            $this->showModulesConfig($io, $configData);
         }
 
         if ($themesOption) {
-            $this->showThemesConfig(
-                $io,
-                $configData
-            );
+            $this->showThemesConfig($io, $configData);
         }
     }
 
@@ -174,10 +160,7 @@ class FrontendConfigCommand extends Command
                 ];
             }
 
-            $io->table(
-                ['Module', 'Path'],
-                $tableRows
-            );
+            $io->table(['Module', 'Path'], $tableRows);
         }
     }
 
@@ -202,10 +185,7 @@ class FrontendConfigCommand extends Command
                 ];
             }
 
-            $io->table(
-                ['Theme', 'Path'],
-                $tableRows
-            );
+            $io->table(['Theme', 'Path'], $tableRows);
         }
     }
 
@@ -220,10 +200,10 @@ class FrontendConfigCommand extends Command
     {
         $io->error('No option specified. Use one of the following:');
         $io->listing([
-                         '--generate   Generate or update the configuration file.',
-                         '--show       Display the current configuration of compatible modules and themes.',
-                         '--modules    Display only the modules configuration.',
-                         '--themes     Display only the themes configuration.',
-                     ]);
+            '--generate   Generate or update the configuration file.',
+            '--show       Display the current configuration of compatible modules and themes.',
+            '--modules    Display only the modules configuration.',
+            '--themes     Display only the themes configuration.',
+        ]);
     }
 }

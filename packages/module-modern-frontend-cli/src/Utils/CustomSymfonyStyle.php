@@ -12,18 +12,24 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class CustomSymfonyStyle extends SymfonyStyle
 {
+    /**
+     * CustomSymfonyStyle constructor.
+     *
+     * @param string|array $message
+     */
     public function info(string|array $message): void
     {
-        $this->block(
-            $message,
-            '!',
-            'fg=blue',
-            ' ',
-            false
-        );
+        $this->block($message, '!', 'fg=blue', ' ', false);
     }
 
-    public function table(array $headers, array $rows, $title = null): void
+    /**
+     * CustomSymfonyStyle constructor.
+     *
+     * @param array $headers
+     * @param array $rows
+     * @param string|null $title
+     */
+    public function table(array $headers, array $rows, ?string $title = null): void
     {
         $table = $this->createTable()
                       ->setHeaders($headers)
@@ -37,13 +43,13 @@ class CustomSymfonyStyle extends SymfonyStyle
         $this->newLine();
     }
 
-    public function note(string|array $message)
+    /**
+     * CustomSymfonyStyle constructor.
+     *
+     * @param string|array $message
+     */
+    public function note(string|array $message): void
     {
-        $this->block(
-            $message,
-            null,
-            'fg=blue',
-            ' '
-        );
+        $this->block($message, null, 'fg=blue', ' ');
     }
 }

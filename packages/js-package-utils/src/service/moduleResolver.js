@@ -1,11 +1,11 @@
 import path from "path";
-import configResolver from "./configResolver.cjs";
+import configResolver from "./configResolver.js";
 import {
     ALL_JS_VUE_FILES_WITH_INHERITANCE_FILE_NAME,
     MODULE_WEB_PATH,
     PRECOMPILED_FOLDER,
     THEME_MODULE_WEB_PATH
-} from "../config/default.cjs";
+} from "../config/default.js";
 import getFilesFromFolders from '../utils/findComponents.js'
 import fs from "fs";
 import deepmerge from "deepmerge";

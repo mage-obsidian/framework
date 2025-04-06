@@ -4,7 +4,7 @@ import moduleResolver from "./moduleResolver.js";
 import {
     PRECOMPILED_FOLDER,
     ALL_JS_VUE_FILES_WITH_INHERITANCE_FILE_NAME
-} from "../config/default.cjs";
+} from "../config/default.js";
 import getCssImports from "./cssResolver.js";
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);

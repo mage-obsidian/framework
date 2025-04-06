@@ -21,26 +21,25 @@ let scenarios = [
 ];
 
 function mockConfigAndModules(scenario) {
-    jest.mock(
-        '#service/configResolver.cjs',
-        () => createMockConfigResolver(scenario).default
-    );
-    jest.unstable_mockModule(
-        '#service/moduleResolver.js',
-        () => ({
-            default: {
-                getAllJsVueFilesWithInheritanceCached: jest.fn(() => ({
-                    'Vendor_ModuleNameA/js/test': '/TEST/web/js/test.js',
-                })),
-            }
-        })
-    );
+    jest.unstable_mockModule('#service/configResolver.js', () => ({
+        __esModule: true,
+        default: createMockConfigResolver(scenario).default,
+    }));
+
+    jest.unstable_mockModule('#service/moduleResolver.js', () => ({
+        __esModule: true,
+        default: {
+            getAllJsVueFilesWithInheritanceCached: jest.fn(() => ({
+                'Vendor_ModuleNameA/js/test': '/TEST/web/js/test.js',
+            })),
+        }
+    }));
 }
 
 async function setupInheritModuleResolver(scenario) {
     mockConfigAndModules(scenario);
-    const resolver = await import('#service/inheritModuleResolver.js');
-    return resolver.default();
+    const { default: inheritModuleResolverFactory } = await import('#service/inheritModuleResolver.js');
+    return inheritModuleResolverFactory();
 }
 
 describe('inherit-resolver', () => {
@@ -57,13 +56,6 @@ describe('inherit-resolver', () => {
         inheritModuleResolver = await setupInheritModuleResolver(scenario);
         const result = await inheritModuleResolver.resolveId.handler(codeImport);
 
-        expect(result).toEqual(
-            expected,
-            `Scenario: "${scenario}"
-            Theme: "${code}"
-            Import: "${codeImport}"
-            Expected: ${JSON.stringify(expected, null, 2)}
-            Received: ${JSON.stringify(result, null, 2)}`
-        );
+        expect(result).toEqual(expected);
     });
 });

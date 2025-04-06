@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     tailwind: {
         theme: {
             extend: {
@@ -11,8 +11,6 @@ module.exports = {
             '../*/page_layout/override/base/*.xml',
         ],
     },
-    ignoredTailwindConfigFromModules: [],
-    ignoredCssFromModules: [
-        'Vendor_ModuleNameA'
-    ]
+    includeTailwindConfigFromParentThemes: false,
+    ignoredTailwindConfigFromModules: 'all'
 }

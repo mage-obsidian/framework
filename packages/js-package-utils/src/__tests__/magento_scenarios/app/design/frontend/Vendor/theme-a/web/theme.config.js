@@ -1,8 +1,7 @@
-module.exports = {
+export default {
     tailwind: {
         theme: {
-            extend: {
-            },
+            extend: {},
         },
         plugins: [],
         content: [
@@ -11,6 +10,8 @@ module.exports = {
             '../*/page_layout/override/base/*.xml',
         ],
     },
-    includeTailwindConfigFromParentThemes: false,
-    ignoredTailwindConfigFromModules: 'all'
-}
+    ignoredTailwindConfigFromModules: [],
+    ignoredCssFromModules: [
+        'Vendor_ModuleNameA',
+    ],
+};

@@ -5,7 +5,7 @@ import readlineSync from 'readline-sync';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import configResolver from '../service/configResolver.cjs';
+import configResolver from '../service/configResolver.js';
 import dotenv from 'dotenv';
 dotenv.config();
 

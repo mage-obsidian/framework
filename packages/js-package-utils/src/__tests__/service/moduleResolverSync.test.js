@@ -74,56 +74,56 @@ let scenariosForResolveFileByTheme = [
             {
                 code: 'Vendor/theme-a',
                 moduleName: 'Vendor_ModuleNameA',
-                filePath: 'module.config.cjs',
+                filePath: 'module.config.js',
                 includeTailwindConfigFromParentThemes: true,
-                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/module.config.cjs'
+                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/module.config.js'
             },
             {
                 code: 'Vendor/theme-a',
                 moduleName: 'Vendor_ModuleNameA',
-                filePath: 'no_exist_file.cjs',
+                filePath: 'no_exist_file.js',
                 includeTailwindConfigFromParentThemes: true,
                 expected: null
             },
             {
                 code: 'Vendor/theme-b',
                 moduleName: 'Vendor_ModuleNameA',
-                filePath: 'module.config.cjs',
+                filePath: 'module.config.js',
                 includeTailwindConfigFromParentThemes: true,
-                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/module.config.cjs'
+                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/module.config.js'
             },
             {
                 code: 'Vendor/theme-b',
                 moduleName: 'Vendor_ModuleNameA',
-                filePath: 'module.config.cjs',
+                filePath: 'module.config.js',
                 includeTailwindConfigFromParentThemes: false,
                 expected: null
             },
             {
                 code: 'Vendor/theme-c',
                 moduleName: 'Vendor_ModuleNameA',
-                filePath: 'module.config.cjs',
+                filePath: 'module.config.js',
                 includeTailwindConfigFromParentThemes: true,
-                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/module.config.cjs'
+                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/module.config.js'
             },
             {
                 code: 'Vendor/theme-c',
                 moduleName: 'Vendor_ModuleNameB',
-                filePath: 'module.config.cjs',
+                filePath: 'module.config.js',
                 includeTailwindConfigFromParentThemes: true,
-                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/module.config.cjs'
+                expected: 'magento_scenarios/app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/module.config.js'
             },
             {
                 code: 'Vendor/theme-d',
                 moduleName: 'Vendor_ModuleNameA',
-                filePath: 'module.config.cjs',
+                filePath: 'module.config.js',
                 includeTailwindConfigFromParentThemes: false,
                 expected: null
             },
             {
                 code: 'Vendor/theme-d',
                 moduleName: 'Vendor_ModuleNameA',
-                filePath: 'module.config.cjs',
+                filePath: 'module.config.js',
                 includeTailwindConfigFromParentThemes: true,
                 expected: null
             }
@@ -140,15 +140,19 @@ for (const scenario of scenariosForResolveFileByTheme) {
 }
 
 async function setupResolvers(scenario) {
-    jest.mock(
-        '#service/configResolver.cjs',
-        () => createMockConfigResolver(scenario).default
-    );
-    let moduleResolver = await import('#service/moduleResolverSync.cjs');
-    let themeResolver = await import('#service/themeResolverSync.cjs');
+    jest.unstable_mockModule('#service/configResolver.js', () => ({
+        __esModule: true,
+        default: createMockConfigResolver(scenario).default,
+    }));
 
-    return { themeResolver, moduleResolver };
+    const [moduleResolver, themeResolver] = await Promise.all([
+        import('#service/moduleResolverSync.js'),
+        import('#service/themeResolverSync.js'),
+    ]);
+
+    return { moduleResolver, themeResolver };
 }
+
 
 describe('getModuleConfigByThemeConfig', () => {
     beforeEach(() => {

@@ -1,13 +1,15 @@
-import themeResolver from "./themeResolverSync.cjs";
-import path from "path";
-import { MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_MODULE_WEB_PATH } from "../config/default.cjs";
-import { resolveFileByTheme } from "./moduleResolverSync.cjs";
-import configResolver from "./configResolver.cjs";
-import fs from "fs/promises";
+import themeResolver from './themeResolverSync.js';
+import path from 'node:path';
+import { MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_MODULE_WEB_PATH } from '../config/default.js';
+import { resolveFileByTheme } from './moduleResolverSync.js';
+import configResolver from './configResolver.js';
+import fs from 'node:fs/promises';
 
-const { getMagentoConfig, getModuleDefinition, getThemeDefinition } = configResolver;
+const { getMagentoConfig, getModuleDefinition, getThemeDefinition, getModulesConfigArray } = configResolver;
+
 const MODULE_CSS_EXTEND_FILE = getMagentoConfig().MODULE_CSS_EXTEND_FILE;
 const THEME_CSS_SOURCE_FILE = getMagentoConfig().THEME_CSS_SOURCE_FILE;
+
 async function getThemeImports(themeName, themeConfig) {
     if (!themeConfig) {
         themeConfig = themeResolver.getThemeConfig(themeName);
@@ -19,6 +21,7 @@ async function getThemeImports(themeName, themeConfig) {
     if (themeConfig.includeCssSourceFromParentThemes && themeDefinition.parent) {
         imports += await getThemeImports(themeDefinition.parent, themeConfig);
     }
+
     imports += `@import "${path.join(themePath, THEME_MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_CSS_SOURCE_FILE)}";\n`;
     return imports;
 }
@@ -31,11 +34,14 @@ function resolveModuleCssSourcePath(moduleName, themeName) {
     }
     return moduleConfigSourcePath;
 }
+
 async function getCssImports(themeName) {
     const themeConfig = themeResolver.getThemeConfig(themeName);
     const excludedModules = new Set(themeConfig.ignoredCssFromModules || []);
-    const modulesConfig = configResolver.getModulesConfigArray();
+    const modulesConfig = getModulesConfigArray();
+
     let cssImports = '';
+
     if (themeConfig.ignoredCssFromModules !== 'all') {
         for (const [moduleName, moduleConfig] of modulesConfig) {
             if (excludedModules.has(moduleName)) continue;
@@ -45,9 +51,11 @@ async function getCssImports(themeName) {
                 await fs.access(filePath);
                 cssImports += `@import "${filePath}";\n`;
             } catch {
+                // ignore if file doesn't exist
             }
         }
     }
+
     cssImports += await getThemeImports(themeName);
     return cssImports;
 }

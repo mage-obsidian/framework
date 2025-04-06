@@ -176,17 +176,19 @@ describe('getAllJsVueFilesWithInheritance', () => {
         themes.map(({ code, expected }) => ([ scenario, code, expected ]))
     ))('Scenario "%s", Theme "%s"', async (scenario, code, expected) => {
         jest.unstable_mockModule(
-            '#service/configResolver.cjs',
-            () => createMockConfigResolver(scenario)
+            '#service/configResolver.js',
+            () => ({
+                __esModule: true,
+                default: createMockConfigResolver(scenario).default
+            })
         );
-        moduleResolver = await import('#service/moduleResolver.js');
-        moduleResolver = moduleResolver.default;
+
+        const importedModule = await import('#service/moduleResolver.js');
+        moduleResolver = importedModule.default;
 
         const result = await moduleResolver.getAllJsVueFilesWithInheritance(code);
 
-        // Mensaje personalizado para errores
         expect(result).toEqual(expected, `Failed for scenario "${scenario}", theme "${code}"`);
     });
-
-
 });
+

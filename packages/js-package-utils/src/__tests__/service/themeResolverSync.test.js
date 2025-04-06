@@ -112,13 +112,17 @@ for (const scenario of scenarios) {
 }
 
 async function setupThemeResolver(scenario) {
-    jest.mock(
-        '#service/configResolver.cjs',
-        () => createMockConfigResolver(scenario).default
-    );
-    let resolver = await import('#service/themeResolverSync.cjs');
+    const mock = createMockConfigResolver(scenario);
+
+    jest.unstable_mockModule('#service/configResolver.js', () => ({
+        ...mock,
+        __esModule: true,
+    }));
+
+    const resolver = await import('#service/themeResolverSync.js');
     return resolver.default;
 }
+
 
 describe('getThemeConfig', () => {
     let themeResolver;

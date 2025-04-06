@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     tailwind: {
         plugins: ['test_from_theme'],
         content: [

@@ -10,7 +10,7 @@ try {
 } catch (error) {
     console.error(`Error reading or parsing configuration file at ${DEPENDENCY_CONFIG_FILE_PATH}:`, error.message);
     console.error('Try running `devcore:frontend:config --generate` to generate the configuration file.');
-    process.exit(1); // Termina el proceso si no se puede leer el archivo de configuración
+    process.exit(1);
 }
 
 const getModulesConfigArray = () => Object.entries(MAGENTO_CONFIG.modules);

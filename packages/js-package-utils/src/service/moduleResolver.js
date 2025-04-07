@@ -186,5 +186,5 @@ export default {
     resolveFileByTheme
 };
 
-export { getModuleConfigByThemeConfig, resolveFileByTheme };
+export { getModuleConfigByThemeConfig, resolveFileByTheme, getAllJsVueFilesWithInheritance, getAllJsVueFilesWithInheritanceCached };
 

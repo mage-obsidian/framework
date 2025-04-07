@@ -1,7 +1,7 @@
 import themeResolver from './themeResolverSync.js';
 import path from 'node:path';
 import { MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_MODULE_WEB_PATH } from '../config/default.js';
-import { resolveFileByTheme } from './moduleResolver.js';
+import { resolveFileByTheme, getAllJsVueFilesWithInheritanceCached } from './moduleResolver.js';
 import configResolver from './configResolver.js';
 import fs from 'node:fs/promises';
 
@@ -35,11 +35,21 @@ function resolveModuleCssSourcePath(moduleName, themeName) {
     return moduleConfigSourcePath;
 }
 
+async function getVueComponentsSource(themeName) {
+    const vueComponents = await getAllJsVueFilesWithInheritanceCached(themeName);
+    // split with @source al inicio
+    const vueComponentSources = Object.entries(vueComponents).map(([name, url]) => {
+        return `@source "${url}";\n`;
+    })
+    return vueComponentSources.join('');
+}
+
 async function getCssImports(themeName) {
     const themeConfig = themeResolver.getThemeConfig(themeName);
     const excludedModules = new Set(themeConfig.ignoredCssFromModules || []);
     const modulesConfig = getModulesConfigArray();
 
+    let cssSource = await getVueComponentsSource(themeName);
     let cssImports = '';
 
     if (themeConfig.ignoredCssFromModules !== 'all') {
@@ -57,7 +67,7 @@ async function getCssImports(themeName) {
     }
 
     cssImports += await getThemeImports(themeName);
-    return cssImports;
+    return `${cssSource}\n${cssImports}`;
 }
 
 export default getCssImports;

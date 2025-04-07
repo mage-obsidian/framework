@@ -10,7 +10,7 @@ export default async (themeName) => {
     execSync('rm -rf .precompiled/*', { stdio: 'inherit' });
     execSync(`mkdir -p .precompiled/${themeName}`, { stdio: 'inherit' });
     console.log('Generating precompiled files');
-    await precompileCss(themeName);
     await precompileJs(themeName);
+    await precompileCss(themeName);
     isPrecompiled = true;
 }

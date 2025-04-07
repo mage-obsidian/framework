@@ -1,5 +1,5 @@
 import themeResolver from './themeResolverSync.js';
-import moduleResolver from './moduleResolverSync.js';
+import moduleResolver from './moduleResolver.js';
 import deepmerge from 'deepmerge';
 
 export function getTailwindConfigByTheme(themeName) {

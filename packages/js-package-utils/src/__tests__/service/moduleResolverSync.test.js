@@ -144,11 +144,8 @@ async function setupResolvers(scenario) {
         __esModule: true,
         default: createMockConfigResolver(scenario).default,
     }));
-
-    const [moduleResolver, themeResolver] = await Promise.all([
-        import('#service/moduleResolverSync.js'),
-        import('#service/themeResolverSync.js'),
-    ]);
+    const moduleResolver = await import('#service/moduleResolver.js');
+    const themeResolver = await import('#service/themeResolverSync.js');
 
     return { moduleResolver, themeResolver };
 }

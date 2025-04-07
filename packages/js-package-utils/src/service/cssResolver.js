@@ -1,7 +1,7 @@
 import themeResolver from './themeResolverSync.js';
 import path from 'node:path';
 import { MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_MODULE_WEB_PATH } from '../config/default.js';
-import { resolveFileByTheme } from './moduleResolverSync.js';
+import { resolveFileByTheme } from './moduleResolver.js';
 import configResolver from './configResolver.js';
 import fs from 'node:fs/promises';
 

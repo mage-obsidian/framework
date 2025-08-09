@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+    Registers a "twig" template engine next to Magento's native "phtml".
+    The engine name is the file extension (see Magento\Framework\View\Element\Template::fetchView),
+    so a block whose template ends in `.twig` is dispatched here while every `.phtml` keeps using the
+    native PHP engine. The `engines` array argument merges across modules, so this only adds an entry.
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\View\TemplateEngineFactory">
+        <arguments>
+            <argument name="engines" xsi:type="array">
+                <item name="twig" xsi:type="string">MageObsidian\ModernFrontendTwig\TemplateEngine\Twig</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

@@ -20,6 +20,10 @@
                     name="mage-obsidian-modern-frontend:doctor:command"
                     xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\FrontendDoctorCommand
                 </item>
+                <item
+                    name="mage-obsidian-modern-frontend:dev:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\FrontendDevCommand
+                </item>
             </argument>
         </arguments>
     </type>
@@ -29,6 +33,11 @@
         </arguments>
     </type>
     <type name="MageObsidian\ModernFrontendCli\Console\Command\FrontendDoctorCommand">
+        <arguments>
+            <argument name="fileDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontendCli\Console\Command\FrontendDevCommand">
         <arguments>
             <argument name="fileDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
         </arguments>

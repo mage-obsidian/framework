@@ -17,6 +17,7 @@ use Magento\Framework\Filesystem\DriverInterface;
 use MageObsidian\ModernFrontend\Model\Config\ConfigProvider;
 use MageObsidian\ModernFrontend\Service\Dev\DevServerProcess;
 use MageObsidian\ModernFrontend\Service\Dev\HttpProberInterface;
+use MageObsidian\ModernFrontend\Service\Dev\NginxSnippet;
 use MageObsidian\ModernFrontend\Service\Dev\ViteEnvFile;
 use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
 use Symfony\Component\Console\Command\Command;
@@ -43,6 +44,7 @@ class FrontendDevCommand extends Command
     private const OPTION_START = 'start';
     private const OPTION_STOP = 'stop';
     private const OPTION_STATUS = 'status';
+    private const OPTION_PRINT_NGINX = 'print-nginx';
     private const OPTION_THEME = 'theme';
     private const VITE_ENV_RELATIVE_PATH = 'vite/.env';
 
@@ -91,6 +93,12 @@ class FrontendDevCommand extends Command
                 'Report whether the local dev server process is running and reachable.'
             )
             ->addOption(
+                self::OPTION_PRINT_NGINX,
+                null,
+                InputOption::VALUE_NONE,
+                'Print the nginx proxy snippet (derived from config) to paste into your server block.'
+            )
+            ->addOption(
                 self::OPTION_THEME,
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -113,6 +121,14 @@ class FrontendDevCommand extends Command
         if ($input->getOption(self::OPTION_STATUS)) {
             return $this->showStatus($io);
         }
+        if ($input->getOption(self::OPTION_PRINT_NGINX)) {
+            $vars = $this->configProvider->getViteEnvVars();
+            $output->writeln(NginxSnippet::render(
+                $vars[ViteEnvFile::VAR_SERVER_HOST] ?? '',
+                $vars[ViteEnvFile::VAR_SERVER_PORT] ?? ''
+            ));
+            return Command::SUCCESS;
+        }
         if ($input->getOption(self::OPTION_SHOW)) {
             $this->renderVars($io, $this->configProvider->getViteEnvVars());
             return Command::SUCCESS;
@@ -122,7 +138,7 @@ class FrontendDevCommand extends Command
         }
 
         $io->warning(
-            'Nothing to do. Use --sync-env, --show, --start --theme=<t>, --stop or --status.'
+            'Nothing to do. Use --sync-env, --show, --start --theme=<t>, --stop, --status or --print-nginx.'
         );
         return Command::SUCCESS;
     }

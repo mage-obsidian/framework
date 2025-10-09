@@ -68,6 +68,12 @@ class MageObsidianExtension extends AbstractExtension
                 $safeHtml
             ),
             new TwigFunction(
+                'json_ld',
+                fn(array $context, string $type, array $data = []): string
+                    => $this->bridge->jsonLd($context['block'], $type, $data),
+                $safeHtml
+            ),
+            new TwigFunction(
                 'vite_url',
                 fn(array $context, string $path): string
                     => $this->bridge->viteUrl($context['block'], $path),

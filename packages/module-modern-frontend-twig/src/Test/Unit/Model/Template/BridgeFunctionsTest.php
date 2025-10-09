@@ -67,6 +67,37 @@ class BridgeFunctionsTest extends TestCase
         $this->assertSame(['check', 'solid', '24'], $block->lastCall);
     }
 
+    public function testJsonLdDelegatesTypeAndData(): void
+    {
+        $block = new class {
+            public array $lastCall = [];
+            public function renderJsonLd(string $type, array $data = []): string
+            {
+                $this->lastCall = [$type, $data];
+                return '<script type="application/ld+json">{}</script>';
+            }
+        };
+
+        $html = $this->bridge->jsonLd($block, 'FAQPage', ['mainEntity' => []]);
+
+        $this->assertSame('<script type="application/ld+json">{}</script>', $html);
+        $this->assertSame(['FAQPage', ['mainEntity' => []]], $block->lastCall);
+    }
+
+    public function testJsonLdThrowsActionableErrorOnUnsupportedBlock(): void
+    {
+        $block = new class {
+            public function getChildHtml(string $alias = '', bool $useCache = true): string
+            {
+                return '';
+            }
+        };
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageMatches('/json_ld.*renderJsonLd/');
+        $this->bridge->jsonLd($block, 'FAQPage');
+    }
+
     public function testUrlHelpersDelegate(): void
     {
         $block = new class {

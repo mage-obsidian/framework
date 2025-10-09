@@ -41,6 +41,22 @@ class BridgeFunctions
     }
 
     /**
+     * Emit a schema.org JSON-LD `<script>` for a custom type. Returns markup, so
+     * the Twig function is marked safe.
+     *
+     * @param object $block
+     * @param string $type
+     * @param array $data
+     *
+     * @return string
+     */
+    public function jsonLd(object $block, string $type, array $data = []): string
+    {
+        $this->assertSupports($block, 'renderJsonLd', 'json_ld');
+        return $block->renderJsonLd($type, $data);
+    }
+
+    /**
      * Render a child block declared in layout (available on every Magento block).
      *
      * @param object $block

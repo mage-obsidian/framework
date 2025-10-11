@@ -46,6 +46,8 @@ class FrontendDevCommand extends Command
     private const OPTION_STATUS = 'status';
     private const OPTION_PRINT_NGINX = 'print-nginx';
     private const OPTION_THEME = 'theme';
+    private const OPTION_WATCH = 'watch';
+    private const OPTION_NO_WATCH = 'no-watch';
     private const VITE_ENV_RELATIVE_PATH = 'vite/.env';
 
     public function __construct(
@@ -103,6 +105,18 @@ class FrontendDevCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Theme to serve when starting the dev server (e.g. Vendor/theme).'
+            )
+            ->addOption(
+                self::OPTION_WATCH,
+                null,
+                InputOption::VALUE_NONE,
+                'With --start: run the HMR dev server (default).'
+            )
+            ->addOption(
+                self::OPTION_NO_WATCH,
+                null,
+                InputOption::VALUE_NONE,
+                'With --start: build the theme once to disk instead of running the dev server.'
             );
 
         parent::configure();
@@ -113,7 +127,10 @@ class FrontendDevCommand extends Command
         $io = new CustomSymfonyStyle($input, $output);
 
         if ($input->getOption(self::OPTION_START)) {
-            return $this->start($io, (string)$input->getOption(self::OPTION_THEME));
+            $theme = (string)$input->getOption(self::OPTION_THEME);
+            return $input->getOption(self::OPTION_NO_WATCH)
+                ? $this->buildOnce($io, $theme)
+                : $this->start($io, $theme);
         }
         if ($input->getOption(self::OPTION_STOP)) {
             return $this->stop($io);
@@ -167,6 +184,36 @@ class FrontendDevCommand extends Command
         $io->success(sprintf('Dev server started (pid %d, theme "%s").', $info['pid'], $info['theme']));
         $io->writeln(sprintf('  Logs: %s', $info['log']));
         $io->writeln('  Check it with: bin/magento mage-obsidian:frontend:dev --status');
+        return Command::SUCCESS;
+    }
+
+    /**
+     * --start --no-watch: build the theme once to disk (no HMR, no daemon).
+     */
+    private function buildOnce(CustomSymfonyStyle $io, string $theme): int
+    {
+        $io->title('MageObsidian Frontend Dev — build (no watch)');
+
+        if ($theme === '') {
+            $io->error('A theme is required to build. Pass --theme=<Vendor/theme>.');
+            return Command::FAILURE;
+        }
+
+        try {
+            $exitCode = $this->devServerProcess->build($theme, function (string $type, string $buffer) use ($io): void {
+                $io->write($buffer);
+            });
+        } catch (LocalizedException $e) {
+            $io->error($e->getMessage());
+            return Command::FAILURE;
+        }
+
+        if ($exitCode !== 0) {
+            $io->error(sprintf('Build failed for theme "%s" (exit %d).', $theme, $exitCode));
+            return Command::FAILURE;
+        }
+
+        $io->success(sprintf('Built theme "%s" to disk.', $theme));
         return Command::SUCCESS;
     }
 

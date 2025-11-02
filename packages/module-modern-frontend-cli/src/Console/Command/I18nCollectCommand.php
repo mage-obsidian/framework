@@ -14,7 +14,7 @@ use Magento\Framework\App\State;
 use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem\DriverInterface;
-use MageObsidian\ModernFrontend\Service\ConfigManager;
+use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
 use MageObsidian\ModernFrontend\Service\I18n\CsvDictionary;
 use MageObsidian\ModernFrontend\Service\I18n\VuePhraseExtractor;
 use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
@@ -36,7 +36,7 @@ class I18nCollectCommand extends Command
 
     public function __construct(
         private readonly State $state,
-        private readonly ConfigManager $configManager,
+        private readonly ConfigManagerInterface $configManager,
         private readonly VuePhraseExtractor $extractor,
         private readonly CsvDictionary $csvDictionary,
         private readonly DriverInterface $fileDriver

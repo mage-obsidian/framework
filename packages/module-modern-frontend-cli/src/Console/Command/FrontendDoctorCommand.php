@@ -14,8 +14,8 @@ use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
 use Magento\Framework\Filesystem\DriverInterface;
 use MageObsidian\ModernFrontend\Api\Data\ConfigInterface;
+use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
 use MageObsidian\ModernFrontend\Model\Config\ConfigProvider;
-use MageObsidian\ModernFrontend\Service\ConfigManager;
 use MageObsidian\ModernFrontend\Service\Dev\CheckResult;
 use MageObsidian\ModernFrontend\Service\Dev\DevDiagnostics;
 use MageObsidian\ModernFrontend\Service\Dev\HttpProberInterface;
@@ -49,7 +49,7 @@ class FrontendDoctorCommand extends Command
     public function __construct(
         private readonly State $state,
         private readonly ConfigProvider $configProvider,
-        private readonly ConfigManager $configManager,
+        private readonly ConfigManagerInterface $configManager,
         private readonly HttpProberInterface $prober,
         private readonly DevDiagnostics $diagnostics,
         private readonly DirectoryList $directoryList,
@@ -91,6 +91,12 @@ class FrontendDoctorCommand extends Command
             $this->diagnostics->evaluateDevServer($hmrEnabled, $devProbe),
             $this->diagnostics->evaluateEnv($this->findMissingEnvVars($env)),
         ];
+
+        // Drift only makes sense to evaluate against an existing contract; the
+        // missing-contract case is already reported by evaluateContract above.
+        if ($contractExists) {
+            $results[] = $this->diagnostics->evaluateDrift($this->configManager->detectDrift());
+        }
 
         $this->renderResults($io, $results);
 

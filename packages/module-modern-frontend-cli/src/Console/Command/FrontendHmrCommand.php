@@ -6,6 +6,8 @@
  * © 2024 Jeanmarcos Juarez
  */
 
+declare(strict_types=1);
+
 namespace MageObsidian\ModernFrontendCli\Console\Command;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -71,24 +73,25 @@ class FrontendHmrCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new CustomSymfonyStyle($input, $output);
-        $showOption = $input->getOption('show');
-        $enableOption = $input->getOption('enable');
-        $disableOption = $input->getOption('disable');
 
         try {
             $this->state->setAreaCode('global');
 
-            if ($showOption) {
-                $this->showConfig($io);
-            } elseif ($enableOption) {
-                $this->setHmrOption(true);
-                $io->success('Hot Module Replacement (HMR) has been enabled. If configuration cache is active, please clear it to apply the changes.');
-            } elseif ($disableOption) {
-                $this->setHmrOption(false);
-                $io->success('Hot Module Replacement (HMR) has been disabled. If configuration cache is active, please clear it to apply the changes.');
-            } else {
-                $io->error('Please specify an option: --show, --enable, or --disable.');
-                return Command::FAILURE;
+            switch (true) {
+                case $input->getOption('show'):
+                    $this->showConfig($io);
+                    break;
+                case $input->getOption('enable'):
+                    $this->setHmrOption(true);
+                    $io->success('Hot Module Replacement (HMR) has been enabled. If configuration cache is active, please clear it to apply the changes.');
+                    break;
+                case $input->getOption('disable'):
+                    $this->setHmrOption(false);
+                    $io->success('Hot Module Replacement (HMR) has been disabled. If configuration cache is active, please clear it to apply the changes.');
+                    break;
+                default:
+                    $this->showUsage($io);
+                    return Command::FAILURE;
             }
         } catch (FileSystemException|LocalizedException $e) {
             $io->error('An error occurred: ' . $e->getMessage());
@@ -121,5 +124,32 @@ class FrontendHmrCommand extends Command
     private function setHmrOption(bool $state): void
     {
         $this->configWriter->save(ConfigProvider::HMR_ENABLED, $state);
+    }
+
+    /**
+     * Displays the usage message when no options are specified.
+     *
+     * @param CustomSymfonyStyle $io
+     *
+     * @return void
+     */
+    private function showUsage(CustomSymfonyStyle $io): void
+    {
+        $io->title('MageObsidian Frontend HMR Manager');
+        $io->warning('No valid option specified. Please choose an action.');
+
+        $io->section('Available Actions');
+        $io->listing([
+            '<info>--show</info>    : Show the current status of HMR.',
+            '<info>--enable</info>  : Enable Hot Module Replacement.',
+            '<info>--disable</info> : Disable Hot Module Replacement.',
+        ]);
+
+        $io->section('Usage Examples');
+        $io->listing([
+            'bin/magento mage-obsidian:frontend:hmr --show',
+            'bin/magento mage-obsidian:frontend:hmr --enable',
+            'bin/magento mage-obsidian:frontend:hmr --disable',
+        ]);
     }
 }

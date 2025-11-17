@@ -6,6 +6,8 @@
  * © 2024 Jeanmarcos Juarez
  */
 
+declare(strict_types=1);
+
 namespace MageObsidian\ModernFrontendCli\Console\Command;
 
 use MageObsidian\ModernFrontend\Service\ConfigManager;
@@ -54,8 +56,8 @@ class FrontendConfigCommand extends Command
                  InputOption::VALUE_NONE,
                  'Display the current configuration of compatible modules and themes.'
              )
-             ->addOption('modules', null, InputOption::VALUE_NONE, 'Display only the modules configuration.')
-             ->addOption('themes', null, InputOption::VALUE_NONE, 'Display only the themes configuration.');
+             ->addOption('modules', null, InputOption::VALUE_NONE, 'Display only the modules configuration (requires --show).')
+             ->addOption('themes', null, InputOption::VALUE_NONE, 'Display only the themes configuration (requires --show).');
 
         parent::configure();
     }
@@ -198,12 +200,26 @@ class FrontendConfigCommand extends Command
      */
     private function showUsage(CustomSymfonyStyle $io): void
     {
-        $io->error('No option specified. Use one of the following:');
+        $io->title('MageObsidian Frontend Config Manager');
+        $io->warning('No valid option specified. Please choose an action.');
+
+        $io->section('Available Actions');
         $io->listing([
-            '--generate   Generate or update the configuration file.',
-            '--show       Display the current configuration of compatible modules and themes.',
-            '--modules    Display only the modules configuration.',
-            '--themes     Display only the themes configuration.',
+            '<info>--generate</info> : Generate or update the configuration file.',
+            '<info>--show</info>     : Display the current configuration.',
+        ]);
+
+        $io->section('Show Filters (use with --show)');
+        $io->listing([
+            '<info>--modules</info>  : Display only modules configuration.',
+            '<info>--themes</info>   : Display only themes configuration.',
+        ]);
+
+        $io->section('Usage Examples');
+        $io->listing([
+            'bin/magento mage-obsidian:frontend:config --generate',
+            'bin/magento mage-obsidian:frontend:config --show',
+            'bin/magento mage-obsidian:frontend:config --show --modules',
         ]);
     }
 }

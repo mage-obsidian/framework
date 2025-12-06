@@ -98,6 +98,37 @@ class BridgeFunctionsTest extends TestCase
         $this->bridge->jsonLd($block, 'FAQPage');
     }
 
+    public function testImageDelegatesSrcAndOptions(): void
+    {
+        $block = new class {
+            public array $lastCall = [];
+            public function renderImage(string $src, array $options = []): string
+            {
+                $this->lastCall = [$src, $options];
+                return '<img src="' . $src . '">';
+            }
+        };
+
+        $html = $this->bridge->image($block, 'Acme::a.jpg', ['width' => 100, 'height' => 80]);
+
+        $this->assertSame('<img src="Acme::a.jpg">', $html);
+        $this->assertSame(['Acme::a.jpg', ['width' => 100, 'height' => 80]], $block->lastCall);
+    }
+
+    public function testImageThrowsActionableErrorOnUnsupportedBlock(): void
+    {
+        $block = new class {
+            public function getChildHtml(string $alias = '', bool $useCache = true): string
+            {
+                return '';
+            }
+        };
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageMatches('/image.*renderImage/');
+        $this->bridge->image($block, 'Acme::a.jpg');
+    }
+
     public function testUrlHelpersDelegate(): void
     {
         $block = new class {

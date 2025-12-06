@@ -57,6 +57,22 @@ class BridgeFunctions
     }
 
     /**
+     * Render a Core-Web-Vitals-friendly image. Returns markup, so the Twig
+     * function is marked safe.
+     *
+     * @param object $block
+     * @param string $src
+     * @param array $options
+     *
+     * @return string
+     */
+    public function image(object $block, string $src, array $options = []): string
+    {
+        $this->assertSupports($block, 'renderImage', 'image');
+        return $block->renderImage($src, $options);
+    }
+
+    /**
      * Render a child block declared in layout (available on every Magento block).
      *
      * @param object $block

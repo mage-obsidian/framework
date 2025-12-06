@@ -74,6 +74,12 @@ class MageObsidianExtension extends AbstractExtension
                 $safeHtml
             ),
             new TwigFunction(
+                'image',
+                fn(array $context, string $src, array $options = []): string
+                    => $this->bridge->image($context['block'], $src, $options),
+                $safeHtml
+            ),
+            new TwigFunction(
                 'vite_url',
                 fn(array $context, string $path): string
                     => $this->bridge->viteUrl($context['block'], $path),

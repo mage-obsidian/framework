@@ -50,36 +50,18 @@ export async function getThemeConfig(themeName) {
   let themeConfig = await loadThemeConfig(themeDefinition, themeName);
   if (!themeConfig) return null;
 
-  themeConfig.includeTailwindConfigFromParentThemes ??= true;
   themeConfig.includeCssSourceFromParentThemes ??= true;
   themeConfig.ignoredCssFromModules ??= [];
-  themeConfig.ignoredTailwindConfigFromModules ??= [];
   themeConfig.exposeNpmPackages ??= [];
-  themeConfig.tailwind ??= {};
-
-  if (themeConfig.tailwind?.content) {
-    themeConfig.tailwind.content = themeConfig.tailwind.content.map((content) =>
-      path.join(themeDefinition.src, "web", content)
-    );
-  }
-
-  const includeParent = themeConfig.includeTailwindConfigFromParentThemes;
-  if (includeParent && themeDefinition.parent) {
+  if (themeDefinition.parent) {
     const parentConfig = await getThemeConfig(themeDefinition.parent);
     themeConfig = deepmerge(parentConfig || {}, themeConfig);
   }
-
   themeConfigCache.set(themeName, themeConfig);
   return themeConfig;
 }
 
-export async function getTailwindThemeConfig(themeName) {
-  const themeConfig = await getThemeConfig(themeName);
-  return themeConfig?.tailwind ?? {};
-}
-
 // Export default con todo
 export default {
-  getThemeConfig,
-  getTailwindThemeConfig
+  getThemeConfig
 };

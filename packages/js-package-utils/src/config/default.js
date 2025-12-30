@@ -22,5 +22,6 @@ export const OUTPUT_THEME_DIR = 'web/generated';
 export const OUTPUT_JS_DIR = 'js/';
 export const OUTPUT_CSS_DIR = 'css/';
 export const PRECOMPILED_FOLDER = '.precompiled';
+export const INTERCEPTORS_FOLDER = 'interceptors';
 
 export const ALL_JS_VUE_FILES_WITH_INHERITANCE_FILE_NAME = 'allJsVueFilesWithInheritance.json';

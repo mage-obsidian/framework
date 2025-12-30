@@ -110,22 +110,22 @@ function getModuleConfigPath(moduleSrc) {
     return path.join(moduleSrc, 'view/frontend/web/', MODULE_CONFIG_FILE);
 }
 
-function resolveFileByTheme(themeName, moduleName, filePath, includeTailwindConfigFromParentThemes) {
+function resolveFileByTheme(themeName, moduleName, filePath) {
     const theme = configResolver.getMagentoConfig().themes[themeName];
     const fullFilePath = path.join(theme.src, moduleName, 'web', filePath);
     if (fs.existsSync(fullFilePath)) {
         return fullFilePath;
     }
 
-    if (includeTailwindConfigFromParentThemes && theme.parent) {
-        return resolveFileByTheme(theme.parent, moduleName, filePath, includeTailwindConfigFromParentThemes);
+    if (theme.parent) {
+        return resolveFileByTheme(theme.parent, moduleName, filePath);
     }
     return null;
 }
 
-async function resolveModuleConfig(moduleName, themeName, includeTailwindConfigFromParentThemes) {
+async function resolveModuleConfig(moduleName, themeName) {
     const module = configResolver.getMagentoConfig().modules[moduleName];
-    let moduleConfigSourcePath = resolveFileByTheme(themeName, moduleName, MODULE_CONFIG_FILE, includeTailwindConfigFromParentThemes);
+    let moduleConfigSourcePath = resolveFileByTheme(themeName, moduleName, MODULE_CONFIG_FIL);
 
     if (!moduleConfigSourcePath && !module) {
         return null;
@@ -158,20 +158,8 @@ async function getModuleConfigByThemeConfig(themeName, themeConfig) {
     let modulesConfig = {};
 
     for (const moduleName of modules) {
-        let moduleConfig = await resolveModuleConfig(moduleName, themeName, themeConfig.includeTailwindConfigFromParentThemes);
+        let moduleConfig = await resolveModuleConfig(moduleName, themeName);
         if (!moduleConfig) continue;
-        if (
-            themeConfig.ignoredTailwindConfigFromModules === 'all' ||
-            themeConfig.ignoredTailwindConfigFromModules.includes(moduleName)
-        ) {
-            moduleConfig.tailwind = {};
-        } else if (moduleConfig.tailwind?.content) {
-            const moduleSrc = configResolver.getMagentoConfig().modules[moduleName].src;
-            moduleConfig.tailwind.content = moduleConfig.tailwind.content.map((content) =>
-                path.join(moduleSrc, 'view/frontend/web', content)
-            );
-        }
-
         modulesConfig = deepmerge(modulesConfig, moduleConfig);
     }
 

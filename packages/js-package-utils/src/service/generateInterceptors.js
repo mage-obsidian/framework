@@ -1,26 +1,28 @@
 import path from "path";
 import { pathToFileURL, fileURLToPath } from "url";
-import themeResolver from './themeResolverSync.js';
-import moduleResolver from './moduleResolver.js';
-import pluginManager from './pluginManager.js';
+import themeResolver from 'mage-obsidian/service/themeResolverSync.js';
+import moduleResolver from 'mage-obsidian/service/moduleResolver.js';
+import interceptorManager from 'mage-obsidian/service/interceptorManager.js';
+import configResolver from "mage-obsidian/service/configResolver.js";
 
 const interceptorsRegisteredByTheme = new Map();
 const generatedInterceptorsCache = new Map();
+export const KEY_INTERCEPTED = 'originalIntercepted';
 
 /**
  * Resolves the absolute path of a file using the cached file map
- * @param {string} identifier 
- * @param {Object} fileMap 
+ * @param {string} identifier
+ * @param {Object} fileMap
  * @returns {string|null}
  */
 function resolvePathFromMap(identifier, fileMap) {
     const [moduleName, relativePath] = identifier.split('::');
     if (!moduleName || !relativePath) return null;
-    
+
     const parsed = path.parse(relativePath);
     const keyPath = path.join(parsed.dir, parsed.name);
     const key = `${moduleName}/${keyPath}`;
-    
+
     return fileMap[key] || null;
 }
 
@@ -31,31 +33,28 @@ async function registerInterceptors(themeName) {
 
     const themeConfig = await themeResolver.getThemeConfig(themeName);
     const modulesConfig = await moduleResolver.getModuleConfigByThemeConfig(themeName, themeConfig);
-    
+    if (!modulesConfig || modulesConfig.interceptors === undefined) {
+        interceptorsRegisteredByTheme.set(themeName, {});
+        return {};
+    }
     // Map<Target, Map<PluginName, PluginConfig>>
     const interceptorsMap = new Map();
+    for (const [interceptorName, interceptorDefinition] of Object.entries( modulesConfig.interceptors)) {
+        const { target } = interceptorDefinition;
+        if (!interceptorName || !target) continue;
 
-    for (const [moduleName, moduleConfig] of Object.entries(modulesConfig)) {
-        if (!moduleConfig.interceptors || !Array.isArray(moduleConfig.interceptors)) {
-            continue;
+        if (!interceptorsMap.has(target)) {
+            interceptorsMap.set(target, new Map());
         }
-        for (const c of moduleConfig.interceptors) {
-            const { name, target } = c;
-            if (!name || !target) continue;
 
-            if (!interceptorsMap.has(target)) {
-                interceptorsMap.set(target, new Map());
-            }
+        const targetPlugins = interceptorsMap.get(target);
 
-            const targetPlugins = interceptorsMap.get(target);
-            
-            if (targetPlugins.has(name)) {
-                // Merge existing plugin config with new config (allows overriding sortOrder, active, etc.)
-                const existing = targetPlugins.get(name);
-                targetPlugins.set(name, { ...existing, ...c });
-            } else {
-                targetPlugins.set(name, { ...c, module: moduleName });
-            }
+        if (targetPlugins.has(interceptorName)) {
+            // Merge existing plugin config with new config (allows overriding sortOrder, active, etc.)
+            const existing = targetPlugins.get(interceptorName);
+            targetPlugins.set(interceptorName, { ...existing, ...interceptorDefinition });
+        } else {
+            targetPlugins.set(interceptorName, { ...interceptorDefinition });
         }
     }
 
@@ -65,7 +64,7 @@ async function registerInterceptors(themeName) {
         const plugins = Array.from(pluginsMap.values())
             .filter(p => p.active !== false) // Filter out inactive plugins
             .sort((a, b) => (a.sortOrder || 10) - (b.sortOrder || 10));
-        
+
         if (plugins.length > 0) {
             result[target] = plugins;
         }
@@ -81,8 +80,7 @@ async function generateInterceptors(themeName) {
     }
 
     const interceptorsConfig = await registerInterceptors(themeName);
-    const modulesConfig = await moduleResolver.getModuleConfigByThemeConfig(themeName, await themeResolver.getThemeConfig(themeName));
-    
+
     // Get all files map from cache
     let allFilesMap = {};
     try {
@@ -94,96 +92,99 @@ async function generateInterceptors(themeName) {
 
     const interceptors = {};
 
-    for (const [targetIdentifier, plugins] of Object.entries(interceptorsConfig)) {
+    for (const [target, plugins] of Object.entries(interceptorsConfig)) {
         // 1. Resolve Target Path
-        const targetPath = resolvePathFromMap(targetIdentifier, allFilesMap);
+        const targetPath = resolvePathFromMap(target, allFilesMap);
         if (!targetPath) {
-            console.warn(`Target module not found for identifier: ${targetIdentifier}`);
+            console.warn(`Target module not found for identifier: ${target}`);
             continue;
         }
 
-        // 2. Load Target Module to inspect exports
         let targetModule;
         try {
             targetModule = await import(pathToFileURL(targetPath).href);
         } catch (e) {
-            console.error(`Failed to import target module ${targetIdentifier}:`, e.message);
+            console.error(`Failed to import target module ${target}:`, e.message);
             continue;
         }
 
         const targetExports = Object.keys(targetModule);
         const methodsToIntercept = new Set();
 
-        // 3. Validate and Register Plugins
-        const validPlugins = [];
-        for (const pluginConfig of plugins) {
-            const pluginPath = resolvePathFromMap(pluginConfig.plugin, allFilesMap);
-            if (!pluginPath) {
-                console.warn(`Plugin module not found: ${pluginConfig.plugin}`);
+        // 3. Validate and Register Interceptors
+        const validInterceptors = [];
+        for (const interceptorConfig of plugins) {
+            const interceptorPath = resolvePathFromMap(interceptorConfig.interceptor, allFilesMap);
+            if (!interceptorPath) {
+                console.warn(`Interceptor module not found: ${interceptorConfig.interceptor}`);
                 continue;
             }
 
-            let pluginModule;
+            let interceptorModule;
             try {
-                pluginModule = await import(pathToFileURL(pluginPath).href);
+                interceptorModule = await import(pathToFileURL(interceptorPath).href);
             } catch (e) {
-                console.error(`Failed to import plugin module ${pluginConfig.plugin}:`, e.message);
+                console.error(`Failed to import interceptor module ${interceptorConfig.interceptor}:`, e.message);
                 continue;
             }
 
-            const pluginMethods = [];
-            for (const pluginExport of Object.keys(pluginModule)) {
+            const interceptorMethods = [];
+            for (const interceptorExport of Object.keys(interceptorModule)) {
                 let type, targetMethod;
-                
-                if (pluginExport.startsWith('before')) {
+
+                if (interceptorExport.startsWith('before')) {
                     type = 'before';
-                    targetMethod = pluginExport.substring(6);
-                } else if (pluginExport.startsWith('around')) {
+                    targetMethod = interceptorExport.substring(6);
+                } else if (interceptorExport.startsWith('around')) {
                     type = 'around';
-                    targetMethod = pluginExport.substring(6);
-                } else if (pluginExport.startsWith('after')) {
+                    targetMethod = interceptorExport.substring(6);
+                } else if (interceptorExport.startsWith('after')) {
                     type = 'after';
-                    targetMethod = pluginExport.substring(5);
+                    targetMethod = interceptorExport.substring(5);
                 } else {
                     continue;
                 }
 
                 // Check if target method exists in target module
                 if (!targetExports.includes(targetMethod) && targetMethod !== 'default') {
-                     const lowerFirst = targetMethod.charAt(0).toLowerCase() + targetMethod.slice(1);
-                     if (targetExports.includes(lowerFirst)) {
-                         targetMethod = lowerFirst;
-                     } else {
-                        // Skip invalid methods but don't crash the whole process? 
+                    const lowerFirst = targetMethod.charAt(0).toLowerCase() + targetMethod.slice(1);
+                    if (targetExports.includes(lowerFirst)) {
+                        targetMethod = lowerFirst;
+                    } else {
+                        // Skip invalid methods but don't crash the whole process?
                         // User requested error if not found.
-                        throw new Error(`Plugin ${pluginConfig.name} (${pluginConfig.plugin}) exports '${pluginExport}' but target ${targetIdentifier} does not export '${targetMethod}'`);
-                     }
+                        throw new Error(`Interceptor ${interceptorConfig.name} (${interceptorConfig.interceptor}) exports '${interceptorExport}' but target ${target} does not export '${targetMethod}'`);
+                    }
                 }
 
-                // Register the plugin with PluginManager (Runtime)
-                const methodKey = `${targetIdentifier}::${targetMethod}`;
-                pluginManager.addPlugin(
+                if (typeof targetModule[targetMethod] !== 'function') {
+                    console.warn(`Interceptor ${interceptorConfig.name} (${interceptorConfig.interceptor}) exports '${interceptorExport}' but target ${target} export '${targetMethod}' is not a function.`);
+                    continue;
+                }
+
+                const methodKey = `${target}::${targetMethod}`;
+                interceptorManager.addInterceptor(
                     methodKey,
-                    pluginConfig.name,
+                    interceptorConfig.name,
                     type,
-                    pluginModule[pluginExport],
-                    pluginConfig.sortOrder
+                    interceptorModule[interceptorExport],
+                    interceptorConfig.sortOrder
                 );
-                
+
                 methodsToIntercept.add(targetMethod);
-                pluginMethods.push({
-                    exportName: pluginExport,
+                interceptorMethods.push({
+                    exportName: interceptorExport,
                     type,
                     targetMethod,
-                    sortOrder: pluginConfig.sortOrder
+                    sortOrder: interceptorConfig.sortOrder
                 });
             }
 
-            if (pluginMethods.length > 0) {
-                validPlugins.push({
-                    ...pluginConfig,
-                    path: pluginPath,
-                    methods: pluginMethods
+            if (interceptorMethods.length > 0) {
+                validInterceptors.push({
+                    ...interceptorConfig,
+                    path: interceptorPath,
+                    methods: interceptorMethods
                 });
             }
         }
@@ -191,15 +192,15 @@ async function generateInterceptors(themeName) {
         // 4. Create Interceptor Proxy & Source Code
         if (methodsToIntercept.size > 0) {
             const wrapper = { ...targetModule };
-            const proxy = pluginManager.intercept(wrapper, targetIdentifier, true);
-            
-            const source = generateInterceptorCode(targetIdentifier, targetPath, validPlugins, targetExports);
+            const proxy = interceptorManager.intercept(wrapper, target, true);
 
-            interceptors[targetIdentifier] = {
+            const source = generateInterceptorCode(target, targetPath, validInterceptors, targetExports);
+
+            interceptors[target] = {
                 proxy,
                 targetPath,
                 targetModule,
-                plugins: validPlugins,
+                interceptors: validInterceptors,
                 source
             };
         }
@@ -209,36 +210,36 @@ async function generateInterceptors(themeName) {
     return interceptors;
 }
 
-function generateInterceptorCode(targetIdentifier, targetPath, plugins, targetExports) {
+function generateInterceptorCode(target, targetPath, interceptors, targetExports) {
     const imports = [];
     const registrations = [];
-    
+
     // Import PluginManager (Assuming it's available via alias or relative path in the build environment)
     // For Vite, we might need to adjust this path or use a virtual module ID.
     // Using a relative path from this service file might not work in the generated code context.
-    // We'll assume '@mage-obsidian/plugin-manager' or similar alias is set up, 
+    // We'll assume '@mage-obsidian/plugin-manager' or similar alias is set up,
     // or use the absolute path which Vite handles.
-    const pluginManagerPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'pluginManager.js');
-    imports.push(`import pluginManager from '/@fs${pluginManagerPath}';`);
+    const resolvedInterceptorManagerPath = configResolver.resolveLibRealPath('mage-obsidian/service/interceptorManager');
+    imports.push(`import interceptorManager from "${resolvedInterceptorManagerPath}";`);
 
     // Import Original Module
-    imports.push(`import * as originalModule from '/@fs${targetPath}';`);
+    imports.push(`import * as originalModule from '/@fs${targetPath}?${KEY_INTERCEPTED}';`);
 
-    // Import Plugins
-    plugins.forEach((plugin, index) => {
-        const pluginVar = `plugin_${index}`;
-        imports.push(`import * as ${pluginVar} from '/@fs${plugin.path}';`);
-        
-        plugin.methods.forEach(method => {
-            const methodKey = `${targetIdentifier}::${method.targetMethod}`;
-            registrations.push(`pluginManager.addPlugin('${methodKey}', '${plugin.name}', '${method.type}', ${pluginVar}.${method.exportName}, ${method.sortOrder});`);
+    // Import Interceptors
+    interceptors.forEach((interceptor, index) => {
+        const interceptorVar = `interceptor_${index}`;
+        imports.push(`import * as ${interceptorVar} from '/@fs${interceptor.path}';`);
+
+        interceptor.methods.forEach(method => {
+            const methodKey = `${target}::${method.targetMethod}`;
+            registrations.push(`interceptorManager.addInterceptor('${methodKey}', '${interceptor.name}', '${method.type}', ${interceptorVar}.${method.exportName}, ${method.sortOrder});`);
         });
     });
 
     // Create Interceptor
     const interceptorCode = `
 const targetWrapper = { ...originalModule };
-const proxy = pluginManager.intercept(targetWrapper, '${targetIdentifier}', true);
+const proxy = interceptorManager.intercept(targetWrapper, '${target}', true);
 `;
 
     // Exports
@@ -262,5 +263,6 @@ ${exportsCode}
 
 export default {
     registerInterceptors,
-    generateInterceptors
+    generateInterceptors,
+    KEY_INTERCEPTED
 };

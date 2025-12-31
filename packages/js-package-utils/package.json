@@ -1,6 +1,6 @@
 {
   "name": "mage-obsidian",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Mage Obsidian Ultis",
   "main": "./src/scripts/buildThemes.js",
   "scripts": {
@@ -25,7 +25,8 @@
     ".": "./src/scripts/buildThemes.js",
     "./service/": "./src/service/",
     "./utils/": "./src/utils/",
-    "./config/": "./src/config/"
+    "./config/": "./src/config/",
+    "./service/*": "./src/service/*"
   },
   "dependencies": {
     "chalk": "^5.4.1",

@@ -14,7 +14,6 @@ try {
 }
 
 export const getMagentoConfig = () => MAGENTO_CONFIG;
-
 export const getModulesConfigArray = () => Object.entries(MAGENTO_CONFIG.modules);
 export const getThemesConfigArray = () => Object.entries(MAGENTO_CONFIG.themes);
 export const getAllMagentoModulesEnabled = () => MAGENTO_CONFIG.allModules;
@@ -29,6 +28,26 @@ export const getModuleDefinition = (moduleName) =>
 export const getThemeDefinition = (themeName) =>
     MAGENTO_CONFIG.themes[themeName];
 
+export const MODE = process.env.NODE_ENV;
+
+export function resolveLibPath(lib) {
+    return path.join(MAGENTO_CONFIG.LIB_PATH, lib);
+}
+
+export function resolveNodePath(packageName) {
+    try {
+        const resolvedPath = import.meta.resolve(packageName);
+        return resolvedPath.replace('file://', '');
+    } catch (error) {
+        console.error(`The package ${packageName} can't be resolved.`);
+        throw error;
+    }
+}
+
+export function resolveLibRealPath(lib) {
+    return MODE === 'production' ? lib : resolveNodePath(lib);
+}
+
 export default {
     getMagentoConfig,
     getModulesConfigArray,
@@ -37,5 +56,8 @@ export default {
     isDev,
     getOutputDirFromTheme,
     getModuleDefinition,
-    getThemeDefinition
+    getThemeDefinition,
+    resolveLibPath,
+    resolveNodePath,
+    resolveLibRealPath
 };

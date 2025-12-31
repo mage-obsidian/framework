@@ -125,7 +125,7 @@ function resolveFileByTheme(themeName, moduleName, filePath) {
 
 async function resolveModuleConfig(moduleName, themeName) {
     const module = configResolver.getMagentoConfig().modules[moduleName];
-    let moduleConfigSourcePath = resolveFileByTheme(themeName, moduleName, MODULE_CONFIG_FIL);
+    let moduleConfigSourcePath = resolveFileByTheme(themeName, moduleName, MODULE_CONFIG_FILE);
 
     if (!moduleConfigSourcePath && !module) {
         return null;

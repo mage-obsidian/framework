@@ -43,6 +43,7 @@ function tryCreateEnvFile() {
         VITE_SERVER_SECURE: 'true',
         VITE_HMR_PATH: '/__vite_ping',
         MAGENTO_HOST: 'magento.test',
+        VITE_SERVER_ALLOWED_HOSTS: 'magento.test,localhost'
     };
 
     console.log(chalk.blue('Creating `.env` file with default or user-provided values...'));
@@ -66,7 +67,7 @@ function tryCreateEnvFile() {
 }
 
 function validateEnv() {
-    const requiredEnvVars = ['VITE_SERVER_HOST', 'VITE_SERVER_PORT', 'VITE_SERVER_SECURE', 'VITE_HMR_PATH', 'MAGENTO_HOST'];
+    const requiredEnvVars = ['VITE_SERVER_HOST', 'VITE_SERVER_PORT', 'VITE_SERVER_SECURE', 'VITE_HMR_PATH', 'MAGENTO_HOST', 'VITE_SERVER_ALLOWED_HOSTS'];
     let missingEnvVars = [];
     for (const envVar of requiredEnvVars) {
         if (!process.env[envVar]) {

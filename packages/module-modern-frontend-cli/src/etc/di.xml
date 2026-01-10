@@ -24,6 +24,10 @@
                     name="mage-obsidian-modern-frontend:dev:command"
                     xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\FrontendDevCommand
                 </item>
+                <item
+                    name="mage-obsidian-modern-frontend:generate-component:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\GenerateComponentCommand
+                </item>
             </argument>
         </arguments>
     </type>

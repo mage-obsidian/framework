@@ -9,7 +9,7 @@ try {
     MAGENTO_CONFIG = JSON.parse(magentoConfigJson);
 } catch (error) {
     console.error(`Error reading or parsing configuration file at ${DEPENDENCY_CONFIG_FILE_PATH}:`, error.message);
-    console.error('Try running `devcore:frontend:config --generate` to generate the configuration file.');
+    console.error('Try running `bin/magento mage-obsidian:frontend:config --generate` to generate the configuration file.');
     process.exit(1);
 }
 

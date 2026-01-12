@@ -28,6 +28,14 @@
                     name="mage-obsidian-modern-frontend:generate-component:command"
                     xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\GenerateComponentCommand
                 </item>
+                <item
+                    name="mage-obsidian-modern-frontend:generate-module:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\GenerateModuleCommand
+                </item>
+                <item
+                    name="mage-obsidian-modern-frontend:generate-theme:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\GenerateThemeCommand
+                </item>
             </argument>
         </arguments>
     </type>

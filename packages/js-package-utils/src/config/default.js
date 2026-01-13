@@ -1,13 +1,17 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const BASE_PATH = process.cwd();
+// The Vite harness runs from the `vite/` dir one level below the Magento root.
+// Allow an explicit root override so the engine is not tied to that cwd layout
+// (e.g. when invoked from elsewhere or in tests).
+export const MAGENTO_ROOT = process.env.MAGE_OBSIDIAN_MAGENTO_ROOT
+    ? path.resolve(process.env.MAGE_OBSIDIAN_MAGENTO_ROOT)
+    : path.resolve(process.cwd(), '..');
 
 export const DEPENDENCY_CONFIG_FILENAME = 'mage_obsidian_frontend_modules.json';
 export const MAGENTO_CONFIG_RELATIVE_PATH = 'app/etc/';
 export const DEPENDENCY_CONFIG_FILE_PATH = path.resolve(
-    BASE_PATH,
-    '..',
+    MAGENTO_ROOT,
     MAGENTO_CONFIG_RELATIVE_PATH,
     DEPENDENCY_CONFIG_FILENAME
 );

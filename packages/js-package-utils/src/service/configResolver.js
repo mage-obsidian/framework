@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DEPENDENCY_CONFIG_FILE_PATH, OUTPUT_THEME_DIR } from '../config/default.js';
+import { validateContract } from './contractValidator.js';
+
+const REGENERATE_HINT = 'Try running `bin/magento mage-obsidian:frontend:config --generate` to generate the configuration file.';
 
 let MAGENTO_CONFIG;
 
@@ -9,7 +12,16 @@ try {
     MAGENTO_CONFIG = JSON.parse(magentoConfigJson);
 } catch (error) {
     console.error(`Error reading or parsing configuration file at ${DEPENDENCY_CONFIG_FILE_PATH}:`, error.message);
-    console.error('Try running `bin/magento mage-obsidian:frontend:config --generate` to generate the configuration file.');
+    console.error(REGENERATE_HINT);
+    process.exit(1);
+}
+
+const validation = validateContract(MAGENTO_CONFIG);
+if (!validation.ok) {
+    console.error(`Invalid MageObsidian frontend contract at ${DEPENDENCY_CONFIG_FILE_PATH}:`);
+    validation.errors.forEach((message) => console.error(`  - ${message}`));
+    console.error(REGENERATE_HINT);
+    console.error('If the version differs, the PHP module and JS engine are out of sync — align their versions, then regenerate.');
     process.exit(1);
 }
 

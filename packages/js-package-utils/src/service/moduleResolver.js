@@ -65,7 +65,7 @@ async function getAllJsVueFilesFromTheme(themeName) {
         }
     }
     const moduleResult = await getFilesFromFolders(
-        'Theme',
+        configResolver.getMagentoConfig().THEME_FILES_PATH,
         path.resolve(theme.src, THEME_MODULE_WEB_PATH),
         defaultFoldersToMap
     );

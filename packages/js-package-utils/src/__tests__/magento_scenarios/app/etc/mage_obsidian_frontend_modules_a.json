@@ -34,6 +34,7 @@
       "Vendor_ModuleNameC"
     ],
     "VUE_COMPONENTS_PATH": "components",
+    "THEME_FILES_PATH": "Theme",
     "JS_PATH": "js",
     "FOLDERS_TO_WATCH": [
         "components",

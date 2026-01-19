@@ -1,16 +1,23 @@
+import path from "node:path";
+import fs from "node:fs/promises";
 import { precompileCss, precompileJs } from "./preCompileFiles.js";
-import {execSync} from "child_process";
+import { PRECOMPILED_FOLDER } from "../config/default.js";
 
-let isPrecompiled = false;
+// Guard per theme: repeated calls within one process (Vite re-invokes the
+// config) skip the work, while different themes each precompile — so a future
+// in-process multi-theme run is safe. Replaces the old module-global flag.
+const precompiledThemes = new Set();
+
 export default async (themeName) => {
-    if (isPrecompiled) {
+    if (precompiledThemes.has(themeName)) {
         return;
     }
-    console.log('Cleaning .precompiled folder');
-    execSync('rm -rf .precompiled/*', { stdio: 'inherit' });
-    execSync(`mkdir -p .precompiled/${themeName}`, { stdio: 'inherit' });
-    console.log('Generating precompiled files');
+    const themeDir = path.resolve(PRECOMPILED_FOLDER, themeName);
+    // Clean only this theme's output. The old `rm -rf .precompiled/*` wiped
+    // every theme, which would corrupt a concurrent or sibling-theme build.
+    await fs.rm(themeDir, { recursive: true, force: true });
+    await fs.mkdir(themeDir, { recursive: true });
     await precompileJs(themeName);
     await precompileCss(themeName);
-    isPrecompiled = true;
-}
+    precompiledThemes.add(themeName);
+};

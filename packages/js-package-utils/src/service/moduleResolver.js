@@ -28,6 +28,11 @@ const defaultFoldersToMap = [
 
 const cachedModulesByTheme = {};
 
+// Caches the persisted inheritance map keyed by theme, invalidated by the file's
+// mtime so a rebuilt .precompiled JSON (watch mode, regeneration) is picked up
+// instead of serving a stale in-memory copy.
+const precompiledFileCache = new Map();
+
 async function getAllJsVueFilesFromActiveModules() {
     let result = {};
     for (const entry of configResolver.getModulesConfigArray()) {
@@ -76,13 +81,14 @@ async function getAllJsVueFilesFromTheme(themeName) {
 
 function getAllJsVueFilesWithInheritanceCached(themeName) {
     themeName = themeName ?? process.env.CURRENT_THEME;
-    if (cachedModulesByTheme[themeName]) {
-        return cachedModulesByTheme[themeName];
-    }
     const filePath = path.join(PRECOMPILED_FOLDER, themeName, ALL_JS_VUE_FILES_WITH_INHERITANCE_FILE_NAME);
-    const fileContent = fs.readFileSync(filePath, "utf-8");
-    const data = JSON.parse(fileContent);
-    cachedModulesByTheme[themeName] = data;
+    const { mtimeMs } = fs.statSync(filePath);
+    const cached = precompiledFileCache.get(themeName);
+    if (cached && cached.mtimeMs === mtimeMs) {
+        return cached.data;
+    }
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    precompiledFileCache.set(themeName, { mtimeMs, data });
     return data;
 }
 

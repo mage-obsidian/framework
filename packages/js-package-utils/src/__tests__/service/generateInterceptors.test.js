@@ -91,10 +91,10 @@ describe('generateInterceptors', () => {
 
         // Verify Source Code Generation
         const source = interceptorData.source;
-        expect(source).toContain(`import * as originalModule from '/@fs${targetModulePath}?originalIntercepted';`);
-        expect(source).toContain(`import * as interceptor_0 from '/@fs${pluginModulePath}';`);
-        expect(source).toContain(`interceptorManager.addInterceptor('${targetIdentifier}::targetFunction', 'TestPlugin', 'before', interceptor_0.beforeTargetFunction, 10);`);
-        expect(source).toContain(`interceptorManager.addInterceptor('${targetIdentifier}::default', 'TestPlugin', 'before', interceptor_0.beforeDefault, 10);`);
+        expect(source).toContain(`import * as originalModule from ${JSON.stringify(`/@fs${targetModulePath}?originalIntercepted`)};`);
+        expect(source).toContain(`import * as interceptor_0 from ${JSON.stringify(`/@fs${pluginModulePath}`)};`);
+        expect(source).toContain(`interceptorManager.addInterceptor("${targetIdentifier}::targetFunction", "TestPlugin", "before", interceptor_0.beforeTargetFunction, 10);`);
+        expect(source).toContain(`interceptorManager.addInterceptor("${targetIdentifier}::default", "TestPlugin", "before", interceptor_0.beforeDefault, 10);`);
         expect(source).toContain(`export const targetFunction = proxy.targetFunction;`);
 
         // Verify Proxy Behavior

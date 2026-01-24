@@ -219,27 +219,32 @@ function generateInterceptorCode(target, targetPath, interceptors, targetExports
     // Using a relative path from this service file might not work in the generated code context.
     // We'll assume '@mage-obsidian/plugin-manager' or similar alias is set up,
     // or use the absolute path which Vite handles.
+    // All string literals go through JSON.stringify so paths or interceptor
+    // names containing quotes/backslashes can't break (or inject into) the
+    // generated module. Identifiers (export names) come from Object.keys of a
+    // real ES module, so they are valid JS and used unquoted.
     const resolvedInterceptorManagerPath = configResolver.resolveLibRealPath('mage-obsidian/service/interceptorManager');
-    imports.push(`import interceptorManager from "${resolvedInterceptorManagerPath}";`);
+    imports.push(`import interceptorManager from ${JSON.stringify(resolvedInterceptorManagerPath)};`);
 
     // Import Original Module
-    imports.push(`import * as originalModule from '/@fs${targetPath}?${KEY_INTERCEPTED}';`);
+    imports.push(`import * as originalModule from ${JSON.stringify(`/@fs${targetPath}?${KEY_INTERCEPTED}`)};`);
 
     // Import Interceptors
     interceptors.forEach((interceptor, index) => {
         const interceptorVar = `interceptor_${index}`;
-        imports.push(`import * as ${interceptorVar} from '/@fs${interceptor.path}';`);
+        imports.push(`import * as ${interceptorVar} from ${JSON.stringify(`/@fs${interceptor.path}`)};`);
 
         interceptor.methods.forEach(method => {
             const methodKey = `${target}::${method.targetMethod}`;
-            registrations.push(`interceptorManager.addInterceptor('${methodKey}', '${interceptor.name}', '${method.type}', ${interceptorVar}.${method.exportName}, ${method.sortOrder});`);
+            const sortOrder = Number.isFinite(method.sortOrder) ? method.sortOrder : 10;
+            registrations.push(`interceptorManager.addInterceptor(${JSON.stringify(methodKey)}, ${JSON.stringify(interceptor.name)}, ${JSON.stringify(method.type)}, ${interceptorVar}.${method.exportName}, ${sortOrder});`);
         });
     });
 
     // Create Interceptor
     const interceptorCode = `
 const targetWrapper = { ...originalModule };
-const proxy = interceptorManager.intercept(targetWrapper, '${target}', true);
+const proxy = interceptorManager.intercept(targetWrapper, ${JSON.stringify(target)}, true);
 `;
 
     // Exports

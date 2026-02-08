@@ -1,15 +1,19 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import { precompileCss, precompileJs } from "./preCompileFiles.js";
+import configResolver from "./configResolver.js";
 import { PRECOMPILED_FOLDER } from "../config/default.js";
 
-// Guard per theme: repeated calls within one process (Vite re-invokes the
-// config) skip the work, while different themes each precompile — so a future
-// in-process multi-theme run is safe. Replaces the old module-global flag.
-const precompiledThemes = new Set();
+// Guard per (theme, contract hash): repeated calls within one process (Vite
+// re-invokes the config) skip the work, while a different theme — or the same
+// theme after the contract changed (e.g. a module enabled/disabled mid dev
+// server) — re-precompiles. Keying on the hash, not just the theme name, makes
+// the invalidation dimension explicit instead of relying on process isolation.
+const precompiledByTheme = new Map();
 
 export default async (themeName) => {
-    if (precompiledThemes.has(themeName)) {
+    const contractHash = configResolver.getContractHash();
+    if (precompiledByTheme.get(themeName) === contractHash) {
         return;
     }
     const themeDir = path.resolve(PRECOMPILED_FOLDER, themeName);
@@ -19,5 +23,5 @@ export default async (themeName) => {
     await fs.mkdir(themeDir, { recursive: true });
     await precompileJs(themeName);
     await precompileCss(themeName);
-    precompiledThemes.add(themeName);
+    precompiledByTheme.set(themeName, contractHash);
 };

@@ -21,6 +21,11 @@ const createMockConfigResolver = (scenario) => {
     return {
         default: {
             getMagentoConfig: jest.fn(() => mockMagentoConfig),
+            getContractHash: jest.fn(() => JSON.stringify({
+                modules: mockMagentoConfig.modules,
+                themes: mockMagentoConfig.themes,
+                allModules: mockMagentoConfig.allModules
+            })),
             getModulesConfigArray: jest.fn(() => Object.entries(mockMagentoConfig.modules)),
             getThemesConfigArray: jest.fn(() => Object.entries(mockMagentoConfig.themes)),
             getAllMagentoModulesEnabled: jest.fn(() => mockMagentoConfig.allModules),

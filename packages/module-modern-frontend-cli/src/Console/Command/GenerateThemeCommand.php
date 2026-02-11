@@ -77,6 +77,8 @@ class GenerateThemeCommand extends Command
                 'etc/mage_obsidian_compatibility.xml' => 'theme/mage_obsidian_compatibility.xml.tpl',
                 'web/theme.config.js' => 'theme/theme.config.js.tpl',
                 'web/css/theme.source.css' => 'theme/theme.source.css.tpl',
+                'jsconfig.json' => 'theme/jsconfig.json.tpl',
+                '.gitignore' => 'theme/gitignore.tpl',
             ];
 
             $created = [];

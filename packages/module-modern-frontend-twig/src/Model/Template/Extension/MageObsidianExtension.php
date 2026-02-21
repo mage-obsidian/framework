@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace MageObsidian\ModernFrontendTwig\Model\Template\Extension;
 
 use Magento\Framework\Escaper;
+use Magento\Framework\Phrase;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
@@ -51,8 +52,8 @@ class MageObsidianExtension extends AbstractExtension
         return [
             new TwigFunction(
                 'render_vue',
-                fn(array $context, string $name, array $props = []): string
-                    => $this->bridge->renderVue($context['block'], $name, $props),
+                fn(array $context, string $name, array $props = [], bool $eager = false): string
+                    => $this->bridge->renderVue($context['block'], $name, $props, $eager),
                 $safeHtml
             ),
             new TwigFunction(
@@ -97,6 +98,14 @@ class MageObsidianExtension extends AbstractExtension
                     => $this->bridge->viewFileUrl($context['block'], $fileId, $params),
                 $url
             ),
+            // i18n. Mirrors phtml's __(): a Phrase translated by Magento's
+            // process-wide renderer, with %1/%2 numbered argument substitution.
+            // Left un-flagged so Twig HTML-escapes the translated text by default.
+            new TwigFunction(
+                '__',
+                static fn(string $text, mixed ...$arguments): string
+                    => (string)new Phrase($text, $arguments)
+            ),
         ];
     }
 
@@ -105,11 +114,16 @@ class MageObsidianExtension extends AbstractExtension
      */
     public function getFilters(): array
     {
+        // These delegate to Magento's Escaper, which already returns markup-safe
+        // output. Flag them is_safe('html') so the html autoescaper does not escape
+        // a second time (which would turn `&` into `&amp;amp;` and break URLs).
+        $safe = ['is_safe' => ['html']];
+
         return [
-            new TwigFilter('escape_url', fn($value): string => $this->escaper->escapeUrl((string)$value)),
-            new TwigFilter('escape_html_attr', fn($value): string => $this->escaper->escapeHtmlAttr((string)$value)),
-            new TwigFilter('escape_js', fn($value): string => $this->escaper->escapeJs((string)$value)),
-            new TwigFilter('escape_css', fn($value): string => $this->escaper->escapeCss((string)$value)),
+            new TwigFilter('escape_url', fn($value): string => $this->escaper->escapeUrl((string)$value), $safe),
+            new TwigFilter('escape_html_attr', fn($value): string => $this->escaper->escapeHtmlAttr((string)$value), $safe),
+            new TwigFilter('escape_js', fn($value): string => $this->escaper->escapeJs((string)$value), $safe),
+            new TwigFilter('escape_css', fn($value): string => $this->escaper->escapeCss((string)$value), $safe),
         ];
     }
 }

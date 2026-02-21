@@ -31,13 +31,14 @@ class BridgeFunctions
      * @param object $block
      * @param string $componentName
      * @param array $props
+     * @param bool $eager Mount immediately instead of on viewport entry (above-the-fold).
      *
      * @return string
      */
-    public function renderVue(object $block, string $componentName, array $props = []): string
+    public function renderVue(object $block, string $componentName, array $props = [], bool $eager = false): string
     {
         $this->assertSupports($block, 'renderVueComponent', 'render_vue');
-        return $block->renderVueComponent($componentName, $props);
+        return $block->renderVueComponent($componentName, $props, $eager);
     }
 
     /**

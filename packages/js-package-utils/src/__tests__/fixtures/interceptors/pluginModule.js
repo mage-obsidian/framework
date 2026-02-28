@@ -1,13 +1,13 @@
 
-export function beforeTargetFunction(arg) {
+export function beforeTargetFunction(subject, arg) {
     return [`Modified: ${arg}`];
 }
 
-export function afterAnotherFunction(result) {
+export function afterAnotherFunction(subject, result) {
     return `${result} - Modified`;
 }
 
-export function beforeDefault() {
+export function beforeDefault(subject) {
     return ['Default Modified'];
 }
 

@@ -23,10 +23,18 @@ class InterceptorManager {
     }
 
     /**
-     * Execute the intercepted method chain synchronously
+     * Execute the intercepted method chain synchronously.
+     *
+     * Handlers receive the intercepted module exports as an explicit `subject`
+     * first argument (Magento plugin parity): before(subject, ...args),
+     * around(subject, proceed, ...args), after(subject, result, ...args).
+     * `this` is still bound to the same object, so handlers written against the
+     * legacy `this`-based access keep working (arrow functions now have a path
+     * to the subject they could not reach via `this`).
+     *
      * @param {string} target - The target method name
      * @param {Function} originalMethod - The original function
-     * @param {Object} context - The 'this' context
+     * @param {Object} context - The intercepted module exports (subject + `this`)
      * @param {Array} args - Arguments passed to the function
      */
     executeSync(target, originalMethod, context, ...args) {
@@ -34,7 +42,7 @@ class InterceptorManager {
 
         // Execute 'before' interceptors
         for (const interceptor of interceptors.before) {
-            const result = interceptor.handler.apply(context, args);
+            const result = interceptor.handler.apply(context, [context, ...args]);
             if (Array.isArray(result)) {
                 args = result;
             }
@@ -50,7 +58,7 @@ class InterceptorManager {
             for (const interceptor of aroundInterceptors) {
                 const next = methodToExecute;
                 methodToExecute = (...currentArgs) => {
-                    return interceptor.handler.apply(context, [next, ...currentArgs]);
+                    return interceptor.handler.apply(context, [context, next, ...currentArgs]);
                 };
             }
         }
@@ -59,33 +67,39 @@ class InterceptorManager {
 
         // Execute 'after' interceptors
         for (const interceptor of interceptors.after) {
-            result = interceptor.handler.apply(context, [result, ...args]);
+            result = interceptor.handler.apply(context, [context, result, ...args]);
         }
 
         return result;
     }
 
     /**
-     * Execute the intercepted method chain
+     * Execute the intercepted method chain.
+     *
+     * Same `subject`-first contract as {@link executeSync}: before(subject,
+     * ...args), around(subject, proceed, ...args), after(subject, result,
+     * ...args), with `this` still bound to the subject for backward compat.
+     *
      * @param {string} target - The target method name
      * @param {Function} originalMethod - The original function
-     * @param {Object} context - The 'this' context
+     * @param {Object} context - The intercepted module exports (subject + `this`)
      * @param {Array} args - Arguments passed to the function
      */
     async execute(target, originalMethod, context, ...args) {
         const interceptors = this.interceptors[target] || { before: [], around: [], after: [] };
 
         // Execute 'before' interceptors
-        // Before interceptors can modify args by returning an array
+        // Before interceptors receive (subject, ...args) and can modify args by
+        // returning an array of the (subject-less) args.
         for (const interceptor of interceptors.before) {
-            const result = await interceptor.handler.apply(context, args);
+            const result = await interceptor.handler.apply(context, [context, ...args]);
             if (Array.isArray(result)) {
                 args = result;
             }
         }
 
         // Execute 'around' interceptors
-        // Around interceptors receive (proceed, ...args)
+        // Around interceptors receive (subject, proceed, ...args)
         let methodToExecute = async (...currentArgs) => {
             return await originalMethod.apply(context, currentArgs);
         };
@@ -96,7 +110,7 @@ class InterceptorManager {
             for (const interceptor of aroundInterceptors) {
                 const next = methodToExecute;
                 methodToExecute = async (...currentArgs) => {
-                    return await interceptor.handler.apply(context, [next, ...currentArgs]);
+                    return await interceptor.handler.apply(context, [context, next, ...currentArgs]);
                 };
             }
         }
@@ -104,9 +118,9 @@ class InterceptorManager {
         let result = await methodToExecute(...args);
 
         // Execute 'after' interceptors
-        // After interceptors receive (result, ...args) and must return result
+        // After interceptors receive (subject, result, ...args) and must return result
         for (const interceptor of interceptors.after) {
-            result = await interceptor.handler.apply(context, [result, ...args]);
+            result = await interceptor.handler.apply(context, [context, result, ...args]);
         }
 
         return result;

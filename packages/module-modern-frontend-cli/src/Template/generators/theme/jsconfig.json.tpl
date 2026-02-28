@@ -5,5 +5,6 @@
         "module": "esnext",
         "moduleResolution": "bundler"
     },
-    "include": ["web/**/*.js", "web/**/*.vue", ".mage-obsidian/**/*.d.ts"]
+    "include": ["**/*.js", "**/*.vue", ".mage-obsidian/**/*.d.ts"],
+    "exclude": ["**/generated/**", "node_modules"]
 }

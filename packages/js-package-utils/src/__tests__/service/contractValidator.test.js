@@ -2,7 +2,7 @@ import {
     EXPECTED_SCHEMA_VERSION,
     REQUIRED_CONTRACT_KEYS,
     validateContract
-} from '../../service/contractValidator.js';
+} from '../../core/contractValidator.js';
 
 function makeValidContract(overrides = {}) {
     const base = {

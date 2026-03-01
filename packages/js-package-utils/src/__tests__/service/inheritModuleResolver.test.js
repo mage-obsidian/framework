@@ -21,12 +21,12 @@ let scenarios = [
 ];
 
 function mockConfigAndModules(scenario) {
-    jest.unstable_mockModule('#service/configResolver.js', () => ({
+    jest.unstable_mockModule('#core/configResolver.js', () => ({
         __esModule: true,
         default: createMockConfigResolver(scenario).default,
     }));
 
-    jest.unstable_mockModule('#service/moduleResolver.js', () => ({
+    jest.unstable_mockModule('#core/moduleResolver.js', () => ({
         __esModule: true,
         default: {
             getAllJsVueFilesWithInheritanceCached: jest.fn(() => ({
@@ -38,7 +38,7 @@ function mockConfigAndModules(scenario) {
 
 async function setupInheritModuleResolver(scenario) {
     mockConfigAndModules(scenario);
-    const { default: inheritModuleResolverFactory } = await import('#service/inheritModuleResolver.js');
+    const { default: inheritModuleResolverFactory } = await import('#vite/inheritModuleResolver.js');
     return inheritModuleResolverFactory();
 }
 

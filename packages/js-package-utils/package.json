@@ -1,8 +1,8 @@
 {
   "name": "mage-obsidian",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "Mage Obsidian Ultis",
-  "main": "./src/scripts/buildThemes.js",
+  "main": "./src/cli/buildThemes.js",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
@@ -14,19 +14,24 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "mage-obsidian:build-themes": "./src/scripts/buildThemes.js"
+    "mage-obsidian:build-themes": "./src/cli/buildThemes.js"
   },
   "imports": {
+    "#core/*": "./src/core/*",
+    "#vite/*": "./src/vite/*",
+    "#runtime/*": "./src/runtime/*",
+    "#cli/*": "./src/cli/*",
     "#utils/*": "./src/utils/*",
-    "#config/*": "./src/config/*",
-    "#service/*": "./src/service/*"
+    "#config/*": "./src/config/*"
   },
   "exports": {
-    ".": "./src/scripts/buildThemes.js",
-    "./service/": "./src/service/",
-    "./utils/": "./src/utils/",
-    "./config/": "./src/config/",
-    "./service/*": "./src/service/*"
+    ".": "./src/cli/buildThemes.js",
+    "./core/*": "./src/core/*",
+    "./vite/*": "./src/vite/*",
+    "./runtime/*": "./src/runtime/*",
+    "./cli/*": "./src/cli/*",
+    "./utils/*": "./src/utils/*",
+    "./config/*": "./src/config/*"
   },
   "dependencies": {
     "chalk": "^5.4.1",

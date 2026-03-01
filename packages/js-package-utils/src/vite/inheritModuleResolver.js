@@ -1,6 +1,6 @@
-import moduleResolver from "./moduleResolver.js";
+import moduleResolver from "../core/moduleResolver.js";
 import path from "path";
-import configResolver from "./configResolver.js";
+import configResolver from "../core/configResolver.js";
 
 export default function customResolverPlugin() {
     const allComponents = moduleResolver.getAllJsVueFilesWithInheritanceCached();

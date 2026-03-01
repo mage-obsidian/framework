@@ -1,4 +1,4 @@
-import generateInterceptorsService from './generateInterceptors.js';
+import generateInterceptorsService from '../core/generateInterceptors.js';
 
 export default function interceptorsPlugin(options = {}) {
     const { themeName } = options;

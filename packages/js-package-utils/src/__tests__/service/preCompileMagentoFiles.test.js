@@ -16,11 +16,11 @@ describe('preCompileMagentoFiles guard', () => {
         const precompileJs = jest.fn(async () => {});
         const precompileCss = jest.fn(async () => {});
 
-        jest.unstable_mockModule('#service/configResolver.js', () => ({
+        jest.unstable_mockModule('#core/configResolver.js', () => ({
             __esModule: true,
             default: { getContractHash: () => currentHash }
         }));
-        jest.unstable_mockModule('#service/preCompileFiles.js', () => ({
+        jest.unstable_mockModule('#core/preCompileFiles.js', () => ({
             __esModule: true,
             precompileJs,
             precompileCss
@@ -30,7 +30,7 @@ describe('preCompileMagentoFiles guard', () => {
             default: { rm: jest.fn(async () => {}), mkdir: jest.fn(async () => {}) }
         }));
 
-        const { default: preCompileMagentoFiles } = await import('#service/preCompileMagentoFiles.js');
+        const { default: preCompileMagentoFiles } = await import('#core/preCompileMagentoFiles.js');
 
         await preCompileMagentoFiles('Vendor/theme-a');
         await preCompileMagentoFiles('Vendor/theme-a');

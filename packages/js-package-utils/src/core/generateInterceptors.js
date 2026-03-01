@@ -1,9 +1,9 @@
 import path from "path";
 import { pathToFileURL, fileURLToPath } from "url";
-import themeResolver from 'mage-obsidian/service/themeResolverSync.js';
-import moduleResolver from 'mage-obsidian/service/moduleResolver.js';
-import interceptorManager from 'mage-obsidian/service/interceptorManager.js';
-import configResolver from "mage-obsidian/service/configResolver.js";
+import themeResolver from './themeResolverSync.js';
+import moduleResolver from './moduleResolver.js';
+import interceptorManager from '../runtime/interceptorManager.js';
+import configResolver from "./configResolver.js";
 
 const interceptorsRegisteredByTheme = new Map();
 const generatedInterceptorsCache = new Map();
@@ -223,7 +223,7 @@ function generateInterceptorCode(target, targetPath, interceptors, targetExports
     // names containing quotes/backslashes can't break (or inject into) the
     // generated module. Identifiers (export names) come from Object.keys of a
     // real ES module, so they are valid JS and used unquoted.
-    const resolvedInterceptorManagerPath = configResolver.resolveLibRealPath('mage-obsidian/service/interceptorManager');
+    const resolvedInterceptorManagerPath = configResolver.resolveLibRealPath('mage-obsidian/runtime/interceptorManager');
     imports.push(`import interceptorManager from ${JSON.stringify(resolvedInterceptorManagerPath)};`);
 
     // Import Original Module

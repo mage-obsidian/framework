@@ -44,12 +44,12 @@ describe('configResolver contract hash + mtime reload', () => {
             DEPENDENCY_CONFIG_FILE_PATH: tmpFile,
             OUTPUT_THEME_DIR: 'web/generated'
         }));
-        jest.unstable_mockModule('#service/contractValidator.js', () => ({
+        jest.unstable_mockModule('#core/contractValidator.js', () => ({
             __esModule: true,
             validateContract: () => ({ ok: true, errors: [] })
         }));
 
-        const configResolver = (await import('#service/configResolver.js')).default;
+        const configResolver = (await import('#core/configResolver.js')).default;
 
         const firstHash = configResolver.getContractHash();
         expect(configResolver.getContractHash()).toBe(firstHash); // same mtime → cached

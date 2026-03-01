@@ -176,14 +176,14 @@ describe('getAllJsVueFilesWithInheritance', () => {
         themes.map(({ code, expected }) => ([ scenario, code, expected ]))
     ))('Scenario "%s", Theme "%s"', async (scenario, code, expected) => {
         jest.unstable_mockModule(
-            '#service/configResolver.js',
+            '#core/configResolver.js',
             () => ({
                 __esModule: true,
                 default: createMockConfigResolver(scenario).default
             })
         );
 
-        const importedModule = await import('#service/moduleResolver.js');
+        const importedModule = await import('#core/moduleResolver.js');
         moduleResolver = importedModule.default;
 
         const result = await moduleResolver.getAllJsVueFilesWithInheritance(code);

@@ -63,12 +63,12 @@ for (const scenario of scenarios) {
 async function setupThemeResolver(scenario) {
     const mock = createMockConfigResolver(scenario);
 
-    jest.unstable_mockModule('#service/configResolver.js', () => ({
+    jest.unstable_mockModule('#core/configResolver.js', () => ({
         ...mock,
         __esModule: true,
     }));
 
-    const resolver = await import('#service/themeResolverSync.js');
+    const resolver = await import('#core/themeResolverSync.js');
     return resolver.default;
 }
 

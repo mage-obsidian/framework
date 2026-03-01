@@ -1,6 +1,6 @@
 
 import { jest } from '@jest/globals';
-// import interceptorsPlugin from '../../service/interceptorsPlugin.js'; // Removed static import
+// import interceptorsPlugin from '../../vite/interceptorsPlugin.js'; // Removed static import
 
 describe('interceptorsPlugin', () => {
     let plugin;
@@ -13,7 +13,7 @@ describe('interceptorsPlugin', () => {
         jest.clearAllMocks();
 
         // Mock configResolver to prevent process.exit
-        jest.unstable_mockModule('../../service/configResolver.js', () => ({
+        jest.unstable_mockModule('../../core/configResolver.js', () => ({
             default: {
                 resolveLibRealPath: jest.fn()
             }
@@ -23,14 +23,14 @@ describe('interceptorsPlugin', () => {
         mockGenerateInterceptors = jest.fn();
         
         // Mock the service module
-        jest.unstable_mockModule('../../service/generateInterceptors.js', () => ({
+        jest.unstable_mockModule('../../core/generateInterceptors.js', () => ({
             default: {
                 generateInterceptors: mockGenerateInterceptors
             }
         }));
 
         // Re-import the plugin to use the mock
-        const pluginModule = await import('../../service/interceptorsPlugin.js');
+        const pluginModule = await import('../../vite/interceptorsPlugin.js');
         const createPlugin = pluginModule.default;
 
         plugin = createPlugin({ themeName });

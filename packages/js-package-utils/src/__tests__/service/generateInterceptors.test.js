@@ -29,25 +29,25 @@ describe('generateInterceptors', () => {
             getAllJsVueFilesWithInheritance: jest.fn(),
         };
 
-        jest.unstable_mockModule('../../service/themeResolverSync.js', () => ({
+        jest.unstable_mockModule('../../core/themeResolverSync.js', () => ({
             default: themeResolverMock
         }));
 
-        jest.unstable_mockModule('../../service/moduleResolver.js', () => ({
+        jest.unstable_mockModule('../../core/moduleResolver.js', () => ({
             default: moduleResolverMock
         }));
 
-        jest.unstable_mockModule('../../service/configResolver.js', () => ({
+        jest.unstable_mockModule('../../core/configResolver.js', () => ({
             default: {
                 resolveLibRealPath: jest.fn().mockReturnValue('/mocked/path/to/interceptorManager')
             }
         }));
 
         // Import real interceptorManager to reset state
-        interceptorManager = (await import('../../service/interceptorManager.js')).default;
+        interceptorManager = (await import('../../runtime/interceptorManager.js')).default;
         interceptorManager.interceptors = {};
 
-        generateInterceptorsService = (await import('../../service/generateInterceptors.js')).default;
+        generateInterceptorsService = (await import('../../core/generateInterceptors.js')).default;
     });
 
     test('should generate interceptors correctly', async () => {

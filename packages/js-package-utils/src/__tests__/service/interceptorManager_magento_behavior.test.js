@@ -1,6 +1,6 @@
 
 import { jest } from '@jest/globals';
-import interceptorManager from '../../service/interceptorManager.js';
+import interceptorManager from '../../runtime/interceptorManager.js';
 
 describe('InterceptorManager Magento Behavior', () => {
     beforeEach(() => {

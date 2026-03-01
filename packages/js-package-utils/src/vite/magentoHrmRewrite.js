@@ -1,4 +1,4 @@
-import moduleResolver from "./moduleResolver.js";
+import moduleResolver from "../core/moduleResolver.js";
 
 export default () => {
     const components = moduleResolver.getAllJsVueFilesWithInheritanceCached();

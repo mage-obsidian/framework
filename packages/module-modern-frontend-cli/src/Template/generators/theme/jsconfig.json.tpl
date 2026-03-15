@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "baseUrl": ".",
+        "allowJs": true,
         "checkJs": false,
         "module": "esnext",
         "moduleResolution": "bundler"

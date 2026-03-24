@@ -1,0 +1,7 @@
+node_modules
+.precompiled
+pnpm-lock.yaml
+src/__tests__/magento_scenarios
+src/__tests__/fixtures
+src/__tests__/__mocks__
+src/templates

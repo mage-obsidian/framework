@@ -1,16 +1,17 @@
 export default {
-    name: 'default-node-resolver',
+    name: "default-node-resolver",
     resolveId: {
-        order: 'post',
+        order: "post",
         handler(id) {
             try {
                 const resolvedPath = import.meta.resolve(id);
                 if (resolvedPath) {
-                    return resolvedPath.replace('file://', '');
+                    return resolvedPath.replace("file://", "");
                 }
-            } catch (err) {
+            } catch {
+                // Not resolvable as a node package; let later resolvers handle it.
             }
             return null;
-        }
-    }
+        },
+    },
 };

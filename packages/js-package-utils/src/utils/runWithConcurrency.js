@@ -13,14 +13,14 @@
  */
 export default async function runWithConcurrency(items, worker, limit = items.length) {
     if (!Array.isArray(items)) {
-        throw new TypeError('runWithConcurrency: items must be an array.');
+        throw new TypeError("runWithConcurrency: items must be an array.");
     }
-    if (typeof worker !== 'function') {
-        throw new TypeError('runWithConcurrency: worker must be a function.');
+    if (typeof worker !== "function") {
+        throw new TypeError("runWithConcurrency: worker must be a function.");
     }
 
     const effectiveLimit = Math.max(1, Math.min(limit, items.length || 1));
-    const results = new Array(items.length);
+    const results = Array.from({ length: items.length });
     let nextIndex = 0;
 
     async function runner() {

@@ -21,7 +21,7 @@ const PLACEHOLDER = /%(\d+)/g;
  * @returns {string}
  */
 export function interpolate(text, args = []) {
-    if (typeof text !== 'string' || !args || args.length === 0) {
+    if (typeof text !== "string" || !args || args.length === 0) {
         return text;
     }
     return text.replace(PLACEHOLDER, (match, index) => {
@@ -40,7 +40,7 @@ export function interpolate(text, args = []) {
  * @returns {string}
  */
 export function translatePhrase(dictionary, phrase, args = []) {
-    const dict = dictionary && typeof dictionary === 'object' ? dictionary : {};
+    const dict = dictionary && typeof dictionary === "object" ? dictionary : {};
     const translated = Object.prototype.hasOwnProperty.call(dict, phrase) ? dict[phrase] : phrase;
     return interpolate(translated, args);
 }
@@ -52,10 +52,10 @@ export function translatePhrase(dictionary, phrase, args = []) {
  * @param {{ __MAGE_OBSIDIAN_I18N__?: { locale?: string, dictionaryUrl?: string } }} [scope]
  * @returns {{ locale: string, dictionaryUrl: string | null }}
  */
-export function readI18nConfig(scope = (typeof window !== 'undefined' ? window : undefined)) {
+export function readI18nConfig(scope = typeof window !== "undefined" ? window : undefined) {
     const config = scope && scope.__MAGE_OBSIDIAN_I18N__;
     return {
-        locale: (config && config.locale) || 'en_US',
+        locale: (config && config.locale) || "en_US",
         dictionaryUrl: (config && config.dictionaryUrl) || null,
     };
 }
@@ -72,17 +72,17 @@ const dictionaryCache = new Map();
  * @param {typeof fetch} [fetchImpl]
  * @returns {Promise<Record<string, string>>}
  */
-export function loadDictionary(url, fetchImpl = (typeof fetch !== 'undefined' ? fetch : undefined)) {
+export function loadDictionary(url, fetchImpl = typeof fetch !== "undefined" ? fetch : undefined) {
     if (!url) {
         return Promise.resolve({});
     }
     if (!dictionaryCache.has(url)) {
-        if (typeof fetchImpl !== 'function') {
+        if (typeof fetchImpl !== "function") {
             return Promise.resolve({});
         }
         const promise = fetchImpl(url)
             .then((res) => (res && res.ok ? res.json() : {}))
-            .then((data) => (data && typeof data === 'object' && !Array.isArray(data) ? data : {}))
+            .then((data) => (data && typeof data === "object" && !Array.isArray(data) ? data : {}))
             .catch(() => ({}));
         dictionaryCache.set(url, promise);
     }

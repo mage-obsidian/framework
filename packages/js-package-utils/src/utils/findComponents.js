@@ -14,12 +14,11 @@ import path from "path";
  *   - The values are the full relative paths to the files within the `components` folder.
  * @throws {Error} - Throws an error if duplicate file names (with different extensions) are found.
  */
-async function getFilesFromFolders(
-    moduleName,
-    moduleDir,
-    directories
-) {
+async function getFilesFromFolders(moduleName, moduleDir, directories) {
     const componentsDir = path.resolve(moduleDir);
+    // TODO: extArr (directory.ext) is threaded through but the extension check
+    // below is hardcoded to .vue/.js; reconcile in a dedicated fix.
+    // oxlint-disable-next-line only-used-in-recursion
     const getFilesFromFolderWithExt = async (dir, folderToSearch, extArr, baseDir = "") => {
         // console.log(moduleName, dir, folderToSearch, extArr, baseDir = "");
         if (!fs.existsSync(dir)) return [];
@@ -31,13 +30,18 @@ async function getFilesFromFolders(
                 const fullPath = path.join(dir, entry.name);
                 const relativePath = path.join(baseDir, entry.name);
                 if (entry.isDirectory()) {
-                    return await getFilesFromFolderWithExt(fullPath, folderToSearch, extArr, relativePath);
-                } else if (entry.isFile() && (entry.name.endsWith(".vue") || entry.name.endsWith(".js"))) {
+                    return await getFilesFromFolderWithExt(
+                        fullPath,
+                        folderToSearch,
+                        extArr,
+                        relativePath,
+                    );
+                } else if (
+                    entry.isFile() &&
+                    (entry.name.endsWith(".vue") || entry.name.endsWith(".js"))
+                ) {
                     const fileName = path.parse(entry.name).name;
-                    let key =
-                        baseDir === ""
-                            ? fileName
-                            : `${baseDir}/${fileName}`;
+                    let key = baseDir === "" ? fileName : `${baseDir}/${fileName}`;
                     key = `${moduleName}/${folderToSearch}/${key}`;
                     const filePath = path.join(dir, entry.name);
                     if (keyRegistered.includes(key)) {
@@ -47,7 +51,7 @@ async function getFilesFromFolders(
                     return { [key]: filePath };
                 }
                 return null;
-            })
+            }),
         );
         return files.filter(Boolean).flat();
     };
@@ -56,14 +60,21 @@ async function getFilesFromFolders(
         let result = [];
         for (const directory of directories) {
             const folderPath = path.resolve(componentsDir, directory.src);
-            const filesArray = await getFilesFromFolderWithExt(folderPath, directory.src, directory.ext);
+            const filesArray = await getFilesFromFolderWithExt(
+                folderPath,
+                directory.src,
+                directory.ext,
+            );
             result.push(...filesArray);
         }
         result = result.reduce((acc, item) => Object.assign(acc, item), {});
 
         return result;
     } catch (err) {
-        throw new Error(`Error while processing JavaScript or Vue files in the components folder of module "${moduleName}": ${err.message}`);
+        throw new Error(
+            `Error while processing JavaScript or Vue files in the components folder of module "${moduleName}": ${err.message}`,
+            { cause: err },
+        );
     }
 }
 

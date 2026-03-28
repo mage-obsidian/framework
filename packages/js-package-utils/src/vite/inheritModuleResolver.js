@@ -10,22 +10,18 @@ export default function customResolverPlugin() {
         validComponentExtensions.some((ext) => filePath.endsWith(ext));
     const hasExtension = (filePath) => !!path.extname(filePath);
 
-
     const resolveComponentPath = (moduleName, filePath) => {
         if (!filePath.startsWith("components/") && !filePath.startsWith("js/")) {
             filePath = "components/" + filePath;
         }
-        const fileName = path.join(
-            path.dirname(filePath),
-            path.parse(filePath).name
-        );
+        const fileName = path.join(path.dirname(filePath), path.parse(filePath).name);
         return allComponents[`${moduleName}/${fileName}`];
     };
 
     return {
         name: "inherit-resolver",
         resolveId: {
-            order: 'pre',
+            order: "pre",
             handler(id) {
                 if (!id) {
                     return;
@@ -44,7 +40,7 @@ export default function customResolverPlugin() {
                 }
 
                 return componentSrc;
-            }
-        }
+            },
+        },
     };
 }

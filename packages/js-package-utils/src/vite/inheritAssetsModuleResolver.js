@@ -4,9 +4,8 @@ import fs from "fs";
 
 export default function customAssetsResolverPlugin() {
     const CURRENT_THEME = process.env.CURRENT_THEME;
-    const THEME_ASSETS_PATH = 'web';
-    const MODULE_ASSETS_PATH = 'view/frontend/web';
-
+    const THEME_ASSETS_PATH = "web";
+    const MODULE_ASSETS_PATH = "view/frontend/web";
 
     function tryResolveAssetPathByTheme(themeName, filePath) {
         const themeDefinition = configResolver.getThemeDefinition(themeName);
@@ -36,16 +35,21 @@ export default function customAssetsResolverPlugin() {
         return null;
     }
 
-
     const resolveAssetPath = (moduleName, filePath) => {
         if (!filePath.startsWith("assets/")) {
             return null;
         }
-        let assetSrc = null;
+        let assetSrc;
         if (moduleName === "Theme") {
-            assetSrc = tryResolveAssetPathByTheme(CURRENT_THEME, path.join(THEME_ASSETS_PATH, filePath));
+            assetSrc = tryResolveAssetPathByTheme(
+                CURRENT_THEME,
+                path.join(THEME_ASSETS_PATH, filePath),
+            );
         } else {
-            assetSrc = tryResolveAssetPathByTheme(CURRENT_THEME, path.join(moduleName, THEME_ASSETS_PATH, filePath));
+            assetSrc = tryResolveAssetPathByTheme(
+                CURRENT_THEME,
+                path.join(moduleName, THEME_ASSETS_PATH, filePath),
+            );
         }
         if (!assetSrc) {
             assetSrc = tryResolveAssetPathByModule(moduleName, filePath);
@@ -57,7 +61,7 @@ export default function customAssetsResolverPlugin() {
     return {
         name: "inherit-assets-resolver",
         resolveId: {
-            order: 'pre',
+            order: "pre",
             handler(id) {
                 if (!id) {
                     return;
@@ -72,7 +76,7 @@ export default function customAssetsResolverPlugin() {
                     return;
                 }
                 return assetSrc;
-            }
-        }
+            },
+        },
     };
 }

@@ -1,13 +1,13 @@
 import path from "path";
-import { pathToFileURL, fileURLToPath } from "url";
-import themeResolver from './themeResolverSync.js';
-import moduleResolver from './moduleResolver.js';
-import interceptorManager from '../runtime/interceptorManager.js';
+import { pathToFileURL } from "url";
+import themeResolver from "./themeResolverSync.js";
+import moduleResolver from "./moduleResolver.js";
+import interceptorManager from "../runtime/interceptorManager.js";
 import configResolver from "./configResolver.js";
 
 const interceptorsRegisteredByTheme = new Map();
 const generatedInterceptorsCache = new Map();
-export const KEY_INTERCEPTED = 'originalIntercepted';
+export const KEY_INTERCEPTED = "originalIntercepted";
 
 /**
  * Resolves the absolute path of a file using the cached file map
@@ -16,7 +16,7 @@ export const KEY_INTERCEPTED = 'originalIntercepted';
  * @returns {string|null}
  */
 function resolvePathFromMap(identifier, fileMap) {
-    const [moduleName, relativePath] = identifier.split('::');
+    const [moduleName, relativePath] = identifier.split("::");
     if (!moduleName || !relativePath) return null;
 
     const parsed = path.parse(relativePath);
@@ -39,7 +39,9 @@ async function registerInterceptors(themeName) {
     }
     // Map<Target, Map<PluginName, PluginConfig>>
     const interceptorsMap = new Map();
-    for (const [interceptorName, interceptorDefinition] of Object.entries( modulesConfig.interceptors)) {
+    for (const [interceptorName, interceptorDefinition] of Object.entries(
+        modulesConfig.interceptors,
+    )) {
         const { target } = interceptorDefinition;
         if (!interceptorName || !target) continue;
 
@@ -62,7 +64,7 @@ async function registerInterceptors(themeName) {
     const result = {};
     for (const [target, pluginsMap] of interceptorsMap) {
         const plugins = Array.from(pluginsMap.values())
-            .filter(p => p.active !== false) // Filter out inactive plugins
+            .filter((p) => p.active !== false) // Filter out inactive plugins
             .sort((a, b) => (a.sortOrder || 10) - (b.sortOrder || 10));
 
         if (plugins.length > 0) {
@@ -82,11 +84,13 @@ async function generateInterceptors(themeName) {
     const interceptorsConfig = await registerInterceptors(themeName);
 
     // Get all files map from cache
-    let allFilesMap = {};
+    let allFilesMap;
     try {
         allFilesMap = moduleResolver.getAllJsVueFilesWithInheritanceCached(themeName);
     } catch (e) {
-        console.warn(`Cache not found for theme ${themeName}, falling back to async generation.`);
+        console.warn(
+            `Cache not found for theme ${themeName} (${e.message}), falling back to async generation.`,
+        );
         allFilesMap = await moduleResolver.getAllJsVueFilesWithInheritance(themeName);
     }
 
@@ -124,7 +128,10 @@ async function generateInterceptors(themeName) {
             try {
                 interceptorModule = await import(pathToFileURL(interceptorPath).href);
             } catch (e) {
-                console.error(`Failed to import interceptor module ${interceptorConfig.interceptor}:`, e.message);
+                console.error(
+                    `Failed to import interceptor module ${interceptorConfig.interceptor}:`,
+                    e.message,
+                );
                 continue;
             }
 
@@ -132,33 +139,37 @@ async function generateInterceptors(themeName) {
             for (const interceptorExport of Object.keys(interceptorModule)) {
                 let type, targetMethod;
 
-                if (interceptorExport.startsWith('before')) {
-                    type = 'before';
+                if (interceptorExport.startsWith("before")) {
+                    type = "before";
                     targetMethod = interceptorExport.substring(6);
-                } else if (interceptorExport.startsWith('around')) {
-                    type = 'around';
+                } else if (interceptorExport.startsWith("around")) {
+                    type = "around";
                     targetMethod = interceptorExport.substring(6);
-                } else if (interceptorExport.startsWith('after')) {
-                    type = 'after';
+                } else if (interceptorExport.startsWith("after")) {
+                    type = "after";
                     targetMethod = interceptorExport.substring(5);
                 } else {
                     continue;
                 }
 
                 // Check if target method exists in target module
-                if (!targetExports.includes(targetMethod) && targetMethod !== 'default') {
+                if (!targetExports.includes(targetMethod) && targetMethod !== "default") {
                     const lowerFirst = targetMethod.charAt(0).toLowerCase() + targetMethod.slice(1);
                     if (targetExports.includes(lowerFirst)) {
                         targetMethod = lowerFirst;
                     } else {
                         // Skip invalid methods but don't crash the whole process?
                         // User requested error if not found.
-                        throw new Error(`Interceptor ${interceptorConfig.name} (${interceptorConfig.interceptor}) exports '${interceptorExport}' but target ${target} does not export '${targetMethod}'`);
+                        throw new Error(
+                            `Interceptor ${interceptorConfig.name} (${interceptorConfig.interceptor}) exports '${interceptorExport}' but target ${target} does not export '${targetMethod}'`,
+                        );
                     }
                 }
 
-                if (typeof targetModule[targetMethod] !== 'function') {
-                    console.warn(`Interceptor ${interceptorConfig.name} (${interceptorConfig.interceptor}) exports '${interceptorExport}' but target ${target} export '${targetMethod}' is not a function.`);
+                if (typeof targetModule[targetMethod] !== "function") {
+                    console.warn(
+                        `Interceptor ${interceptorConfig.name} (${interceptorConfig.interceptor}) exports '${interceptorExport}' but target ${target} export '${targetMethod}' is not a function.`,
+                    );
                     continue;
                 }
 
@@ -168,7 +179,7 @@ async function generateInterceptors(themeName) {
                     interceptorConfig.name,
                     type,
                     interceptorModule[interceptorExport],
-                    interceptorConfig.sortOrder
+                    interceptorConfig.sortOrder,
                 );
 
                 methodsToIntercept.add(targetMethod);
@@ -176,7 +187,7 @@ async function generateInterceptors(themeName) {
                     exportName: interceptorExport,
                     type,
                     targetMethod,
-                    sortOrder: interceptorConfig.sortOrder
+                    sortOrder: interceptorConfig.sortOrder,
                 });
             }
 
@@ -184,7 +195,7 @@ async function generateInterceptors(themeName) {
                 validInterceptors.push({
                     ...interceptorConfig,
                     path: interceptorPath,
-                    methods: interceptorMethods
+                    methods: interceptorMethods,
                 });
             }
         }
@@ -194,14 +205,19 @@ async function generateInterceptors(themeName) {
             const wrapper = { ...targetModule };
             const proxy = interceptorManager.intercept(wrapper, target, true);
 
-            const source = generateInterceptorCode(target, targetPath, validInterceptors, targetExports);
+            const source = generateInterceptorCode(
+                target,
+                targetPath,
+                validInterceptors,
+                targetExports,
+            );
 
             interceptors[target] = {
                 proxy,
                 targetPath,
                 targetModule,
                 interceptors: validInterceptors,
-                source
+                source,
             };
         }
     }
@@ -223,21 +239,31 @@ function generateInterceptorCode(target, targetPath, interceptors, targetExports
     // names containing quotes/backslashes can't break (or inject into) the
     // generated module. Identifiers (export names) come from Object.keys of a
     // real ES module, so they are valid JS and used unquoted.
-    const resolvedInterceptorManagerPath = configResolver.resolveLibRealPath('mage-obsidian/runtime/interceptorManager');
-    imports.push(`import interceptorManager from ${JSON.stringify(resolvedInterceptorManagerPath)};`);
+    const resolvedInterceptorManagerPath = configResolver.resolveLibRealPath(
+        "mage-obsidian/runtime/interceptorManager",
+    );
+    imports.push(
+        `import interceptorManager from ${JSON.stringify(resolvedInterceptorManagerPath)};`,
+    );
 
     // Import Original Module
-    imports.push(`import * as originalModule from ${JSON.stringify(`/@fs${targetPath}?${KEY_INTERCEPTED}`)};`);
+    imports.push(
+        `import * as originalModule from ${JSON.stringify(`/@fs${targetPath}?${KEY_INTERCEPTED}`)};`,
+    );
 
     // Import Interceptors
     interceptors.forEach((interceptor, index) => {
         const interceptorVar = `interceptor_${index}`;
-        imports.push(`import * as ${interceptorVar} from ${JSON.stringify(`/@fs${interceptor.path}`)};`);
+        imports.push(
+            `import * as ${interceptorVar} from ${JSON.stringify(`/@fs${interceptor.path}`)};`,
+        );
 
-        interceptor.methods.forEach(method => {
+        interceptor.methods.forEach((method) => {
             const methodKey = `${target}::${method.targetMethod}`;
             const sortOrder = Number.isFinite(method.sortOrder) ? method.sortOrder : 10;
-            registrations.push(`interceptorManager.addInterceptor(${JSON.stringify(methodKey)}, ${JSON.stringify(interceptor.name)}, ${JSON.stringify(method.type)}, ${interceptorVar}.${method.exportName}, ${sortOrder});`);
+            registrations.push(
+                `interceptorManager.addInterceptor(${JSON.stringify(methodKey)}, ${JSON.stringify(interceptor.name)}, ${JSON.stringify(method.type)}, ${interceptorVar}.${method.exportName}, ${sortOrder});`,
+            );
         });
     });
 
@@ -248,17 +274,19 @@ const proxy = interceptorManager.intercept(targetWrapper, ${JSON.stringify(targe
 `;
 
     // Exports
-    const exportsCode = targetExports.map(exp => {
-        if (exp === 'default') {
-            return `export default proxy.default;`;
-        }
-        return `export const ${exp} = proxy.${exp};`;
-    }).join('\n');
+    const exportsCode = targetExports
+        .map((exp) => {
+            if (exp === "default") {
+                return `export default proxy.default;`;
+            }
+            return `export const ${exp} = proxy.${exp};`;
+        })
+        .join("\n");
 
     return `
-${imports.join('\n')}
+${imports.join("\n")}
 
-${registrations.join('\n')}
+${registrations.join("\n")}
 
 ${interceptorCode}
 
@@ -269,5 +297,5 @@ ${exportsCode}
 export default {
     registerInterceptors,
     generateInterceptors,
-    KEY_INTERCEPTED
+    KEY_INTERCEPTED,
 };

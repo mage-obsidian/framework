@@ -1,10 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { DEPENDENCY_CONFIG_FILE_PATH, OUTPUT_THEME_DIR } from '../config/default.js';
-import { validateContract } from './contractValidator.js';
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import { DEPENDENCY_CONFIG_FILE_PATH, OUTPUT_THEME_DIR } from "../config/default.js";
+import { validateContract } from "./contractValidator.js";
 
-const REGENERATE_HINT = 'Try running `bin/magento mage-obsidian:frontend:config --generate` to generate the configuration file.';
+const REGENERATE_HINT =
+    "Try running `bin/magento mage-obsidian:frontend:config --generate` to generate the configuration file.";
 
 // Cached contract, invalidated by the file's mtime. A per-process `const` read
 // at import time never picked up a regenerated contract (e.g. a module enabled
@@ -25,7 +26,9 @@ function loadContract() {
     try {
         stats = fs.statSync(DEPENDENCY_CONFIG_FILE_PATH);
     } catch (error) {
-        fail(`Error reading configuration file at ${DEPENDENCY_CONFIG_FILE_PATH}: ${error.message}`);
+        fail(
+            `Error reading configuration file at ${DEPENDENCY_CONFIG_FILE_PATH}: ${error.message}`,
+        );
     }
 
     if (cached && cached.mtimeMs === stats.mtimeMs) {
@@ -34,29 +37,34 @@ function loadContract() {
 
     let config;
     try {
-        config = JSON.parse(fs.readFileSync(DEPENDENCY_CONFIG_FILE_PATH, 'utf-8'));
+        config = JSON.parse(fs.readFileSync(DEPENDENCY_CONFIG_FILE_PATH, "utf-8"));
     } catch (error) {
-        fail(`Error reading or parsing configuration file at ${DEPENDENCY_CONFIG_FILE_PATH}: ${error.message}`);
+        fail(
+            `Error reading or parsing configuration file at ${DEPENDENCY_CONFIG_FILE_PATH}: ${error.message}`,
+        );
     }
 
     const validation = validateContract(config);
     if (!validation.ok) {
-        fail(
-            `Invalid MageObsidian frontend contract at ${DEPENDENCY_CONFIG_FILE_PATH}:`,
-            [
-                ...validation.errors.map((message) => `  - ${message}`),
-                'If the version differs, the PHP module and JS engine are out of sync — align their versions, then regenerate.'
-            ]
-        );
+        fail(`Invalid MageObsidian frontend contract at ${DEPENDENCY_CONFIG_FILE_PATH}:`, [
+            ...validation.errors.map((message) => `  - ${message}`),
+            "If the version differs, the PHP module and JS engine are out of sync — align their versions, then regenerate.",
+        ]);
     }
 
     // Hash the parts that change the build graph (which modules/themes exist and
     // their resolution). Caches downstream key on this so a changed module set
     // invalidates them, rather than serving a result keyed only by theme name.
     const hash = crypto
-        .createHash('sha1')
-        .update(JSON.stringify({ modules: config.modules, themes: config.themes, allModules: config.allModules }))
-        .digest('hex');
+        .createHash("sha1")
+        .update(
+            JSON.stringify({
+                modules: config.modules,
+                themes: config.themes,
+                allModules: config.allModules,
+            }),
+        )
+        .digest("hex");
 
     cached = { mtimeMs: stats.mtimeMs, config, hash };
     return config;
@@ -72,16 +80,13 @@ export const getContractHash = () => {
 export const getModulesConfigArray = () => Object.entries(getContract().modules);
 export const getThemesConfigArray = () => Object.entries(getContract().themes);
 export const getAllMagentoModulesEnabled = () => getContract().allModules;
-export const isDev = () => getContract().mode !== 'production';
+export const isDev = () => getContract().mode !== "production";
 
-export const getOutputDirFromTheme = (themePath) =>
-    path.resolve(themePath, OUTPUT_THEME_DIR);
+export const getOutputDirFromTheme = (themePath) => path.resolve(themePath, OUTPUT_THEME_DIR);
 
-export const getModuleDefinition = (moduleName) =>
-    getContract().modules[moduleName];
+export const getModuleDefinition = (moduleName) => getContract().modules[moduleName];
 
-export const getThemeDefinition = (themeName) =>
-    getContract().themes[themeName];
+export const getThemeDefinition = (themeName) => getContract().themes[themeName];
 
 export const MODE = process.env.NODE_ENV;
 
@@ -92,7 +97,7 @@ export function resolveLibPath(lib) {
 export function resolveNodePath(packageName) {
     try {
         const resolvedPath = import.meta.resolve(packageName);
-        return resolvedPath.replace('file://', '');
+        return resolvedPath.replace("file://", "");
     } catch (error) {
         console.error(`The package ${packageName} can't be resolved.`);
         throw error;
@@ -100,7 +105,7 @@ export function resolveNodePath(packageName) {
 }
 
 export function resolveLibRealPath(lib) {
-    return MODE === 'production' ? lib : resolveNodePath(lib);
+    return MODE === "production" ? lib : resolveNodePath(lib);
 }
 
 export default {
@@ -115,5 +120,5 @@ export default {
     getThemeDefinition,
     resolveLibPath,
     resolveNodePath,
-    resolveLibRealPath
+    resolveLibRealPath,
 };

@@ -15,7 +15,7 @@ class InterceptorManager {
         if (!this.interceptors[target]) {
             this.interceptors[target] = { before: [], around: [], after: [] };
         }
-        if (!['before', 'around', 'after'].includes(type)) {
+        if (!["before", "around", "after"].includes(type)) {
             throw new Error(`Invalid interceptor type: ${type}`);
         }
         this.interceptors[target][type].push({ name, handler, sortOrder });
@@ -110,7 +110,11 @@ class InterceptorManager {
             for (const interceptor of aroundInterceptors) {
                 const next = methodToExecute;
                 methodToExecute = async (...currentArgs) => {
-                    return await interceptor.handler.apply(context, [context, next, ...currentArgs]);
+                    return await interceptor.handler.apply(context, [
+                        context,
+                        next,
+                        ...currentArgs,
+                    ]);
                 };
             }
         }
@@ -136,14 +140,20 @@ class InterceptorManager {
         return new Proxy(target, {
             get: (obj, prop) => {
                 const value = obj[prop];
-                if (typeof value === 'function') {
+                if (typeof value === "function") {
                     return (...args) => {
                         const method = useAsync ? this.execute : this.executeSync;
-                        return method.call(this, `${namespace}::${String(prop)}`, value, obj, ...args);
+                        return method.call(
+                            this,
+                            `${namespace}::${String(prop)}`,
+                            value,
+                            obj,
+                            ...args,
+                        );
                     };
                 }
                 return value;
-            }
+            },
         });
     }
 }

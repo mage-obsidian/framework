@@ -15,11 +15,7 @@ import configResolver from "../core/configResolver.js";
  * reimplementing it and drifting.
  */
 export function getResolverPlugins() {
-    return [
-        inheritModuleResolver(),
-        inheritAssetsModuleResolver(),
-        defaultNodeResolve,
-    ];
+    return [inheritModuleResolver(), inheritAssetsModuleResolver(), defaultNodeResolve];
 }
 
 /**

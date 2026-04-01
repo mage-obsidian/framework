@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 import createMockConfigResolver from "../__mocks__/configResolver.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -259,7 +259,7 @@ describe("getAllJsVueFilesWithInheritance", () => {
     let moduleResolver;
 
     beforeEach(async () => {
-        jest.resetModules();
+        vi.resetModules();
     });
 
     test.each(
@@ -267,7 +267,7 @@ describe("getAllJsVueFilesWithInheritance", () => {
             themes.map(({ code, expected }) => [scenario, code, expected]),
         ),
     )('Scenario "%s", Theme "%s"', async (scenario, code, expected) => {
-        jest.unstable_mockModule("#core/configResolver.js", () => ({
+        vi.doMock("#core/configResolver.js", () => ({
             __esModule: true,
             default: createMockConfigResolver(scenario).default,
         }));

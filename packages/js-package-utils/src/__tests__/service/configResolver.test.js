@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,7 +13,7 @@ describe("configResolver contract hash + mtime reload", () => {
     let tmpFile;
 
     beforeEach(() => {
-        jest.resetModules();
+        vi.resetModules();
     });
 
     afterEach(() => {
@@ -39,12 +39,12 @@ describe("configResolver contract hash + mtime reload", () => {
         };
         writeContract(tmpFile, base, 10000);
 
-        jest.unstable_mockModule("#config/default.js", () => ({
+        vi.doMock("#config/default.js", () => ({
             __esModule: true,
             DEPENDENCY_CONFIG_FILE_PATH: tmpFile,
             OUTPUT_THEME_DIR: "web/generated",
         }));
-        jest.unstable_mockModule("#core/contractValidator.js", () => ({
+        vi.doMock("#core/contractValidator.js", () => ({
             __esModule: true,
             validateContract: () => ({ ok: true, errors: [] }),
         }));

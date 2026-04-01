@@ -5,8 +5,8 @@ on:
     pull_request:
 
 jobs:
-    jest:
-        name: Jest (Node ${{ matrix.node }})
+    unit:
+        name: Unit tests (Node ${{ matrix.node }})
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -28,6 +28,8 @@ jobs:
               with:
                   node-version: "22"
             - run: npm install
+            - name: Typecheck
+              run: npm run typecheck
             - name: Oxlint (fast pre-filter)
               run: npm run lint:fast
             - name: ESLint

@@ -1,0 +1,4 @@
+# esbuild (pulled in by Vitest) ships its binary via the platform-specific
+# @esbuild/<platform> package, so its postinstall script is not required.
+allowBuilds:
+    esbuild: false

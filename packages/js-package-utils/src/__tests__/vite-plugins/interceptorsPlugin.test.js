@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 // import interceptorsPlugin from '../../vite/interceptorsPlugin.js'; // Removed static import
 
 describe("interceptorsPlugin", () => {
@@ -8,21 +8,21 @@ describe("interceptorsPlugin", () => {
     const themeName = "Vendor/theme-test";
 
     beforeEach(async () => {
-        jest.resetModules(); // Reset modules to ensure fresh imports and mocks
-        jest.clearAllMocks();
+        vi.resetModules(); // Reset modules to ensure fresh imports and mocks
+        vi.clearAllMocks();
 
         // Mock configResolver to prevent process.exit
-        jest.unstable_mockModule("../../core/configResolver.js", () => ({
+        vi.doMock("../../core/configResolver.js", () => ({
             default: {
-                resolveLibRealPath: jest.fn(),
+                resolveLibRealPath: vi.fn(),
             },
         }));
 
         // Mock generateInterceptorsService
-        mockGenerateInterceptors = jest.fn();
+        mockGenerateInterceptors = vi.fn();
 
         // Mock the service module
-        jest.unstable_mockModule("../../core/generateInterceptors.js", () => ({
+        vi.doMock("../../core/generateInterceptors.js", () => ({
             default: {
                 generateInterceptors: mockGenerateInterceptors,
             },
@@ -35,7 +35,7 @@ describe("interceptorsPlugin", () => {
         plugin = createPlugin({ themeName });
 
         // Mock Vite context
-        mockResolve = jest.fn();
+        mockResolve = vi.fn();
         plugin.resolve = mockResolve; // Bind mock to the plugin instance context if needed, but resolveId is called on context
     });
 
@@ -60,7 +60,7 @@ describe("interceptorsPlugin", () => {
 
         // Mock resolve to return the absolute path
         const context = {
-            resolve: jest.fn().mockResolvedValue({ id: targetPath }),
+            resolve: vi.fn().mockResolvedValue({ id: targetPath }),
         };
 
         const result = await plugin.resolveId.call(context, "./target.js", "/importer.js");
@@ -84,7 +84,7 @@ describe("interceptorsPlugin", () => {
         await plugin.buildStart.call({});
 
         const context = {
-            resolve: jest.fn().mockResolvedValue({ id: targetPath }),
+            resolve: vi.fn().mockResolvedValue({ id: targetPath }),
         };
 
         const virtualId = `\0interceptor:${targetPath}`;

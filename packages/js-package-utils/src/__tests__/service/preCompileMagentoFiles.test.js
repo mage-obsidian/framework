@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 
 /**
  * The precompile guard must key on (theme, contract hash), not just the theme
@@ -8,26 +8,26 @@ import { jest } from "@jest/globals";
  */
 describe("preCompileMagentoFiles guard", () => {
     beforeEach(() => {
-        jest.resetModules();
+        vi.resetModules();
     });
 
     test("skips on same theme+hash and recompiles when the hash changes", async () => {
         let currentHash = "hash-1";
-        const precompileJs = jest.fn(async () => {});
-        const precompileCss = jest.fn(async () => {});
+        const precompileJs = vi.fn(async () => {});
+        const precompileCss = vi.fn(async () => {});
 
-        jest.unstable_mockModule("#core/configResolver.js", () => ({
+        vi.doMock("#core/configResolver.js", () => ({
             __esModule: true,
             default: { getContractHash: () => currentHash },
         }));
-        jest.unstable_mockModule("#core/preCompileFiles.js", () => ({
+        vi.doMock("#core/preCompileFiles.js", () => ({
             __esModule: true,
             precompileJs,
             precompileCss,
         }));
-        jest.unstable_mockModule("node:fs/promises", () => ({
+        vi.doMock("node:fs/promises", () => ({
             __esModule: true,
-            default: { rm: jest.fn(async () => {}), mkdir: jest.fn(async () => {}) },
+            default: { rm: vi.fn(async () => {}), mkdir: vi.fn(async () => {}) },
         }));
 
         const { default: preCompileMagentoFiles } = await import("#core/preCompileMagentoFiles.js");

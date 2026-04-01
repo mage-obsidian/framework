@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 import {
     interpolate,
     translatePhrase,
@@ -73,13 +73,13 @@ describe("loadDictionary", () => {
     beforeEach(() => _resetDictionaryCache());
 
     it("resolves to {} for a falsy url without calling fetch", async () => {
-        const fetchImpl = jest.fn();
+        const fetchImpl = vi.fn();
         await expect(loadDictionary(null, fetchImpl)).resolves.toEqual({});
         expect(fetchImpl).not.toHaveBeenCalled();
     });
 
     it("fetches and parses the dictionary once, caching by url", async () => {
-        const fetchImpl = jest
+        const fetchImpl = vi
             .fn()
             .mockResolvedValue({ ok: true, json: () => Promise.resolve({ a: "b" }) });
         const first = await loadDictionary("/d.json", fetchImpl);
@@ -90,19 +90,17 @@ describe("loadDictionary", () => {
     });
 
     it("normalizes an empty array (Magento empty dictionary) to {}", async () => {
-        const fetchImpl = jest
-            .fn()
-            .mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+        const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
         await expect(loadDictionary("/empty.json", fetchImpl)).resolves.toEqual({});
     });
 
     it("degrades to {} on a non-ok response", async () => {
-        const fetchImpl = jest.fn().mockResolvedValue({ ok: false });
+        const fetchImpl = vi.fn().mockResolvedValue({ ok: false });
         await expect(loadDictionary("/missing.json", fetchImpl)).resolves.toEqual({});
     });
 
     it("degrades to {} when fetch rejects", async () => {
-        const fetchImpl = jest.fn().mockRejectedValue(new Error("network"));
+        const fetchImpl = vi.fn().mockRejectedValue(new Error("network"));
         await expect(loadDictionary("/boom.json", fetchImpl)).resolves.toEqual({});
     });
 });

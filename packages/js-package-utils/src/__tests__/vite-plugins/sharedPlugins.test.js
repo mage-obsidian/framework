@@ -1,35 +1,35 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 
 // Mock only the direct leaf dependencies so the heavy precompile graph never
 // loads; the real inherit resolvers are kept so we assert their actual names
 // and resolveId order.
 function mockLeafDeps(configOverrides = {}) {
-    const cached = jest.fn(() => ({}));
-    jest.unstable_mockModule("../../core/moduleResolver.js", () => ({
+    const cached = vi.fn(() => ({}));
+    vi.doMock("../../core/moduleResolver.js", () => ({
         default: { getAllJsVueFilesWithInheritanceCached: cached },
         getAllJsVueFilesWithInheritanceCached: cached,
     }));
     const configDefault = {
-        getMagentoConfig: jest.fn(() => ({ ALLOWED_EXTENSIONS: [".js", ".vue"] })),
-        getModulesConfigArray: jest.fn(() => []),
-        getThemesConfigArray: jest.fn(() => []),
+        getMagentoConfig: vi.fn(() => ({ ALLOWED_EXTENSIONS: [".js", ".vue"] })),
+        getModulesConfigArray: vi.fn(() => []),
+        getThemesConfigArray: vi.fn(() => []),
         ...configOverrides,
     };
-    jest.unstable_mockModule("../../core/configResolver.js", () => ({
+    vi.doMock("../../core/configResolver.js", () => ({
         default: configDefault,
     }));
 }
 
 describe("sharedPlugins", () => {
     beforeEach(() => {
-        jest.resetModules();
-        jest.clearAllMocks();
+        vi.resetModules();
+        vi.clearAllMocks();
     });
 
     test("getResolverPlugins returns the framework resolution chain in order", async () => {
         mockLeafDeps();
-        jest.unstable_mockModule("../../core/preCompileMagentoFiles.js", () => ({
-            default: jest.fn(() => Promise.resolve()),
+        vi.doMock("../../core/preCompileMagentoFiles.js", () => ({
+            default: vi.fn(() => Promise.resolve()),
         }));
 
         const { getResolverPlugins } = await import("../../vite/sharedPlugins.js");
@@ -48,8 +48,8 @@ describe("sharedPlugins", () => {
 
     test("ensurePrecompiled delegates to preCompileMagentoFiles", async () => {
         mockLeafDeps();
-        const mockPre = jest.fn(() => Promise.resolve());
-        jest.unstable_mockModule("../../core/preCompileMagentoFiles.js", () => ({
+        const mockPre = vi.fn(() => Promise.resolve());
+        vi.doMock("../../core/preCompileMagentoFiles.js", () => ({
             default: mockPre,
         }));
 
@@ -63,10 +63,10 @@ describe("sharedPlugins", () => {
         mockLeafDeps({
             // A module symlinked from outside the Magento root, plus an
             // in-root theme: both src roots must end up in the allow-list.
-            getModulesConfigArray: jest.fn(() => [
+            getModulesConfigArray: vi.fn(() => [
                 ["Vendor_Module", { src: "/outside/repo/module/src" }],
             ]),
-            getThemesConfigArray: jest.fn(() => [
+            getThemesConfigArray: vi.fn(() => [
                 ["Vendor/theme", { src: "/var/www/html/app/design/frontend/Vendor/theme" }],
             ]),
         });
@@ -83,11 +83,11 @@ describe("sharedPlugins", () => {
 
     test("getFsAllowList dedupes and skips entries without a src", async () => {
         mockLeafDeps({
-            getModulesConfigArray: jest.fn(() => [
+            getModulesConfigArray: vi.fn(() => [
                 ["A", { src: "/var/www/html" }],
                 ["B", {}],
             ]),
-            getThemesConfigArray: jest.fn(() => []),
+            getThemesConfigArray: vi.fn(() => []),
         });
 
         const { getFsAllowList } = await import("../../vite/sharedPlugins.js");

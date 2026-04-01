@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -16,29 +16,29 @@ describe("generateInterceptors", () => {
     let interceptorManager;
 
     beforeEach(async () => {
-        jest.resetModules();
+        vi.resetModules();
 
         themeResolverMock = {
-            getThemeConfig: jest.fn(),
+            getThemeConfig: vi.fn(),
         };
 
         moduleResolverMock = {
-            getModuleConfigByThemeConfig: jest.fn(),
-            getAllJsVueFilesWithInheritanceCached: jest.fn(),
-            getAllJsVueFilesWithInheritance: jest.fn(),
+            getModuleConfigByThemeConfig: vi.fn(),
+            getAllJsVueFilesWithInheritanceCached: vi.fn(),
+            getAllJsVueFilesWithInheritance: vi.fn(),
         };
 
-        jest.unstable_mockModule("../../core/themeResolverSync.js", () => ({
+        vi.doMock("../../core/themeResolverSync.js", () => ({
             default: themeResolverMock,
         }));
 
-        jest.unstable_mockModule("../../core/moduleResolver.js", () => ({
+        vi.doMock("../../core/moduleResolver.js", () => ({
             default: moduleResolverMock,
         }));
 
-        jest.unstable_mockModule("../../core/configResolver.js", () => ({
+        vi.doMock("../../core/configResolver.js", () => ({
             default: {
-                resolveLibRealPath: jest.fn().mockReturnValue("/mocked/path/to/interceptorManager"),
+                resolveLibRealPath: vi.fn().mockReturnValue("/mocked/path/to/interceptorManager"),
             },
         }));
 
@@ -187,7 +187,7 @@ describe("generateInterceptors", () => {
 
         moduleResolverMock.getAllJsVueFilesWithInheritanceCached.mockReturnValue(allFilesMap);
 
-        const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         const result = await generateInterceptorsService.generateInterceptors(themeName);
 

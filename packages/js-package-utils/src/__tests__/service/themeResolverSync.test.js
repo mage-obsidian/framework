@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 import createMockConfigResolver from "../__mocks__/configResolver.js";
 
 let scenarios = [
@@ -44,7 +44,7 @@ let scenarios = [
 async function setupThemeResolver(scenario) {
     const mock = createMockConfigResolver(scenario);
 
-    jest.unstable_mockModule("#core/configResolver.js", () => ({
+    vi.doMock("#core/configResolver.js", () => ({
         ...mock,
         __esModule: true,
     }));
@@ -57,7 +57,7 @@ describe("getThemeConfig", () => {
     let themeResolver;
 
     beforeEach(() => {
-        jest.resetModules();
+        vi.resetModules();
     });
 
     test.each(

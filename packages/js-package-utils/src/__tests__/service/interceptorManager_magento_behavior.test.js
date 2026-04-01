@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { vi } from "vitest";
 import interceptorManager from "../../runtime/interceptorManager.js";
 
 describe("InterceptorManager Magento Behavior", () => {
@@ -9,21 +9,21 @@ describe("InterceptorManager Magento Behavior", () => {
 
     test("Before interceptors: should chain arguments and handle null returns", async () => {
         const targetName = "Test::beforeChain";
-        const originalFn = jest.fn((arg1, arg2) => `Original: ${arg1}, ${arg2}`);
+        const originalFn = vi.fn((arg1, arg2) => `Original: ${arg1}, ${arg2}`);
         const context = { id: "subject" };
 
         // Interceptor 1: Modifies arguments (returns the subject-less args)
-        const beforeInterceptor1 = jest.fn((subject, arg1, arg2) => {
+        const beforeInterceptor1 = vi.fn((subject, arg1, arg2) => {
             return [arg1 + "_mod1", arg2 + "_mod1"];
         });
 
         // Interceptor 2: Returns null (should keep arguments from Interceptor 1)
-        const beforeInterceptor2 = jest.fn((_subject, _arg1, _arg2) => {
+        const beforeInterceptor2 = vi.fn((_subject, _arg1, _arg2) => {
             return null;
         });
 
         // Interceptor 3: Modifies arguments again
-        const beforeInterceptor3 = jest.fn((subject, arg1, arg2) => {
+        const beforeInterceptor3 = vi.fn((subject, arg1, arg2) => {
             return [arg1 + "_mod3", arg2 + "_mod3"];
         });
 
@@ -64,17 +64,17 @@ describe("InterceptorManager Magento Behavior", () => {
 
     test("Around interceptors: should wrap execution and modify args/result", async () => {
         const targetName = "Test::aroundChain";
-        const originalFn = jest.fn((arg) => `Original(${arg})`);
+        const originalFn = vi.fn((arg) => `Original(${arg})`);
         const context = { id: "subject" };
 
         // Outer Around Interceptor
-        const aroundInterceptor1 = jest.fn(async (subject, proceed, arg) => {
+        const aroundInterceptor1 = vi.fn(async (subject, proceed, arg) => {
             const result = await proceed(arg + "_outerIn");
             return `Outer(${result})`;
         });
 
         // Inner Around Interceptor
-        const aroundInterceptor2 = jest.fn(async (subject, proceed, arg) => {
+        const aroundInterceptor2 = vi.fn(async (subject, proceed, arg) => {
             const result = await proceed(arg + "_innerIn");
             return `Inner(${result})`;
         });
@@ -110,14 +110,14 @@ describe("InterceptorManager Magento Behavior", () => {
 
     test("After interceptors: should chain results", async () => {
         const targetName = "Test::afterChain";
-        const originalFn = jest.fn(() => "Original");
+        const originalFn = vi.fn(() => "Original");
         const context = { id: "subject" };
 
-        const afterInterceptor1 = jest.fn((subject, result) => {
+        const afterInterceptor1 = vi.fn((subject, result) => {
             return result + "_After1";
         });
 
-        const afterInterceptor2 = jest.fn((subject, result) => {
+        const afterInterceptor2 = vi.fn((subject, result) => {
             return result + "_After2";
         });
 
@@ -145,7 +145,7 @@ describe("InterceptorManager Magento Behavior", () => {
 
     test("Full Chain: Before -> Around -> Original -> After", async () => {
         const targetName = "Test::fullChain";
-        const originalFn = jest.fn((arg) => `Original(${arg})`);
+        const originalFn = vi.fn((arg) => `Original(${arg})`);
         const context = { id: "subject" };
 
         // Before: Modifies arg
@@ -194,7 +194,7 @@ describe("InterceptorManager Magento Behavior", () => {
     test("subject parity: handlers get the subject explicitly and via `this`", async () => {
         const targetName = "Test::subjectParity";
         const subject = { name: "TargetModule", greet: () => "hi" };
-        const originalFn = jest.fn(() => "result");
+        const originalFn = vi.fn(() => "result");
 
         const seen = {};
         // Arrow handler: cannot use `this`, relies on the explicit subject arg.
@@ -242,7 +242,7 @@ describe("InterceptorManager Magento Behavior", () => {
     test("executeSync: subject threaded the same way as async execute", () => {
         const targetName = "Test::syncSubject";
         const subject = { id: "sync-subject" };
-        const originalFn = jest.fn((arg) => `Original(${arg})`);
+        const originalFn = vi.fn((arg) => `Original(${arg})`);
 
         const calls = [];
         interceptorManager.addInterceptor(

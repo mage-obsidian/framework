@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "target": "ES2023",
+        "lib": ["ES2023", "DOM", "DOM.Iterable"],
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "types": ["node"],
+
+        // No build in dev: Vite and Node (>=22.18 type-stripping) consume the
+        // .ts sources directly. tsc is type-check only. Importing `.ts`
+        // specifiers is therefore allowed, and only erasable TS syntax is
+        // permitted so type-stripping never fails.
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "erasableSyntaxOnly": true,
+        "verbatimModuleSyntax": true,
+
+        // Author components stay JS; the engine is TS. allowJs keeps the mixed
+        // tree resolvable without forcing checkJs on legacy/JS files.
+        "allowJs": true,
+        "checkJs": false,
+
+        "strict": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": ["src/**/*.ts", "src/**/*.js", "*.ts", "*.js"],
+    "exclude": ["node_modules", ".precompiled", "src/__tests__/magento_scenarios"]
+}

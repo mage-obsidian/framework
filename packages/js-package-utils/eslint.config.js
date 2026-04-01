@@ -16,9 +16,9 @@ export default [
     },
     ...preset,
     {
-        files: ["**/*.test.js", "src/__tests__/**"],
+        files: ["**/*.test.{js,ts}", "src/__tests__/**"],
         languageOptions: {
-            globals: { ...globals.jest },
+            globals: { ...globals.vitest },
         },
     },
 ];

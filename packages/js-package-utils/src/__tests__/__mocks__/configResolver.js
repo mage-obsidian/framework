@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,19 +20,19 @@ const createMockConfigResolver = (scenario) => {
     }
     return {
         default: {
-            getMagentoConfig: jest.fn(() => mockMagentoConfig),
-            getContractHash: jest.fn(() => JSON.stringify({
+            getMagentoConfig: vi.fn(() => mockMagentoConfig),
+            getContractHash: vi.fn(() => JSON.stringify({
                 modules: mockMagentoConfig.modules,
                 themes: mockMagentoConfig.themes,
                 allModules: mockMagentoConfig.allModules
             })),
-            getModulesConfigArray: jest.fn(() => Object.entries(mockMagentoConfig.modules)),
-            getThemesConfigArray: jest.fn(() => Object.entries(mockMagentoConfig.themes)),
-            getAllMagentoModulesEnabled: jest.fn(() => mockMagentoConfig.allModules),
-            isDev: jest.fn(() => mockMagentoConfig.mode === 'development'),
-            getOutputDirFromTheme: jest.fn((themePath) => `${themePath}/output`),
-            getThemeDefinition: jest.fn((themeName) => mockMagentoConfig.themes[themeName]),
-            getModuleDefinition: jest.fn((moduleName) => mockMagentoConfig.modules[moduleName]),
+            getModulesConfigArray: vi.fn(() => Object.entries(mockMagentoConfig.modules)),
+            getThemesConfigArray: vi.fn(() => Object.entries(mockMagentoConfig.themes)),
+            getAllMagentoModulesEnabled: vi.fn(() => mockMagentoConfig.allModules),
+            isDev: vi.fn(() => mockMagentoConfig.mode === 'development'),
+            getOutputDirFromTheme: vi.fn((themePath) => `${themePath}/output`),
+            getThemeDefinition: vi.fn((themeName) => mockMagentoConfig.themes[themeName]),
+            getModuleDefinition: vi.fn((moduleName) => mockMagentoConfig.modules[moduleName]),
         }
     }
 };

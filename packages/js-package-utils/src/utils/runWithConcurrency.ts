@@ -3,15 +3,14 @@
  *
  * Results are returned in the same order as `items` regardless of completion
  * order. The first rejection aborts the run (no new workers are started) and is
- * propagated, mirroring Promise.all semantics.
- *
- * @template T, R
- * @param {T[]} items
- * @param {(item: T, index: number) => Promise<R>} worker
- * @param {number} [limit] Max concurrent workers (default: number of items).
- * @returns {Promise<R[]>}
+ * propagated, mirroring Promise.all semantics. `limit` defaults to the number of
+ * items.
  */
-export default async function runWithConcurrency(items, worker, limit = items.length) {
+export default async function runWithConcurrency<T, R>(
+    items: T[],
+    worker: (item: T, index: number) => Promise<R>,
+    limit: number = items.length,
+): Promise<R[]> {
     if (!Array.isArray(items)) {
         throw new TypeError("runWithConcurrency: items must be an array.");
     }
@@ -20,7 +19,7 @@ export default async function runWithConcurrency(items, worker, limit = items.le
     }
 
     const effectiveLimit = Math.max(1, Math.min(limit, items.length || 1));
-    const results = Array.from({ length: items.length });
+    const results = Array.from({ length: items.length }) as R[];
     let nextIndex = 0;
 
     async function runner() {

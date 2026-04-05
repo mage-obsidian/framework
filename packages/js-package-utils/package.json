@@ -2,7 +2,7 @@
     "name": "mage-obsidian",
     "version": "2.0.0",
     "description": "Mage Obsidian Ultis",
-    "main": "./src/cli/buildThemes.js",
+    "main": "./src/cli/buildThemes.ts",
     "scripts": {
         "test": "vitest run",
         "test:watch": "vitest",
@@ -21,7 +21,7 @@
     "license": "MIT",
     "type": "module",
     "bin": {
-        "mage-obsidian:build-themes": "./src/cli/buildThemes.js"
+        "mage-obsidian:build-themes": "./src/cli/buildThemes.ts"
     },
     "imports": {
         "#core/*": "./src/core/*",
@@ -32,7 +32,7 @@
         "#config/*": "./src/config/*"
     },
     "exports": {
-        ".": "./src/cli/buildThemes.js",
+        ".": "./src/cli/buildThemes.ts",
         "./core/*": "./src/core/*",
         "./vite/*": "./src/vite/*",
         "./runtime/*": "./src/runtime/*",

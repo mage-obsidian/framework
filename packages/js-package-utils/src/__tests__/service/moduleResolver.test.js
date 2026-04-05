@@ -267,12 +267,12 @@ describe("getAllJsVueFilesWithInheritance", () => {
             themes.map(({ code, expected }) => [scenario, code, expected]),
         ),
     )('Scenario "%s", Theme "%s"', async (scenario, code, expected) => {
-        vi.doMock("#core/configResolver.js", () => ({
+        vi.doMock("#core/configResolver.ts", () => ({
             __esModule: true,
             default: createMockConfigResolver(scenario).default,
         }));
 
-        const importedModule = await import("#core/moduleResolver.js");
+        const importedModule = await import("#core/moduleResolver.ts");
         moduleResolver = importedModule.default;
 
         const result = await moduleResolver.getAllJsVueFilesWithInheritance(code);

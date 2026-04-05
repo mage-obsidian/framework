@@ -1,8 +1,8 @@
-import inheritModuleResolver from "./inheritModuleResolver.js";
-import inheritAssetsModuleResolver from "./inheritAssetsModuleResolver.js";
-import defaultNodeResolve from "./defaultNodeResolver.js";
-import preCompileMagentoFiles from "../core/preCompileMagentoFiles.js";
-import configResolver from "../core/configResolver.js";
+import inheritModuleResolver from "./inheritModuleResolver.ts";
+import inheritAssetsModuleResolver from "./inheritAssetsModuleResolver.ts";
+import defaultNodeResolve from "./defaultNodeResolver.ts";
+import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
+import configResolver from "../core/configResolver.ts";
 
 /**
  * The framework's module-resolution plugin chain: `Vendor_Module::` component

@@ -1,4 +1,8 @@
 class InterceptorManager {
+    // `declare` keeps this type-only (erasable): the runtime field is created by
+    // the constructor assignment below, type-stripping emits nothing for this.
+    declare interceptors: Record<string, Record<string, any[]>>;
+
     constructor() {
         this.interceptors = {};
     }

@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-// import interceptorsPlugin from '../../vite/interceptorsPlugin.js'; // Removed static import
+// import interceptorsPlugin from '../../vite/interceptorsPlugin.ts'; // Removed static import
 
 describe("interceptorsPlugin", () => {
     let plugin;
@@ -12,7 +12,7 @@ describe("interceptorsPlugin", () => {
         vi.clearAllMocks();
 
         // Mock configResolver to prevent process.exit
-        vi.doMock("../../core/configResolver.js", () => ({
+        vi.doMock("../../core/configResolver.ts", () => ({
             default: {
                 resolveLibRealPath: vi.fn(),
             },
@@ -22,14 +22,14 @@ describe("interceptorsPlugin", () => {
         mockGenerateInterceptors = vi.fn();
 
         // Mock the service module
-        vi.doMock("../../core/generateInterceptors.js", () => ({
+        vi.doMock("../../core/generateInterceptors.ts", () => ({
             default: {
                 generateInterceptors: mockGenerateInterceptors,
             },
         }));
 
         // Re-import the plugin to use the mock
-        const pluginModule = await import("../../vite/interceptorsPlugin.js");
+        const pluginModule = await import("../../vite/interceptorsPlugin.ts");
         const createPlugin = pluginModule.default;
 
         plugin = createPlugin({ themeName });

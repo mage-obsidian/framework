@@ -5,7 +5,7 @@ import { vi } from "vitest";
 // and resolveId order.
 function mockLeafDeps(configOverrides = {}) {
     const cached = vi.fn(() => ({}));
-    vi.doMock("../../core/moduleResolver.js", () => ({
+    vi.doMock("../../core/moduleResolver.ts", () => ({
         default: { getAllJsVueFilesWithInheritanceCached: cached },
         getAllJsVueFilesWithInheritanceCached: cached,
     }));
@@ -15,7 +15,7 @@ function mockLeafDeps(configOverrides = {}) {
         getThemesConfigArray: vi.fn(() => []),
         ...configOverrides,
     };
-    vi.doMock("../../core/configResolver.js", () => ({
+    vi.doMock("../../core/configResolver.ts", () => ({
         default: configDefault,
     }));
 }
@@ -28,11 +28,11 @@ describe("sharedPlugins", () => {
 
     test("getResolverPlugins returns the framework resolution chain in order", async () => {
         mockLeafDeps();
-        vi.doMock("../../core/preCompileMagentoFiles.js", () => ({
+        vi.doMock("../../core/preCompileMagentoFiles.ts", () => ({
             default: vi.fn(() => Promise.resolve()),
         }));
 
-        const { getResolverPlugins } = await import("../../vite/sharedPlugins.js");
+        const { getResolverPlugins } = await import("../../vite/sharedPlugins.ts");
         const plugins = getResolverPlugins();
 
         expect(plugins.map((p) => p.name)).toEqual([
@@ -49,11 +49,11 @@ describe("sharedPlugins", () => {
     test("ensurePrecompiled delegates to preCompileMagentoFiles", async () => {
         mockLeafDeps();
         const mockPre = vi.fn(() => Promise.resolve());
-        vi.doMock("../../core/preCompileMagentoFiles.js", () => ({
+        vi.doMock("../../core/preCompileMagentoFiles.ts", () => ({
             default: mockPre,
         }));
 
-        const { ensurePrecompiled } = await import("../../vite/sharedPlugins.js");
+        const { ensurePrecompiled } = await import("../../vite/sharedPlugins.ts");
         await ensurePrecompiled("Vendor/theme-test");
 
         expect(mockPre).toHaveBeenCalledWith("Vendor/theme-test");
@@ -71,7 +71,7 @@ describe("sharedPlugins", () => {
             ]),
         });
 
-        const { getFsAllowList } = await import("../../vite/sharedPlugins.js");
+        const { getFsAllowList } = await import("../../vite/sharedPlugins.ts");
         const allow = getFsAllowList("/var/www/html");
 
         expect(allow).toEqual([
@@ -90,7 +90,7 @@ describe("sharedPlugins", () => {
             getThemesConfigArray: vi.fn(() => []),
         });
 
-        const { getFsAllowList } = await import("../../vite/sharedPlugins.js");
+        const { getFsAllowList } = await import("../../vite/sharedPlugins.ts");
         expect(getFsAllowList("/var/www/html")).toEqual(["/var/www/html"]);
     });
 });

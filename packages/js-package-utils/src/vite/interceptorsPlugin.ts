@@ -1,8 +1,8 @@
-import generateInterceptorsService from "../core/generateInterceptors.js";
+import generateInterceptorsService from "../core/generateInterceptors.ts";
 
-export default function interceptorsPlugin(options = {}) {
+export default function interceptorsPlugin(options: { themeName?: string } = {}) {
     const { themeName } = options;
-    let interceptorsMap = new Map(); // path -> interceptorData
+    const interceptorsMap = new Map(); // path -> interceptorData
 
     return {
         name: "mage-obsidian:interceptors",

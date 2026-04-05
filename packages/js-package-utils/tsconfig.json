@@ -20,7 +20,10 @@
         "allowJs": true,
         "checkJs": false,
 
-        "strict": true,
+        // Lenient baseline for the JS->TS migration: the tree is now TypeScript
+        // and type-strippable, but not yet annotated. strict is the ratchet
+        // target, tightened progressively per subdirectory in follow-up work.
+        "strict": false,
         "skipLibCheck": true,
         "resolveJsonModule": true,
         "esModuleInterop": true,

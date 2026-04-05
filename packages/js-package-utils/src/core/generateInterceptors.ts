@@ -1,9 +1,9 @@
 import path from "path";
 import { pathToFileURL } from "url";
-import themeResolver from "./themeResolverSync.js";
-import moduleResolver from "./moduleResolver.js";
-import interceptorManager from "../runtime/interceptorManager.js";
-import configResolver from "./configResolver.js";
+import themeResolver from "./themeResolverSync.ts";
+import moduleResolver from "./moduleResolver.ts";
+import interceptorManager from "../runtime/interceptorManager.ts";
+import configResolver from "./configResolver.ts";
 
 const interceptorsRegisteredByTheme = new Map();
 const generatedInterceptorsCache = new Map();
@@ -26,7 +26,7 @@ function resolvePathFromMap(identifier, fileMap) {
     return fileMap[key] || null;
 }
 
-async function registerInterceptors(themeName) {
+async function registerInterceptors(themeName): Promise<Record<string, any[]>> {
     if (interceptorsRegisteredByTheme.has(themeName)) {
         return interceptorsRegisteredByTheme.get(themeName);
     }
@@ -38,10 +38,10 @@ async function registerInterceptors(themeName) {
         return {};
     }
     // Map<Target, Map<PluginName, PluginConfig>>
-    const interceptorsMap = new Map();
+    const interceptorsMap = new Map<string, Map<string, any>>();
     for (const [interceptorName, interceptorDefinition] of Object.entries(
         modulesConfig.interceptors,
-    )) {
+    ) as [string, any][]) {
         const { target } = interceptorDefinition;
         if (!interceptorName || !target) continue;
 
@@ -61,7 +61,7 @@ async function registerInterceptors(themeName) {
     }
 
     // Convert Map to structured object and sort plugins
-    const result = {};
+    const result: Record<string, any[]> = {};
     for (const [target, pluginsMap] of interceptorsMap) {
         const plugins = Array.from(pluginsMap.values())
             .filter((p) => p.active !== false) // Filter out inactive plugins

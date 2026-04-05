@@ -1,4 +1,4 @@
-import runWithConcurrency from "../../utils/runWithConcurrency.js";
+import runWithConcurrency from "../../utils/runWithConcurrency.ts";
 
 const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

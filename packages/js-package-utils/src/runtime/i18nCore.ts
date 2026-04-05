@@ -10,6 +10,13 @@
  * plugin (shipped as a module web asset) wraps these primitives.
  */
 
+// Published by PHP on the page before the ESM runtime loads.
+declare global {
+    interface Window {
+        __MAGE_OBSIDIAN_I18N__?: { locale?: string; dictionaryUrl?: string };
+    }
+}
+
 const PLACEHOLDER = /%(\d+)/g;
 
 /**

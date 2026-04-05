@@ -1,8 +1,8 @@
-import themeResolver from "./themeResolverSync.js";
+import themeResolver from "./themeResolverSync.ts";
 import path from "node:path";
-import { MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_MODULE_WEB_PATH } from "../config/default.js";
-import { resolveFileByTheme, getAllJsVueFilesWithInheritanceCached } from "./moduleResolver.js";
-import configResolver from "./configResolver.js";
+import { MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_MODULE_WEB_PATH } from "../config/default.ts";
+import { resolveFileByTheme, getAllJsVueFilesWithInheritanceCached } from "./moduleResolver.ts";
+import configResolver from "./configResolver.ts";
 import fs from "node:fs/promises";
 
 const { getMagentoConfig, getModuleDefinition, getThemeDefinition, getModulesConfigArray } =
@@ -11,9 +11,9 @@ const { getMagentoConfig, getModuleDefinition, getThemeDefinition, getModulesCon
 const MODULE_CSS_EXTEND_FILE = getMagentoConfig().MODULE_CSS_EXTEND_FILE;
 const THEME_CSS_SOURCE_FILE = getMagentoConfig().THEME_CSS_SOURCE_FILE;
 
-async function getThemeImports(themeName, themeConfig) {
+async function getThemeImports(themeName, themeConfig?) {
     if (!themeConfig) {
-        themeConfig = themeResolver.getThemeConfig(themeName);
+        themeConfig = await themeResolver.getThemeConfig(themeName);
     }
     const themeDefinition = getThemeDefinition(themeName);
     const themePath = themeDefinition.src;
@@ -31,8 +31,7 @@ function resolveModuleCssSourcePath(moduleName, themeName) {
     let moduleConfigSourcePath = resolveFileByTheme(
         themeName,
         moduleName,
-        "css",
-        MODULE_CSS_EXTEND_FILE,
+        path.join("css", MODULE_CSS_EXTEND_FILE),
     );
     if (!moduleConfigSourcePath) {
         const moduleDefinition = getModuleDefinition(moduleName);
@@ -56,11 +55,11 @@ async function getVueComponentsSource(themeName) {
 }
 
 async function getCssImports(themeName) {
-    const themeConfig = themeResolver.getThemeConfig(themeName);
+    const themeConfig = await themeResolver.getThemeConfig(themeName);
     const excludedModules = new Set(themeConfig.ignoredCssFromModules || []);
     const modulesConfig = getModulesConfigArray();
 
-    let cssSource = await getVueComponentsSource(themeName);
+    const cssSource = await getVueComponentsSource(themeName);
     let cssImports = "";
 
     if (themeConfig.ignoredCssFromModules !== "all") {

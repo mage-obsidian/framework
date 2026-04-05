@@ -39,17 +39,17 @@ describe("configResolver contract hash + mtime reload", () => {
         };
         writeContract(tmpFile, base, 10000);
 
-        vi.doMock("#config/default.js", () => ({
+        vi.doMock("#config/default.ts", () => ({
             __esModule: true,
             DEPENDENCY_CONFIG_FILE_PATH: tmpFile,
             OUTPUT_THEME_DIR: "web/generated",
         }));
-        vi.doMock("#core/contractValidator.js", () => ({
+        vi.doMock("#core/contractValidator.ts", () => ({
             __esModule: true,
             validateContract: () => ({ ok: true, errors: [] }),
         }));
 
-        const configResolver = (await import("#core/configResolver.js")).default;
+        const configResolver = (await import("#core/configResolver.ts")).default;
 
         const firstHash = configResolver.getContractHash();
         expect(configResolver.getContractHash()).toBe(firstHash); // same mtime → cached

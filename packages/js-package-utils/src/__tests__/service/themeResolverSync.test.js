@@ -44,12 +44,12 @@ let scenarios = [
 async function setupThemeResolver(scenario) {
     const mock = createMockConfigResolver(scenario);
 
-    vi.doMock("#core/configResolver.js", () => ({
+    vi.doMock("#core/configResolver.ts", () => ({
         ...mock,
         __esModule: true,
     }));
 
-    const resolver = await import("#core/themeResolverSync.js");
+    const resolver = await import("#core/themeResolverSync.ts");
     return resolver.default;
 }
 

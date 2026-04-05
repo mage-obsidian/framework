@@ -1,8 +1,8 @@
 import path from "node:path";
 import fs from "node:fs/promises";
-import { precompileCss, precompileJs } from "./preCompileFiles.js";
-import configResolver from "./configResolver.js";
-import { PRECOMPILED_FOLDER } from "../config/default.js";
+import { precompileCss, precompileJs } from "./preCompileFiles.ts";
+import configResolver from "./configResolver.ts";
+import { PRECOMPILED_FOLDER } from "../config/default.ts";
 
 // Guard per (theme, contract hash): repeated calls within one process (Vite
 // re-invokes the config) skip the work, while a different theme — or the same

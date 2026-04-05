@@ -1,8 +1,8 @@
 import path from "path";
 import fs from "fs";
 import deepmerge from "deepmerge";
-import { THEME_MODULE_WEB_PATH } from "../config/default.js";
-import configResolver from "./configResolver.js";
+import { THEME_MODULE_WEB_PATH } from "../config/default.ts";
+import configResolver from "./configResolver.ts";
 
 const themeConfigCache = new Map();
 const themeConfigPlainCache = new Map();

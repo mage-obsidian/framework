@@ -41,12 +41,12 @@ let scenarios = [
 ];
 
 function mockConfigAndModules(scenario) {
-    vi.doMock("#core/configResolver.js", () => ({
+    vi.doMock("#core/configResolver.ts", () => ({
         __esModule: true,
         default: createMockConfigResolver(scenario).default,
     }));
 
-    vi.doMock("#core/moduleResolver.js", () => ({
+    vi.doMock("#core/moduleResolver.ts", () => ({
         __esModule: true,
         default: {
             getAllJsVueFilesWithInheritanceCached: vi.fn(() => ({
@@ -59,7 +59,7 @@ function mockConfigAndModules(scenario) {
 async function setupInheritModuleResolver(scenario) {
     mockConfigAndModules(scenario);
     const { default: inheritModuleResolverFactory } =
-        await import("#vite/inheritModuleResolver.js");
+        await import("#vite/inheritModuleResolver.ts");
     return inheritModuleResolverFactory();
 }
 

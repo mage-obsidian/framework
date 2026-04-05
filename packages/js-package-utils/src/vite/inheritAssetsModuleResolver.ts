@@ -1,5 +1,5 @@
 import path from "path";
-import configResolver from "../core/configResolver.js";
+import configResolver from "../core/configResolver.ts";
 import fs from "fs";
 
 export default function customAssetsResolverPlugin() {

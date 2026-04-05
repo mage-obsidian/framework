@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import interceptorManager from "../../runtime/interceptorManager.js";
+import interceptorManager from "../../runtime/interceptorManager.ts";
 
 describe("InterceptorManager Magento Behavior", () => {
     beforeEach(() => {

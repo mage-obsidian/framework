@@ -16,11 +16,11 @@ describe("preCompileMagentoFiles guard", () => {
         const precompileJs = vi.fn(async () => {});
         const precompileCss = vi.fn(async () => {});
 
-        vi.doMock("#core/configResolver.js", () => ({
+        vi.doMock("#core/configResolver.ts", () => ({
             __esModule: true,
             default: { getContractHash: () => currentHash },
         }));
-        vi.doMock("#core/preCompileFiles.js", () => ({
+        vi.doMock("#core/preCompileFiles.ts", () => ({
             __esModule: true,
             precompileJs,
             precompileCss,
@@ -30,7 +30,7 @@ describe("preCompileMagentoFiles guard", () => {
             default: { rm: vi.fn(async () => {}), mkdir: vi.fn(async () => {}) },
         }));
 
-        const { default: preCompileMagentoFiles } = await import("#core/preCompileMagentoFiles.js");
+        const { default: preCompileMagentoFiles } = await import("#core/preCompileMagentoFiles.ts");
 
         await preCompileMagentoFiles("Vendor/theme-a");
         await preCompileMagentoFiles("Vendor/theme-a");

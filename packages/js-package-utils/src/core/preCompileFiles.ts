@@ -1,11 +1,11 @@
 import path from "path";
 import fs from "fs/promises";
-import moduleResolver from "./moduleResolver.js";
+import moduleResolver from "./moduleResolver.ts";
 import {
     PRECOMPILED_FOLDER,
     ALL_JS_VUE_FILES_WITH_INHERITANCE_FILE_NAME,
-} from "../config/default.js";
-import getCssImports from "./cssResolver.js";
+} from "../config/default.ts";
+import getCssImports from "./cssResolver.ts";
 import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -6,8 +6,8 @@ import readlineSync from "readline-sync";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import configResolver from "../core/configResolver.js";
-import runWithConcurrency from "../utils/runWithConcurrency.js";
+import configResolver from "../core/configResolver.ts";
+import runWithConcurrency from "../utils/runWithConcurrency.ts";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -80,7 +80,7 @@ function validateEnv() {
         "MAGENTO_HOST",
         "VITE_SERVER_ALLOWED_HOSTS",
     ];
-    let missingEnvVars = [];
+    const missingEnvVars = [];
     for (const envVar of requiredEnvVars) {
         if (!process.env[envVar]) {
             missingEnvVars.push(envVar);
@@ -107,7 +107,7 @@ function validateEnv() {
  * @returns {Promise<{ themeName: string, code: number }>}
  */
 const spawnBuild = (themeName) =>
-    new Promise((resolve) => {
+    new Promise<{ themeName: string; code: number }>((resolve) => {
         const child = spawn("vite build", {
             shell: true,
             env: { ...process.env, CURRENT_THEME: themeName },

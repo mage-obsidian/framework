@@ -1,11 +1,25 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { DEPENDENCY_CONFIG_FILE_PATH, OUTPUT_THEME_DIR } from "../config/default.js";
-import { validateContract } from "./contractValidator.js";
+import { DEPENDENCY_CONFIG_FILE_PATH, OUTPUT_THEME_DIR } from "../config/default.ts";
+import { validateContract } from "./contractValidator.ts";
 
 const REGENERATE_HINT =
     "Try running `bin/magento mage-obsidian:frontend:config --generate` to generate the configuration file.";
+
+// Minimal shapes for the generated contract entries. Only `src` (and the theme
+// `parent`) are typed today; the rest stays open as the engine is typed
+// progressively. The contract itself is validated at runtime by validateContract.
+interface ModuleDefinition {
+    src: string;
+    [key: string]: any;
+}
+
+interface ThemeDefinition {
+    src: string;
+    parent?: string;
+    [key: string]: any;
+}
 
 // Cached contract, invalidated by the file's mtime. A per-process `const` read
 // at import time never picked up a regenerated contract (e.g. a module enabled
@@ -77,16 +91,19 @@ export const getContractHash = () => {
     getContract();
     return cached.hash;
 };
-export const getModulesConfigArray = () => Object.entries(getContract().modules);
-export const getThemesConfigArray = () => Object.entries(getContract().themes);
+export const getModulesConfigArray = () =>
+    Object.entries(getContract().modules) as [string, ModuleDefinition][];
+export const getThemesConfigArray = () =>
+    Object.entries(getContract().themes) as [string, ThemeDefinition][];
 export const getAllMagentoModulesEnabled = () => getContract().allModules;
 export const isDev = () => getContract().mode !== "production";
 
 export const getOutputDirFromTheme = (themePath) => path.resolve(themePath, OUTPUT_THEME_DIR);
 
-export const getModuleDefinition = (moduleName) => getContract().modules[moduleName];
+export const getModuleDefinition = (moduleName): ModuleDefinition =>
+    getContract().modules[moduleName];
 
-export const getThemeDefinition = (themeName) => getContract().themes[themeName];
+export const getThemeDefinition = (themeName): ThemeDefinition => getContract().themes[themeName];
 
 export const MODE = process.env.NODE_ENV;
 

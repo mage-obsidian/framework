@@ -5,7 +5,7 @@ import {
     readI18nConfig,
     loadDictionary,
     _resetDictionaryCache,
-} from "../../runtime/i18nCore.js";
+} from "../../runtime/i18nCore.ts";
 
 describe("interpolate", () => {
     it("returns the text unchanged when there are no args", () => {

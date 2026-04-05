@@ -28,25 +28,25 @@ describe("generateInterceptors", () => {
             getAllJsVueFilesWithInheritance: vi.fn(),
         };
 
-        vi.doMock("../../core/themeResolverSync.js", () => ({
+        vi.doMock("../../core/themeResolverSync.ts", () => ({
             default: themeResolverMock,
         }));
 
-        vi.doMock("../../core/moduleResolver.js", () => ({
+        vi.doMock("../../core/moduleResolver.ts", () => ({
             default: moduleResolverMock,
         }));
 
-        vi.doMock("../../core/configResolver.js", () => ({
+        vi.doMock("../../core/configResolver.ts", () => ({
             default: {
                 resolveLibRealPath: vi.fn().mockReturnValue("/mocked/path/to/interceptorManager"),
             },
         }));
 
         // Import real interceptorManager to reset state
-        interceptorManager = (await import("../../runtime/interceptorManager.js")).default;
+        interceptorManager = (await import("../../runtime/interceptorManager.ts")).default;
         interceptorManager.interceptors = {};
 
-        generateInterceptorsService = (await import("../../core/generateInterceptors.js")).default;
+        generateInterceptorsService = (await import("../../core/generateInterceptors.ts")).default;
     });
 
     test("should generate interceptors correctly", async () => {

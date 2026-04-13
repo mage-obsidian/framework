@@ -1,6 +1,7 @@
 import inheritModuleResolver from "./inheritModuleResolver.ts";
 import inheritAssetsModuleResolver from "./inheritAssetsModuleResolver.ts";
 import defaultNodeResolve from "./defaultNodeResolver.ts";
+import unresolvedModuleGuard from "./unresolvedModuleGuard.ts";
 import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
 import configResolver from "../core/configResolver.ts";
 
@@ -15,7 +16,12 @@ import configResolver from "../core/configResolver.ts";
  * reimplementing it and drifting.
  */
 export function getResolverPlugins() {
-    return [inheritModuleResolver(), inheritAssetsModuleResolver(), defaultNodeResolve];
+    return [
+        inheritModuleResolver(),
+        inheritAssetsModuleResolver(),
+        defaultNodeResolve,
+        unresolvedModuleGuard(),
+    ];
 }
 
 /**

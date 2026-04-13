@@ -39,11 +39,14 @@ describe("sharedPlugins", () => {
             "inherit-resolver",
             "inherit-assets-resolver",
             "default-node-resolver",
+            "unresolved-module-guard",
         ]);
         // The `::` resolvers must run before the node-package fallback.
         expect(plugins[0].resolveId.order).toBe("pre");
         expect(plugins[1].resolveId.order).toBe("pre");
         expect(plugins[2].resolveId.order).toBe("post");
+        // The fail-loud guard runs last so it only sees genuinely unresolved ids.
+        expect(plugins[3].resolveId.order).toBe("post");
     });
 
     test("ensurePrecompiled delegates to preCompileMagentoFiles", async () => {

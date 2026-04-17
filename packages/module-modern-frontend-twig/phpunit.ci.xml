@@ -16,6 +16,8 @@
         <testsuite name="MageObsidian ModernFrontendTwig Standalone Unit">
             <directory>src/Test/Unit</directory>
             <exclude>src/Test/Unit/Model/Template/TwigRenderTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/EnvironmentFactoryTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/FormatExtensionTest.php</exclude>
         </testsuite>
     </testsuites>
 </phpunit>

@@ -14,4 +14,17 @@
             </argument>
         </arguments>
     </type>
+    <!--
+        Twig extensions registered on the shared environment. The array merges
+        across modules by item key, so any module adds its own extension by
+        declaring another <item> on this same <type> — no edit to the engine.
+    -->
+    <type name="MageObsidian\ModernFrontendTwig\Model\Template\EnvironmentFactory">
+        <arguments>
+            <argument name="extensions" xsi:type="array">
+                <item name="mage_obsidian" xsi:type="object">MageObsidian\ModernFrontendTwig\Model\Template\Extension\MageObsidianExtension</item>
+                <item name="format" xsi:type="object">MageObsidian\ModernFrontendTwig\Model\Template\Extension\FormatExtension</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

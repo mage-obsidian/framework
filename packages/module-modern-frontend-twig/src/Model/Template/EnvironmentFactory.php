@@ -11,9 +11,10 @@ namespace MageObsidian\ModernFrontendTwig\Model\Template;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
-use MageObsidian\ModernFrontendTwig\Model\Template\Extension\MageObsidianExtension;
 use Twig\Environment;
 use Twig\Extension\DebugExtension;
+use Twig\Extension\ExtensionInterface;
+use UnexpectedValueException;
 
 /**
  * Builds the shared Twig environment.
@@ -24,6 +25,12 @@ use Twig\Extension\DebugExtension;
  * undefined variable into an error instead of a silent empty string. HTML
  * auto-escaping is always on — the main security gain over raw phtml. The
  * environment is built once and reused (declared shared in di.xml).
+ *
+ * Extensions are injected as an array via di.xml (`extensions` argument), which
+ * Magento merges across modules by item key — so any module can contribute its
+ * own filters/functions without editing this factory (the engine's own
+ * MageObsidianExtension and FormatExtension are just two such items). This
+ * mirrors how TemplateEngineFactory's `engines` array is extended.
  */
 class EnvironmentFactory
 {
@@ -33,15 +40,15 @@ class EnvironmentFactory
 
     /**
      * @param FilesystemLoader $loader
-     * @param MageObsidianExtension $extension
      * @param DirectoryList $directoryList
      * @param State $appState
+     * @param ExtensionInterface[] $extensions Twig extensions to register, injected via di.xml.
      */
     public function __construct(
         private readonly FilesystemLoader $loader,
-        private readonly MageObsidianExtension $extension,
         private readonly DirectoryList $directoryList,
-        private readonly State $appState
+        private readonly State $appState,
+        private readonly array $extensions = []
     ) {
     }
 
@@ -64,7 +71,20 @@ class EnvironmentFactory
             'strict_variables' => $isDeveloper,
         ]);
 
-        $environment->addExtension($this->extension);
+        foreach ($this->extensions as $key => $extension) {
+            // The di.xml array carries no type guarantee; fail with an
+            // actionable message instead of an opaque error deep inside Twig.
+            if (!$extension instanceof ExtensionInterface) {
+                throw new UnexpectedValueException(sprintf(
+                    'Twig extension "%s" must implement %s, %s given.',
+                    is_string($key) ? $key : (string)$key,
+                    ExtensionInterface::class,
+                    get_debug_type($extension)
+                ));
+            }
+            $environment->addExtension($extension);
+        }
+
         if ($isDeveloper) {
             $environment->addExtension(new DebugExtension());
         }

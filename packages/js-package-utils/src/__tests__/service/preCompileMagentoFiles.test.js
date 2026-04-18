@@ -15,6 +15,7 @@ describe("preCompileMagentoFiles guard", () => {
         let currentHash = "hash-1";
         const precompileJs = vi.fn(async () => {});
         const precompileCss = vi.fn(async () => {});
+        const precompileDts = vi.fn(async () => {});
 
         vi.doMock("#core/configResolver.ts", () => ({
             __esModule: true,
@@ -24,6 +25,7 @@ describe("preCompileMagentoFiles guard", () => {
             __esModule: true,
             precompileJs,
             precompileCss,
+            precompileDts,
         }));
         vi.doMock("node:fs/promises", () => ({
             __esModule: true,
@@ -44,5 +46,6 @@ describe("preCompileMagentoFiles guard", () => {
         expect(precompileJs).toHaveBeenCalledTimes(3); // different theme
 
         expect(precompileCss).toHaveBeenCalledTimes(3);
+        expect(precompileDts).toHaveBeenCalledTimes(3);
     });
 });

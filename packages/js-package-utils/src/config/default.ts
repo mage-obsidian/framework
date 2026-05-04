@@ -16,6 +16,7 @@ export const DEPENDENCY_CONFIG_FILE_PATH = path.resolve(
 );
 
 export const MODULE_WEB_PATH = "view/frontend/web/";
+export const MODULE_TEMPLATES_PATH = "view/frontend/templates";
 export const THEME_MODULE_WEB_PATH = "web/";
 export const MODULE_CSS_FOLDER = "css";
 

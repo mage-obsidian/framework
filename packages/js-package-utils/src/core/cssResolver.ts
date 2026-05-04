@@ -1,6 +1,11 @@
 import themeResolver from "./themeResolverSync.ts";
 import path from "node:path";
-import { MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_MODULE_WEB_PATH } from "../config/default.ts";
+import {
+    MODULE_TEMPLATES_PATH,
+    MODULE_WEB_PATH,
+    THEME_CSS_FOLDER,
+    THEME_MODULE_WEB_PATH,
+} from "../config/default.ts";
 import { resolveFileByTheme, getAllJsVueFilesWithInheritanceCached } from "./moduleResolver.ts";
 import configResolver from "./configResolver.ts";
 import fs from "node:fs/promises";
@@ -45,6 +50,43 @@ function resolveModuleCssSourcePath(moduleName, themeName) {
     return moduleConfigSourcePath;
 }
 
+// Walk the theme -> parent chain emitting a @source for each theme root so
+// Tailwind scans the Twig/phtml templates of every theme in the inheritance
+// chain (a child theme's classes plus everything it inherits unchanged).
+async function getThemeTemplateSources(themeName) {
+    const theme = getThemeDefinition(themeName);
+    if (!theme) return "";
+
+    let sources = "";
+    if (theme.parent) {
+        sources += await getThemeTemplateSources(theme.parent);
+    }
+    sources += `@source "${theme.src}";\n`;
+    return sources;
+}
+
+// Templates (.twig/.phtml) are not auto-scanned by Tailwind in this pipeline
+// (its base path is the Vite root, not the Magento tree), and the engine only
+// emits @source for JS/Vue components. This registers the template dirs of
+// every compatible module plus the whole theme inheritance chain, mirroring how
+// components already resolve module + parent-theme sources.
+async function getTemplateSources(themeName) {
+    let sources = "";
+
+    for (const [, moduleConfig] of getModulesConfigArray()) {
+        const templatesDir = path.join(moduleConfig.src, MODULE_TEMPLATES_PATH);
+        try {
+            await fs.access(templatesDir);
+            sources += `@source "${templatesDir}";\n`;
+        } catch {
+            // module ships no frontend templates
+        }
+    }
+
+    sources += await getThemeTemplateSources(themeName);
+    return sources;
+}
+
 async function getVueComponentsSource(themeName) {
     const vueComponents = await getAllJsVueFilesWithInheritanceCached(themeName);
     // split with @source al inicio
@@ -77,7 +119,10 @@ async function getCssImports(themeName) {
     }
 
     cssImports += await getThemeImports(themeName);
-    return `${cssSource}\n${cssImports}`;
+
+    const templateSources = await getTemplateSources(themeName);
+    return `${cssSource}${templateSources}\n${cssImports}`;
 }
 
 export default getCssImports;
+export { getTemplateSources };

@@ -4,6 +4,8 @@ import {
     mergeSections,
     isSectionStale,
     buildSectionLoadUrl,
+    readCookie,
+    needsHydration,
 } from "../../runtime/customerDataCore.ts";
 
 describe("parseSectionStorage", () => {
@@ -99,9 +101,9 @@ describe("buildSectionLoadUrl", () => {
         );
     });
 
-    it("requests all sections (*) for an empty list", () => {
+    it("omits the sections param for an empty list (Magento returns all; rejects sections=*)", () => {
         expect(buildSectionLoadUrl([])).toBe(
-            "/customer/section/load/?sections=*&force_new_section_timestamp=false"
+            "/customer/section/load/?force_new_section_timestamp=false"
         );
     });
 
@@ -109,5 +111,40 @@ describe("buildSectionLoadUrl", () => {
         expect(buildSectionLoadUrl(["cart"], { baseUrl: "https://shop.test", forceNewTimestamp: true })).toBe(
             "https://shop.test/customer/section/load/?sections=cart&force_new_section_timestamp=true"
         );
+    });
+});
+
+describe("readCookie", () => {
+    it("reads a cookie value by name", () => {
+        expect(readCookie("form_key=abc; private_content_version=v1", "private_content_version")).toBe("v1");
+    });
+
+    it("trims surrounding whitespace and decodes the value", () => {
+        expect(readCookie("a=1; b=%20x%20", "b")).toBe(" x ");
+    });
+
+    it("returns empty string when absent or input is missing", () => {
+        expect(readCookie("a=1", "missing")).toBe("");
+        expect(readCookie("", "a")).toBe("");
+        expect(readCookie(null, "a")).toBe("");
+    });
+});
+
+describe("needsHydration", () => {
+    it("hydrates when nothing is cached yet", () => {
+        expect(needsHydration({}, "v1", "v1")).toBe(true);
+        expect(needsHydration(null, "", "v1")).toBe(true);
+    });
+
+    it("hydrates when the version cookie moved past the synced version", () => {
+        expect(needsHydration({ cart: {} }, "v1", "v2")).toBe(true);
+    });
+
+    it("does not hydrate when the cached version still matches", () => {
+        expect(needsHydration({ cart: {} }, "v2", "v2")).toBe(false);
+    });
+
+    it("does not hydrate when there is no version cookie to compare", () => {
+        expect(needsHydration({ cart: {} }, "v1", "")).toBe(false);
     });
 });

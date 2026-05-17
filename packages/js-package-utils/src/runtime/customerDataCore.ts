@@ -91,7 +91,8 @@ export function isSectionStale(section, lifetimeSeconds, nowSeconds) {
 
 /**
  * Build the `/customer/section/load/` URL Magento uses to (re)load sections.
- * An empty list requests all sections (`*`), mirroring Magento.
+ * An empty list requests ALL sections by omitting the `sections` param —
+ * Magento returns every section then and rejects a literal `sections=*` with 400.
  *
  * @param {Array<string>} sectionNames
  * @param {{ baseUrl?: string, forceNewTimestamp?: boolean }} [options]
@@ -100,11 +101,61 @@ export function isSectionStale(section, lifetimeSeconds, nowSeconds) {
 export function buildSectionLoadUrl(sectionNames, options = {}) {
     const { baseUrl = "/", forceNewTimestamp = false } = options;
     const names = Array.isArray(sectionNames) ? sectionNames.filter(Boolean) : [];
-    const sectionsParam = names.length ? names.join(",") : "*";
     const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 
-    return `${base}customer/section/load/?sections=${sectionsParam}`
-        + `&force_new_section_timestamp=${forceNewTimestamp ? "true" : "false"}`;
+    const params = [];
+    if (names.length) {
+        params.push(`sections=${names.join(",")}`);
+    }
+    params.push(`force_new_section_timestamp=${forceNewTimestamp ? "true" : "false"}`);
+
+    return `${base}customer/section/load/?${params.join("&")}`;
+}
+
+/**
+ * Read a single cookie value from a `document.cookie` string. Returns "" when
+ * the cookie is absent. Kept pure (the store passes `document.cookie` in) so the
+ * private-content-version lookup is testable without a DOM.
+ *
+ * @param {string | null | undefined} cookieString
+ * @param {string} name
+ * @returns {string}
+ */
+export function readCookie(cookieString, name) {
+    if (typeof cookieString !== "string" || cookieString === "" || !name) {
+        return "";
+    }
+    for (const pair of cookieString.split(";")) {
+        const index = pair.indexOf("=");
+        if (index === -1) {
+            continue;
+        }
+        if (pair.slice(0, index).trim() === name) {
+            return decodeURIComponent(pair.slice(index + 1).trim());
+        }
+    }
+    return "";
+}
+
+/**
+ * Whether the store must hydrate sections from the server on init.
+ *
+ * Magento bumps the `private_content_version` cookie whenever a session's
+ * private content changes. This stack does not run Magento's native
+ * customer-data (which would own `localStorage['mage-cache-storage']`), so the
+ * bridge hydrates itself: when nothing is cached yet, or the version cookie has
+ * moved past the last synced version, the cached sections are stale.
+ *
+ * @param {Record<string, unknown> | null | undefined} sections
+ * @param {string} syncedVersion last version we fully synced for
+ * @param {string} currentVersion the private_content_version cookie value
+ * @returns {boolean}
+ */
+export function needsHydration(sections, syncedVersion, currentVersion) {
+    if (!sections || typeof sections !== "object" || Object.keys(sections).length === 0) {
+        return true;
+    }
+    return currentVersion !== "" && currentVersion !== syncedVersion;
 }
 
 /**

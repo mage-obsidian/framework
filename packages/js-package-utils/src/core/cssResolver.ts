@@ -65,21 +65,39 @@ async function getThemeTemplateSources(themeName) {
     return sources;
 }
 
+// Reads the source-scan opt-out: a theme (merged with its parents) lists the
+// modules whose files Tailwind must NOT scan via `ignoredTailwindConfigFromModules`
+// in theme.config.js — an array of module names, or "all" to skip every module.
+// The theme's own files are always scanned.
+async function getScanExclusions(themeName) {
+    const themeConfig = await themeResolver.getThemeConfig(themeName);
+    const ignored = themeConfig?.ignoredTailwindConfigFromModules;
+    return {
+        ignoreAllModules: ignored === "all",
+        excludedModules: new Set(Array.isArray(ignored) ? ignored : []),
+    };
+}
+
 // Templates (.twig/.phtml) are not auto-scanned by Tailwind in this pipeline
 // (its base path is the Vite root, not the Magento tree), and the engine only
 // emits @source for JS/Vue components. This registers the template dirs of
 // every compatible module plus the whole theme inheritance chain, mirroring how
-// components already resolve module + parent-theme sources.
+// components already resolve module + parent-theme sources, and honours the
+// per-module scan opt-out.
 async function getTemplateSources(themeName) {
+    const { ignoreAllModules, excludedModules } = await getScanExclusions(themeName);
     let sources = "";
 
-    for (const [, moduleConfig] of getModulesConfigArray()) {
-        const templatesDir = path.join(moduleConfig.src, MODULE_TEMPLATES_PATH);
-        try {
-            await fs.access(templatesDir);
-            sources += `@source "${templatesDir}";\n`;
-        } catch {
-            // module ships no frontend templates
+    if (!ignoreAllModules) {
+        for (const [moduleName, moduleConfig] of getModulesConfigArray()) {
+            if (excludedModules.has(moduleName)) continue;
+            const templatesDir = path.join(moduleConfig.src, MODULE_TEMPLATES_PATH);
+            try {
+                await fs.access(templatesDir);
+                sources += `@source "${templatesDir}";\n`;
+            } catch {
+                // module ships no frontend templates
+            }
         }
     }
 
@@ -88,11 +106,18 @@ async function getTemplateSources(themeName) {
 }
 
 async function getVueComponentsSource(themeName) {
+    const { ignoreAllModules, excludedModules } = await getScanExclusions(themeName);
     const vueComponents = await getAllJsVueFilesWithInheritanceCached(themeName);
-    // split with @source al inicio
-    const vueComponentSources = Object.entries(vueComponents).map(([, url]) => {
-        return `@source "${url}";\n`;
-    });
+    // Inheritance keys look like "Vendor_Module/components/X" or "Theme/...";
+    // "Theme" entries are the theme's own files and are always scanned.
+    const vueComponentSources = Object.entries(vueComponents)
+        .filter(([key]) => {
+            const owner = key.split("/")[0];
+            if (owner === "Theme") return true;
+            if (ignoreAllModules) return false;
+            return !excludedModules.has(owner);
+        })
+        .map(([, url]) => `@source "${url}";\n`);
     return vueComponentSources.join("");
 }
 

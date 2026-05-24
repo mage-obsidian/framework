@@ -10,10 +10,21 @@
  * plugin (shipped as a module web asset) wraps these primitives.
  */
 
+export interface I18nConfig {
+    locale?: string;
+    dictionaryUrl?: string;
+}
+
+interface I18nScope {
+    __MAGE_OBSIDIAN_I18N__?: I18nConfig;
+}
+
+export type Dictionary = Record<string, string>;
+
 // Published by PHP on the page before the ESM runtime loads.
 declare global {
     interface Window {
-        __MAGE_OBSIDIAN_I18N__?: { locale?: string; dictionaryUrl?: string };
+        __MAGE_OBSIDIAN_I18N__?: I18nConfig;
     }
 }
 
@@ -22,12 +33,8 @@ const PLACEHOLDER = /%(\d+)/g;
 /**
  * Replace `%1`, `%2`, … with positional args. An out-of-range placeholder is
  * left untouched so a malformed phrase never throws or yields "undefined".
- *
- * @param {string} text
- * @param {Array<unknown>} [args]
- * @returns {string}
  */
-export function interpolate(text, args = []) {
+export function interpolate(text: string, args: unknown[] = []): string {
     if (typeof text !== "string" || !args || args.length === 0) {
         return text;
     }
@@ -40,13 +47,12 @@ export function interpolate(text, args = []) {
 /**
  * Translate a phrase against a dictionary, falling back to the phrase itself,
  * then interpolate placeholders.
- *
- * @param {Record<string, string> | null | undefined} dictionary
- * @param {string} phrase
- * @param {Array<unknown>} [args]
- * @returns {string}
  */
-export function translatePhrase(dictionary, phrase, args = []) {
+export function translatePhrase(
+    dictionary: Dictionary | null | undefined,
+    phrase: string,
+    args: unknown[] = [],
+): string {
     const dict = dictionary && typeof dictionary === "object" ? dictionary : {};
     const translated = Object.prototype.hasOwnProperty.call(dict, phrase) ? dict[phrase] : phrase;
     return interpolate(translated, args);
@@ -55,11 +61,10 @@ export function translatePhrase(dictionary, phrase, args = []) {
 /**
  * Read the runtime i18n config published by PHP as `window.__MAGE_OBSIDIAN_I18N__`.
  * Returns sane defaults when absent so the layer degrades to passthrough.
- *
- * @param {{ __MAGE_OBSIDIAN_I18N__?: { locale?: string, dictionaryUrl?: string } }} [scope]
- * @returns {{ locale: string, dictionaryUrl: string | null }}
  */
-export function readI18nConfig(scope = typeof window !== "undefined" ? window : undefined) {
+export function readI18nConfig(
+    scope: I18nScope | undefined = typeof window !== "undefined" ? window : undefined,
+): { locale: string; dictionaryUrl: string | null } {
     const config = scope && scope.__MAGE_OBSIDIAN_I18N__;
     return {
         locale: (config && config.locale) || "en_US",
@@ -67,19 +72,18 @@ export function readI18nConfig(scope = typeof window !== "undefined" ? window : 
     };
 }
 
-const dictionaryCache = new Map();
+const dictionaryCache = new Map<string, Promise<Dictionary>>();
 
 /**
  * Fetch and cache a dictionary by URL. The fetch happens at most once per URL
  * regardless of how many Vue apps request it. Magento emits `[]` for an empty
  * dictionary, which is normalized to `{}`; any failure degrades to `{}` so the
  * UI keeps rendering original phrases.
- *
- * @param {string | null | undefined} url
- * @param {typeof fetch} [fetchImpl]
- * @returns {Promise<Record<string, string>>}
  */
-export function loadDictionary(url, fetchImpl = typeof fetch !== "undefined" ? fetch : undefined) {
+export function loadDictionary(
+    url: string | null | undefined,
+    fetchImpl: typeof fetch | undefined = typeof fetch !== "undefined" ? fetch : undefined,
+): Promise<Dictionary> {
     if (!url) {
         return Promise.resolve({});
     }
@@ -87,18 +91,20 @@ export function loadDictionary(url, fetchImpl = typeof fetch !== "undefined" ? f
         if (typeof fetchImpl !== "function") {
             return Promise.resolve({});
         }
-        const promise = fetchImpl(url)
+        const promise: Promise<Dictionary> = fetchImpl(url)
             .then((res) => (res && res.ok ? res.json() : {}))
-            .then((data) => (data && typeof data === "object" && !Array.isArray(data) ? data : {}))
-            .catch(() => ({}));
+            .then((data: unknown): Dictionary =>
+                data && typeof data === "object" && !Array.isArray(data) ? (data as Dictionary) : {},
+            )
+            .catch((): Dictionary => ({}));
         dictionaryCache.set(url, promise);
     }
-    return dictionaryCache.get(url);
+    return dictionaryCache.get(url)!;
 }
 
 /**
  * Test-only: clear the dictionary cache between cases.
  */
-export function _resetDictionaryCache() {
+export function _resetDictionaryCache(): void {
     dictionaryCache.clear();
 }

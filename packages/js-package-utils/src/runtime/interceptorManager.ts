@@ -1,25 +1,47 @@
+export type InterceptorType = "before" | "around" | "after";
+
+// Handlers receive the intercepted subject first (Magento plugin parity); the
+// remaining shape varies per type, so the tail stays `any[]`.
+export type InterceptorHandler = (subject: any, ...rest: any[]) => any;
+
+export interface InterceptorEntry {
+    name: string;
+    handler: InterceptorHandler;
+    sortOrder: number;
+}
+
+type InterceptorBuckets = Record<InterceptorType, InterceptorEntry[]>;
+
+const TYPES: readonly InterceptorType[] = ["before", "around", "after"];
+
+function emptyBuckets(): InterceptorBuckets {
+    return { before: [], around: [], after: [] };
+}
+
 class InterceptorManager {
     // `declare` keeps this type-only (erasable): the runtime field is created by
     // the constructor assignment below, type-stripping emits nothing for this.
-    declare interceptors: Record<string, Record<string, any[]>>;
+    declare interceptors: Record<string, InterceptorBuckets>;
 
     constructor() {
         this.interceptors = {};
     }
 
     /**
-     * Register an interceptor
-     * @param {string} target - The name of the target function/method to intercept
-     * @param {string} name - Unique name for the interceptor
-     * @param {string} type - 'before', 'around', 'after'
-     * @param {Function} handler - The function to execute
-     * @param {number} sortOrder - Order of execution
+     * Register an interceptor. `target` is the function/method name to wrap;
+     * `name` is a unique id; `sortOrder` controls execution order.
      */
-    addInterceptor(target, name, type, handler, sortOrder = 10) {
+    addInterceptor(
+        target: string,
+        name: string,
+        type: InterceptorType,
+        handler: InterceptorHandler,
+        sortOrder: number = 10,
+    ) {
         if (!this.interceptors[target]) {
-            this.interceptors[target] = { before: [], around: [], after: [] };
+            this.interceptors[target] = emptyBuckets();
         }
-        if (!["before", "around", "after"].includes(type)) {
+        if (!TYPES.includes(type)) {
             throw new Error(`Invalid interceptor type: ${type}`);
         }
         this.interceptors[target][type].push({ name, handler, sortOrder });
@@ -35,14 +57,9 @@ class InterceptorManager {
      * `this` is still bound to the same object, so handlers written against the
      * legacy `this`-based access keep working (arrow functions now have a path
      * to the subject they could not reach via `this`).
-     *
-     * @param {string} target - The target method name
-     * @param {Function} originalMethod - The original function
-     * @param {Object} context - The intercepted module exports (subject + `this`)
-     * @param {Array} args - Arguments passed to the function
      */
-    executeSync(target, originalMethod, context, ...args) {
-        const interceptors = this.interceptors[target] || { before: [], around: [], after: [] };
+    executeSync(target: string, originalMethod: Function, context: any, ...args: any[]): any {
+        const interceptors = this.interceptors[target] || emptyBuckets();
 
         // Execute 'before' interceptors
         for (const interceptor of interceptors.before) {
@@ -53,7 +70,7 @@ class InterceptorManager {
         }
 
         // Execute 'around' interceptors
-        let methodToExecute = (...currentArgs) => {
+        let methodToExecute = (...currentArgs: any[]) => {
             return originalMethod.apply(context, currentArgs);
         };
 
@@ -61,7 +78,7 @@ class InterceptorManager {
             const aroundInterceptors = [...interceptors.around].reverse();
             for (const interceptor of aroundInterceptors) {
                 const next = methodToExecute;
-                methodToExecute = (...currentArgs) => {
+                methodToExecute = (...currentArgs: any[]) => {
                     return interceptor.handler.apply(context, [context, next, ...currentArgs]);
                 };
             }
@@ -83,14 +100,9 @@ class InterceptorManager {
      * Same `subject`-first contract as {@link executeSync}: before(subject,
      * ...args), around(subject, proceed, ...args), after(subject, result,
      * ...args), with `this` still bound to the subject for backward compat.
-     *
-     * @param {string} target - The target method name
-     * @param {Function} originalMethod - The original function
-     * @param {Object} context - The intercepted module exports (subject + `this`)
-     * @param {Array} args - Arguments passed to the function
      */
-    async execute(target, originalMethod, context, ...args) {
-        const interceptors = this.interceptors[target] || { before: [], around: [], after: [] };
+    async execute(target: string, originalMethod: Function, context: any, ...args: any[]): Promise<any> {
+        const interceptors = this.interceptors[target] || emptyBuckets();
 
         // Execute 'before' interceptors
         // Before interceptors receive (subject, ...args) and can modify args by
@@ -104,7 +116,7 @@ class InterceptorManager {
 
         // Execute 'around' interceptors
         // Around interceptors receive (subject, proceed, ...args)
-        let methodToExecute = async (...currentArgs) => {
+        let methodToExecute = async (...currentArgs: any[]) => {
             return await originalMethod.apply(context, currentArgs);
         };
 
@@ -113,7 +125,7 @@ class InterceptorManager {
             const aroundInterceptors = [...interceptors.around].reverse();
             for (const interceptor of aroundInterceptors) {
                 const next = methodToExecute;
-                methodToExecute = async (...currentArgs) => {
+                methodToExecute = async (...currentArgs: any[]) => {
                     return await interceptor.handler.apply(context, [
                         context,
                         next,
@@ -135,17 +147,16 @@ class InterceptorManager {
     }
 
     /**
-     * Create a proxy to intercept method calls on an object
-     * @param {Object} target - The target object (e.g. module exports)
-     * @param {string} namespace - Namespace for interceptors
-     * @param {boolean} useAsync - Whether to use async execution
+     * Create a proxy that intercepts method calls on an object (e.g. module
+     * exports). `namespace` scopes the interceptor keys; `useAsync` picks the
+     * async or sync chain.
      */
-    intercept(target, namespace, useAsync = true) {
+    intercept(target: object, namespace: string, useAsync: boolean = true) {
         return new Proxy(target, {
-            get: (obj, prop) => {
+            get: (obj: any, prop) => {
                 const value = obj[prop];
                 if (typeof value === "function") {
-                    return (...args) => {
+                    return (...args: any[]) => {
                         const method = useAsync ? this.execute : this.executeSync;
                         return method.call(
                             this,

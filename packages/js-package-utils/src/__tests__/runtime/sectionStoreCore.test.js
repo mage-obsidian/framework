@@ -6,7 +6,7 @@ import {
     buildSectionLoadUrl,
     readCookie,
     needsHydration,
-} from "../../runtime/customerDataCore.ts";
+} from "../../runtime/sectionStoreCore.ts";
 
 describe("parseSectionStorage", () => {
     it("parses sections keyed by name", () => {
@@ -95,21 +95,29 @@ describe("isSectionStale", () => {
 });
 
 describe("buildSectionLoadUrl", () => {
+    const ENDPOINT = "customer/section/load/";
+
     it("joins section names and defaults force flag to false", () => {
-        expect(buildSectionLoadUrl(["cart", "customer"])).toBe(
+        expect(buildSectionLoadUrl(ENDPOINT, ["cart", "customer"])).toBe(
             "/customer/section/load/?sections=cart,customer&force_new_section_timestamp=false"
         );
     });
 
-    it("omits the sections param for an empty list (Magento returns all; rejects sections=*)", () => {
-        expect(buildSectionLoadUrl([])).toBe(
+    it("omits the sections param for an empty list (server returns all; rejects sections=*)", () => {
+        expect(buildSectionLoadUrl(ENDPOINT, [])).toBe(
             "/customer/section/load/?force_new_section_timestamp=false"
         );
     });
 
     it("honors a custom base URL and the force flag", () => {
-        expect(buildSectionLoadUrl(["cart"], { baseUrl: "https://shop.test", forceNewTimestamp: true })).toBe(
-            "https://shop.test/customer/section/load/?sections=cart&force_new_section_timestamp=true"
+        expect(
+            buildSectionLoadUrl(ENDPOINT, ["cart"], { baseUrl: "https://shop.test", forceNewTimestamp: true })
+        ).toBe("https://shop.test/customer/section/load/?sections=cart&force_new_section_timestamp=true");
+    });
+
+    it("tolerates a leading slash in the endpoint", () => {
+        expect(buildSectionLoadUrl("/customer/section/load/", ["cart"])).toBe(
+            "/customer/section/load/?sections=cart&force_new_section_timestamp=false"
         );
     });
 });

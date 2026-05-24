@@ -76,11 +76,8 @@ class FrontendDoctorCommand extends Command
         $env = $this->parseEnv();
 
         $contractExists = $this->configManager->hasConfig();
-        $schemaVersion = null;
-        if ($contractExists) {
-            $config = $this->configManager->get();
-            $schemaVersion = $config['schema_version'] ?? null;
-        }
+        $config = $contractExists ? $this->configManager->get() : [];
+        $schemaVersion = $contractExists ? ($config['schema_version'] ?? null) : null;
 
         $devProbe = $this->probeDevServer($hmrEnabled, $env);
 
@@ -96,6 +93,7 @@ class FrontendDoctorCommand extends Command
         // missing-contract case is already reported by evaluateContract above.
         if ($contractExists) {
             $results[] = $this->diagnostics->evaluateDrift($this->configManager->detectDrift());
+            $results[] = $this->diagnostics->evaluateShadowedConfigs($this->findShadowedConfigs($config));
         }
 
         $this->renderResults($io, $results);
@@ -163,6 +161,95 @@ class FrontendDoctorCommand extends Command
         }
 
         return $missing;
+    }
+
+    /**
+     * Walk the module and theme web directories the engine reads config from and
+     * collect any config file present in a build-ignored extension. Mirrors the
+     * engine's resolution sites: module sources (view/frontend/web), theme-level
+     * module overrides (<theme>/<Vendor_Module>/web) and the theme config
+     * (<theme>/web). The shadowing decision itself lives in DevDiagnostics.
+     *
+     * @param array<string, mixed> $config
+     * @return string[]
+     */
+    private function findShadowedConfigs(array $config): array
+    {
+        $moduleConfigFile = is_string($config['MODULE_CONFIG_FILE'] ?? null)
+            ? $config['MODULE_CONFIG_FILE']
+            : ConfigInterface::MODULE_CONFIG_FILE;
+        $themeConfigFile = is_string($config['THEME_CONFIG_FILE'] ?? null)
+            ? $config['THEME_CONFIG_FILE']
+            : ConfigInterface::THEME_CONFIG_FILE;
+
+        $shadows = [];
+
+        foreach (($config['modules'] ?? []) as $module) {
+            $src = $module['src'] ?? null;
+            if (is_string($src)) {
+                $shadows = array_merge(
+                    $shadows,
+                    $this->shadowPathsIn($src . '/view/frontend/web', $moduleConfigFile)
+                );
+            }
+        }
+
+        foreach (($config['themes'] ?? []) as $theme) {
+            $src = $theme['src'] ?? null;
+            if (!is_string($src)) {
+                continue;
+            }
+            $shadows = array_merge($shadows, $this->shadowPathsIn($src . '/web', $themeConfigFile));
+            foreach ($this->themeModuleOverrideDirs($src) as $overrideWebDir) {
+                $shadows = array_merge($shadows, $this->shadowPathsIn($overrideWebDir, $moduleConfigFile));
+            }
+        }
+
+        return array_values(array_unique($shadows));
+    }
+
+    /**
+     * Resolve the ignored config files (full paths) in a single directory.
+     *
+     * @return string[]
+     */
+    private function shadowPathsIn(string $dir, string $expectedFile): array
+    {
+        if (!$this->fileDriver->isExists($dir) || !$this->fileDriver->isDirectory($dir)) {
+            return [];
+        }
+
+        $names = array_map('basename', $this->fileDriver->readDirectory($dir));
+        $shadows = $this->diagnostics->shadowsInDirectory($expectedFile, $names);
+
+        return array_map(static fn (string $name): string => $dir . '/' . $name, $shadows);
+    }
+
+    /**
+     * The <theme>/<Vendor_Module>/web directories that can hold a theme-level
+     * module config override. Module folders follow the Vendor_Module convention
+     * (an underscore), which separates them from the theme's own web/media dirs.
+     *
+     * @return string[]
+     */
+    private function themeModuleOverrideDirs(string $themeSrc): array
+    {
+        if (!$this->fileDriver->isExists($themeSrc) || !$this->fileDriver->isDirectory($themeSrc)) {
+            return [];
+        }
+
+        $dirs = [];
+        foreach ($this->fileDriver->readDirectory($themeSrc) as $entry) {
+            if (!$this->fileDriver->isDirectory($entry) || !str_contains(basename($entry), '_')) {
+                continue;
+            }
+            $webDir = $entry . '/web';
+            if ($this->fileDriver->isExists($webDir) && $this->fileDriver->isDirectory($webDir)) {
+                $dirs[] = $webDir;
+            }
+        }
+
+        return $dirs;
     }
 
     /**

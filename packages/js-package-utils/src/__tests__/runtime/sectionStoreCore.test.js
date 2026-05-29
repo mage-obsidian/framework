@@ -6,6 +6,8 @@ import {
     buildSectionLoadUrl,
     readCookie,
     needsHydration,
+    expiredSectionNames,
+    readSectionRuntimeConfig,
 } from "../../runtime/sectionStoreCore.ts";
 
 describe("parseSectionStorage", () => {
@@ -154,5 +156,55 @@ describe("needsHydration", () => {
 
     it("does not hydrate when there is no version cookie to compare", () => {
         expect(needsHydration({ cart: {} }, "v1", "")).toBe(false);
+    });
+});
+
+describe("expiredSectionNames", () => {
+    const now = 1000;
+
+    it("flags a present, expirable section whose data_id + lifetime has passed", () => {
+        const sections = { cart: { summary_count: 6, data_id: 900 } };
+        expect(expiredSectionNames(sections, 60, ["cart"], now)).toEqual(["cart"]);
+    });
+
+    it("does not flag a section still within its lifetime", () => {
+        const sections = { cart: { summary_count: 6, data_id: 960 } };
+        expect(expiredSectionNames(sections, 60, ["cart"], now)).toEqual([]);
+    });
+
+    it("ignores sections absent from storage (mirrors native lifetime branch)", () => {
+        expect(expiredSectionNames({ customer: { data_id: 1 } }, 60, ["cart"], now)).toEqual([]);
+    });
+
+    it("ignores sections not in the expirable list", () => {
+        const sections = { customer: { data_id: 1 } };
+        expect(expiredSectionNames(sections, 60, ["cart"], now)).toEqual([]);
+    });
+
+    it("returns [] when no lifetime, no expirable names, or no sections", () => {
+        const sections = { cart: { data_id: 1 } };
+        expect(expiredSectionNames(sections, 0, ["cart"], now)).toEqual([]);
+        expect(expiredSectionNames(sections, 60, [], now)).toEqual([]);
+        expect(expiredSectionNames(null, 60, ["cart"], now)).toEqual([]);
+    });
+});
+
+describe("readSectionRuntimeConfig", () => {
+    it("reads the lifetime (seconds) and expirable names from the scope global", () => {
+        const scope = { __MAGE_OBSIDIAN_SECTIONS__: { lifetime: 3600, expirable: ["cart"] } };
+        expect(readSectionRuntimeConfig(scope)).toEqual({
+            lifetimeSeconds: 3600,
+            expirableSections: ["cart"],
+        });
+    });
+
+    it("falls back to a disabled config (lifetime 0, no sections) when the global is absent", () => {
+        expect(readSectionRuntimeConfig({})).toEqual({ lifetimeSeconds: 0, expirableSections: [] });
+        expect(readSectionRuntimeConfig(undefined)).toEqual({ lifetimeSeconds: 0, expirableSections: [] });
+    });
+
+    it("coerces a non-positive or non-numeric lifetime to 0 and keeps only string section names", () => {
+        const scope = { __MAGE_OBSIDIAN_SECTIONS__: { lifetime: "x", expirable: ["cart", 5, null] } };
+        expect(readSectionRuntimeConfig(scope)).toEqual({ lifetimeSeconds: 0, expirableSections: ["cart"] });
     });
 });

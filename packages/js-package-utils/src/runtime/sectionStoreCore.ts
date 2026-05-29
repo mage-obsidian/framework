@@ -20,6 +20,22 @@ export interface SectionLoadOptions {
     forceNewTimestamp?: boolean;
 }
 
+export interface SectionRuntimeConfig {
+    lifetimeSeconds: number;
+    expirableSections: string[];
+}
+
+interface SectionRuntimeScope {
+    __MAGE_OBSIDIAN_SECTIONS__?: { lifetime?: unknown; expirable?: unknown };
+}
+
+// Published by PHP on the page before the ESM runtime loads.
+declare global {
+    interface Window {
+        __MAGE_OBSIDIAN_SECTIONS__?: { lifetime?: unknown; expirable?: unknown };
+    }
+}
+
 /**
  * Parse the raw section-storage JSON into a map of section objects. Tolerates
  * missing/corrupt input and drops non-object section values so the caller
@@ -151,6 +167,57 @@ export function needsHydration(
         return true;
     }
     return currentVersion !== "" && currentVersion !== syncedVersion;
+}
+
+/**
+ * The expirable sections that have aged out and must be re-fetched, mirroring the
+ * lifetime branch of Magento's native `getExpiredSectionNames`: a section listed
+ * in `expirableNames` expires once `data_id + lifetimeSeconds <= now`.
+ *
+ * This is the backstop the version cookie cannot provide: `private_content_version`
+ * only moves on POST, so a section whose server data changed through a non-POST
+ * path the browser took — most commonly the PHP session/quote expiring while
+ * localStorage lives on — is otherwise never re-fetched, leaving a stale snapshot
+ * (e.g. a cart badge that outlives its quote). Absent sections are skipped here,
+ * exactly like native (they reload via the version/empty-cache path instead).
+ */
+export function expiredSectionNames(
+    sections: SectionMap | null | undefined,
+    lifetimeSeconds: number,
+    expirableNames: string[],
+    nowSeconds: number,
+): string[] {
+    if (!Array.isArray(expirableNames) || expirableNames.length === 0) {
+        return [];
+    }
+    const map = sections && typeof sections === "object" ? sections : {};
+    const expired: string[] = [];
+    for (const name of expirableNames) {
+        const section = map[name];
+        if (section && typeof section === "object" && isSectionStale(section, lifetimeSeconds, nowSeconds)) {
+            expired.push(name);
+        }
+    }
+    return expired;
+}
+
+/**
+ * Read the runtime section config a binding's host page publishes (lifetime +
+ * which sections expire by lifetime). Kept pure — the binding passes the scope
+ * (e.g. `window`) — so it is testable without a DOM, like `readI18nConfig`.
+ */
+export function readSectionRuntimeConfig(
+    scope: SectionRuntimeScope | undefined = typeof window !== "undefined" ? window : undefined,
+): SectionRuntimeConfig {
+    const config = scope && scope.__MAGE_OBSIDIAN_SECTIONS__;
+    const lifetime = Number(config && config.lifetime);
+    const expirable = config && config.expirable;
+    return {
+        lifetimeSeconds: Number.isFinite(lifetime) && lifetime > 0 ? lifetime : 0,
+        expirableSections: Array.isArray(expirable)
+            ? expirable.filter((name): name is string => typeof name === "string")
+            : [],
+    };
 }
 
 function pickObjectEntries(value: unknown): SectionMap {

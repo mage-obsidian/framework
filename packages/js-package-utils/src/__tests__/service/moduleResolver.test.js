@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import createMockConfigResolver from "../__mocks__/configResolver.js";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
@@ -278,5 +279,36 @@ describe("getAllJsVueFilesWithInheritance", () => {
         const result = await moduleResolver.getAllJsVueFilesWithInheritance(code);
 
         expect(result).toEqual(expected, `Failed for scenario "${scenario}", theme "${code}"`);
+    });
+});
+
+describe("invalidateTheme", () => {
+    beforeEach(() => {
+        vi.resetModules();
+        vi.restoreAllMocks();
+    });
+
+    // Regression: the cache key joins theme and hash with a NUL separator, but
+    // invalidateTheme once used a space, so its prefix match cleared nothing and
+    // the dev-server watcher kept serving the pre-change inheritance map. Detect a
+    // real recompute by the filesystem re-scan it must perform.
+    test("forces a filesystem re-scan on the next resolution", async () => {
+        vi.doMock("#core/configResolver.ts", () => ({
+            __esModule: true,
+            default: createMockConfigResolver("a").default,
+        }));
+
+        const moduleResolver = (await import("#core/moduleResolver.ts")).default;
+        const code = "Vendor/theme-a";
+
+        await moduleResolver.getAllJsVueFilesWithInheritance(code);
+
+        const readdir = vi.spyOn(fs.promises, "readdir");
+        await moduleResolver.getAllJsVueFilesWithInheritance(code);
+        expect(readdir).not.toHaveBeenCalled(); // served from cache
+
+        moduleResolver.invalidateTheme(code);
+        await moduleResolver.getAllJsVueFilesWithInheritance(code);
+        expect(readdir).toHaveBeenCalled(); // cache cleared -> recomputed from disk
     });
 });

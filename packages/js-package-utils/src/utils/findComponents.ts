@@ -38,7 +38,10 @@ async function getFilesFromFolders(moduleName, moduleDir, directories) {
                     );
                 } else if (
                     entry.isFile() &&
-                    (entry.name.endsWith(".vue") || entry.name.endsWith(".js"))
+                    (entry.name.endsWith(".vue") || entry.name.endsWith(".js")) &&
+                    // Skip co-located unit tests/specs so test-only deps
+                    // (e.g. @vue/test-utils) never leak into the build.
+                    !/\.(test|spec)\.[jt]sx?$/.test(entry.name)
                 ) {
                     const fileName = path.parse(entry.name).name;
                     let key = baseDir === "" ? fileName : `${baseDir}/${fileName}`;

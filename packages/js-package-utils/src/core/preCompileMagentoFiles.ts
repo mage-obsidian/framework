@@ -1,6 +1,6 @@
 import path from "node:path";
 import fs from "node:fs/promises";
-import { precompileCss, precompileJs, precompileDts } from "./preCompileFiles.ts";
+import { precompileCss, precompileJs, precompileJsconfig } from "./preCompileFiles.ts";
 import configResolver from "./configResolver.ts";
 import { PRECOMPILED_FOLDER } from "../config/default.ts";
 
@@ -23,6 +23,6 @@ export default async (themeName) => {
     await fs.mkdir(themeDir, { recursive: true });
     await precompileJs(themeName);
     await precompileCss(themeName);
-    await precompileDts(themeName);
+    await precompileJsconfig(themeName);
     precompiledByTheme.set(themeName, contractHash);
 };

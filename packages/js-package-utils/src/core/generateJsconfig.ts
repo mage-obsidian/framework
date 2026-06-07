@@ -46,7 +46,7 @@ function nodeModulesWildcard(map: Array<[string, string]>): string {
  * directly to its real source file, so Ctrl+click jumps straight there and a
  * typo surfaces as an unresolved import. Derived from the same inheritance cache
  * the resolver uses, so the declared set matches exactly what the build resolves
- * (only `.js`/`.vue` — assets are not in the cache). A `"*"` wildcard adds npm
+ * (`.ts`/`.js`/`.vue` — assets are not in the cache). A `"*"` wildcard adds npm
  * package resolution from the harness node_modules.
  */
 export default async function generateJsconfigPaths(
@@ -98,7 +98,7 @@ function buildThemeJsconfig(paths: Record<string, string[]>): string {
             moduleResolution: "bundler",
             paths,
         },
-        include: ["**/*.js", "**/*.vue"],
+        include: ["**/*.ts", "**/*.js", "**/*.vue"],
         exclude: ["**/generated/**", "node_modules"],
     };
     const header = `${GENERATED_MARKER} — do not edit. Refreshed on every build and live in dev.\n`;

@@ -13,11 +13,11 @@ import deepmerge from "deepmerge";
 const defaultFoldersToMap = [
     {
         src: configResolver.getMagentoConfig().VUE_COMPONENTS_PATH,
-        ext: ["vue", "js"],
+        ext: ["vue", "ts", "js"],
     },
     {
         src: configResolver.getMagentoConfig().JS_PATH,
-        ext: ["js"],
+        ext: ["ts", "js"],
     },
 ];
 

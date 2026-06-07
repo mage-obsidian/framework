@@ -2,8 +2,9 @@ import fs from "fs";
 import path from "path";
 
 /**
- * Recursively searches for `.vue` and `.js` files in the `components` directory
- * of a given module and organizes them into an object.
+ * Recursively searches a module's source folders for component files — matched by
+ * the extensions each folder declares (`directory.ext`) — and organizes them into
+ * an object.
  *
  * @param {string} moduleName - The name of the module to associate the files with.
  * @param moduleDir
@@ -16,8 +17,6 @@ import path from "path";
  */
 async function getFilesFromFolders(moduleName, moduleDir, directories) {
     const componentsDir = path.resolve(moduleDir);
-    // TODO: extArr (directory.ext) is threaded through but the extension check
-    // below is hardcoded to .vue/.js; reconcile in a dedicated fix.
     // oxlint-disable-next-line only-used-in-recursion
     const getFilesFromFolderWithExt = async (dir, folderToSearch, extArr, baseDir = "") => {
         // console.log(moduleName, dir, folderToSearch, extArr, baseDir = "");
@@ -38,7 +37,7 @@ async function getFilesFromFolders(moduleName, moduleDir, directories) {
                     );
                 } else if (
                     entry.isFile() &&
-                    (entry.name.endsWith(".vue") || entry.name.endsWith(".js")) &&
+                    extArr.some((ext) => entry.name.endsWith(`.${ext}`)) &&
                     // Skip co-located unit tests/specs so test-only deps
                     // (e.g. @vue/test-utils) never leak into the build.
                     !/\.(test|spec)\.[jt]sx?$/.test(entry.name)

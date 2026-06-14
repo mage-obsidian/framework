@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import configResolver from "../core/configResolver.ts";
+import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
 import runWithConcurrency from "../utils/runWithConcurrency.ts";
 import dotenv from "dotenv";
 dotenv.config();
@@ -15,7 +16,8 @@ const program = new Command();
 
 program
     .option("--theme <theme>", "Specify the active theme")
-    .option("--dev-server", "Run the development server for a specific theme");
+    .option("--dev-server", "Run the development server for a specific theme")
+    .option("--typecheck", "Type-check theme sources with vue-tsc instead of building");
 
 program.parse(process.argv);
 
@@ -156,6 +158,64 @@ const buildThemes = async (themeNames) => {
     }
 };
 
+/**
+ * Type-check one assembled theme with vue-tsc. The theme's generated
+ * tsconfig.typecheck.json (materialized by precompile) carries the full
+ * `Vendor_Module::` paths, so every cross-module seam resolves. vue-tsc (not
+ * plain tsc) is required to check inside `<script setup lang="ts">` SFCs. Output
+ * is buffered and printed as a labeled block; never rejects — failures surface
+ * via the exit code so sibling themes still run.
+ *
+ * @param {string} themeName
+ * @returns {Promise<{ themeName: string, code: number }>}
+ */
+const spawnTypecheck = (themeName) =>
+    new Promise<{ themeName: string; code: number }>((resolve) => {
+        const themeDefinition = configResolver.getThemeDefinition(themeName);
+        const tsconfigPath = path.join(themeDefinition.src, "tsconfig.typecheck.json");
+        const child = spawn(`vue-tsc --noEmit -p "${tsconfigPath}"`, {
+            shell: true,
+            env: { ...process.env, CURRENT_THEME: themeName },
+        });
+        const chunks = [];
+        child.stdout.on("data", (data) => chunks.push(data));
+        child.stderr.on("data", (data) => chunks.push(data));
+        const finish = (code) => {
+            console.log(chalk.cyan(`\n=== ${themeName} (typecheck) ===`));
+            process.stdout.write(Buffer.concat(chunks).toString());
+            if (code === 0) {
+                console.log(chalk.green(`✓ ${themeName} type-checks`));
+            } else {
+                console.error(chalk.red(`✗ ${themeName} has type errors (exit ${code})`));
+            }
+            resolve({ themeName, code });
+        };
+        child.on("close", finish);
+        child.on("error", (error) => {
+            chunks.push(Buffer.from(String(error?.stack ?? error)));
+            finish(1);
+        });
+    });
+
+const typecheckThemes = async (themeNames) => {
+    // Materialize each theme's tsconfig.typecheck.json + inheritance map in-process
+    // (idempotent, cached by contract hash) before spawning vue-tsc against it.
+    for (const themeName of themeNames) {
+        await preCompileMagentoFiles(themeName);
+    }
+    console.log(chalk.cyan(`Type-checking ${themeNames.length} theme(s): ${themeNames.join(", ")}`));
+
+    const results = await runWithConcurrency(themeNames, (themeName) => spawnTypecheck(themeName), 1);
+
+    const failed = results.filter((result) => result.code !== 0);
+    if (failed.length > 0) {
+        console.error(
+            chalk.red(`Type check failed for: ${failed.map((r) => r.themeName).join(", ")}`),
+        );
+        process.exit(1);
+    }
+};
+
 const runDevServer = (themeName) => {
     console.log(chalk.cyan(`Starting development server for theme: ${themeName}`));
     try {
@@ -189,5 +249,9 @@ if (options.devServer) {
         console.error(chalk.red(`Theme "${theme}" does not exist.`));
         process.exit(1);
     }
-    await buildThemes(themeNames);
+    if (options.typecheck) {
+        await typecheckThemes(themeNames);
+    } else {
+        await buildThemes(themeNames);
+    }
 }

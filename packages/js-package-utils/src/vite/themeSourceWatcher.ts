@@ -1,10 +1,10 @@
 import path from "node:path";
 import configResolver from "../core/configResolver.ts";
 import moduleResolver from "../core/moduleResolver.ts";
-import { precompileJs, precompileJsconfig } from "../core/preCompileFiles.ts";
+import { precompileJs, precompileJsconfig, precompileTsconfig } from "../core/preCompileFiles.ts";
 import { MODULE_WEB_PATH } from "../config/default.ts";
 
-const SOURCE_EXT = /\.(vue|js)$/;
+const SOURCE_EXT = /\.(vue|ts|js)$/;
 // Build output and engine scratch live under the watched trees but are not
 // authored sources — reacting to them would loop (we write them ourselves).
 const IGNORED = /[/\\](generated|\.precompiled|node_modules)[/\\]/;
@@ -12,7 +12,7 @@ const DEBOUNCE_MS = 150;
 
 // The source roots whose structure feeds the inheritance map: every opted-in
 // module's web dir plus the theme and its parent chain. Adding/removing a
-// `.vue`/`.js` under these changes what `Vendor_Module::` can resolve.
+// `.vue`/`.ts`/`.js` under these changes what `Vendor_Module::` can resolve.
 function collectWatchDirs(themeName) {
     const dirs = new Set();
     for (const [, definition] of configResolver.getModulesConfigArray()) {
@@ -62,6 +62,7 @@ export default function themeSourceWatcher(themeName) {
                     moduleResolver.invalidateTheme(themeName);
                     await precompileJs(themeName);
                     await precompileJsconfig(themeName);
+                    await precompileTsconfig(themeName);
                     server.config.logger.info(
                         `[mage-obsidian] sources changed — refreshed ${themeName} import resolution`,
                     );

@@ -16,6 +16,7 @@ describe("preCompileMagentoFiles guard", () => {
         const precompileJs = vi.fn(async () => {});
         const precompileCss = vi.fn(async () => {});
         const precompileJsconfig = vi.fn(async () => {});
+        const precompileTsconfig = vi.fn(async () => {});
 
         vi.doMock("#core/configResolver.ts", () => ({
             __esModule: true,
@@ -26,6 +27,7 @@ describe("preCompileMagentoFiles guard", () => {
             precompileJs,
             precompileCss,
             precompileJsconfig,
+            precompileTsconfig,
         }));
         vi.doMock("node:fs/promises", () => ({
             __esModule: true,
@@ -47,5 +49,6 @@ describe("preCompileMagentoFiles guard", () => {
 
         expect(precompileCss).toHaveBeenCalledTimes(3);
         expect(precompileJsconfig).toHaveBeenCalledTimes(3);
+        expect(precompileTsconfig).toHaveBeenCalledTimes(3);
     });
 });

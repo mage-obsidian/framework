@@ -59,6 +59,14 @@ describe("generateJsconfigPaths", () => {
         expect(result["*"]).toEqual([path.join(process.cwd(), "node_modules", "*")]);
     });
 
+    test("maps engine subpath imports through the package src (more specific than *)", async () => {
+        mockFiles({});
+        const result = await paths();
+        expect(result["mage-obsidian/*"]).toEqual([
+            path.join(process.cwd(), "node_modules", "mage-obsidian", "src", "*"),
+        ]);
+    });
+
     test("prefers the most specific remap prefix regardless of declaration order", async () => {
         // The broad mount is declared first, but the nested vite mount must win
         // for paths under it.

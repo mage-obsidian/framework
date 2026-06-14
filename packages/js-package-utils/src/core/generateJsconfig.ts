@@ -40,6 +40,18 @@ function nodeModulesWildcard(map: Array<[string, string]>): string {
     return path.join(remapPath(path.resolve(process.cwd(), "node_modules"), map), "*");
 }
 
+// Engine subpath imports (`mage-obsidian/runtime/*`, `/service/*`, …) route
+// through the package's `exports` (`./runtime/*` → `./src/runtime/*`), which the
+// bare `"*"` wildcard's literal substitution would miss — it would look under the
+// package root, not `src/`. A more-specific `mage-obsidian/*` → `src/*` pattern
+// resolves them (TS prefers the longer match over `"*"`).
+function engineSrcWildcard(map: Array<[string, string]>): string {
+    return path.join(
+        remapPath(path.resolve(process.cwd(), "node_modules", "mage-obsidian", "src"), map),
+        "*",
+    );
+}
+
 /**
  * Build the `compilerOptions.paths` map that makes the framework's
  * `Vendor_Module::` import specifiers first-class for the editor: each maps
@@ -51,14 +63,19 @@ function nodeModulesWildcard(map: Array<[string, string]>): string {
  */
 export default async function generateJsconfigPaths(
     themeName: string,
+    options: { remap?: boolean } = {},
 ): Promise<Record<string, string[]>> {
     const files = (await moduleResolver.getAllJsVueFilesWithInheritance(themeName)) as Record<
         string,
         string
     >;
-    const map = parsePathMap(process.env.MAGE_OBSIDIAN_TYPES_PATH_MAP);
+    // The editor jsconfig remaps container paths to the host mount so go-to-def
+    // lands on the files the editor opens. The typecheck gate runs where the build
+    // runs (same filesystem as the sources), so it opts out and keeps real paths.
+    const map = options.remap === false ? [] : parsePathMap(process.env.MAGE_OBSIDIAN_TYPES_PATH_MAP);
 
     const paths: Record<string, string[]> = {
+        "mage-obsidian/*": [engineSrcWildcard(map)],
         "*": [nodeModulesWildcard(map)],
     };
 
@@ -105,4 +122,46 @@ function buildThemeJsconfig(paths: Record<string, string[]>): string {
     return `${header}${JSON.stringify(jsconfig, null, 4)}\n`;
 }
 
-export { buildThemeJsconfig, GENERATED_MARKER };
+/**
+ * Wrap a `paths` map in the theme's typecheck tsconfig — the CI/build gate run by
+ * `vue-tsc --noEmit`. Distinct from the editor `jsconfig.json` (same dir) on
+ * purpose: it is NOT named `tsconfig.json`, so the editor's auto-discovery keeps
+ * using the jsconfig while this file is consumed only via an explicit `-p`. It is
+ * the one context where every `Vendor_Module::` resolves to its real source (the
+ * `paths` are the same map the build resolves through), so cross-module type
+ * seams are actually verified.
+ *
+ * `allowImportingTsExtensions` is required because engine imports use explicit
+ * `.ts` specifiers; it in turn requires `noEmit`. `allowJs`/`checkJs:false` keep
+ * not-yet-migrated `.js` in the graph (resolvable) without type-checking them, so
+ * a half-migrated tree still passes. `lib` carries DOM because the storefront
+ * code touches `document`/`window`/`fetch`/`localStorage`.
+ *
+ * `files` is the exact assembled set the build bundles (the inheritance-resolved
+ * absolute paths), not a recursive theme-relative glob: module sources live
+ * outside the theme dir, so such a glob would silently check nothing. Listing
+ * them explicitly is what makes the gate type-check every module/override file.
+ */
+function buildThemeTsconfig(paths: Record<string, string[]>, files: string[]): string {
+    const tsconfig = {
+        compilerOptions: {
+            noEmit: true,
+            allowImportingTsExtensions: true,
+            module: "esnext",
+            moduleResolution: "bundler",
+            target: "esnext",
+            lib: ["ESNext", "DOM", "DOM.Iterable"],
+            allowJs: true,
+            checkJs: false,
+            skipLibCheck: true,
+            strict: false,
+            paths,
+        },
+        files,
+        exclude: ["**/generated/**", "node_modules"],
+    };
+    const header = `${GENERATED_MARKER} — typecheck gate (vue-tsc). Build-managed; do not edit.\n`;
+    return `${header}${JSON.stringify(tsconfig, null, 4)}\n`;
+}
+
+export { buildThemeJsconfig, buildThemeTsconfig, GENERATED_MARKER };

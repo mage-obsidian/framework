@@ -6,6 +6,7 @@ import {
     buildSectionLoadUrl,
     readCookie,
     needsHydration,
+    sessionInvalidated,
     expiredSectionNames,
     readSectionRuntimeConfig,
 } from "../../runtime/sectionStoreCore.ts";
@@ -156,6 +157,21 @@ describe("needsHydration", () => {
 
     it("does not hydrate when there is no version cookie to compare", () => {
         expect(needsHydration({ cart: {} }, "v1", "")).toBe(false);
+    });
+});
+
+describe("sessionInvalidated", () => {
+    it("invalidates when the marker cookie is gone (login/logout deleted it)", () => {
+        expect(sessionInvalidated("private_content_version=v1", "mage-cache-sessid")).toBe(true);
+        expect(sessionInvalidated("", "mage-cache-sessid")).toBe(true);
+    });
+
+    it("does not invalidate while the marker cookie is present", () => {
+        expect(sessionInvalidated("mage-cache-sessid=1; x=2", "mage-cache-sessid")).toBe(false);
+    });
+
+    it("is disabled when no marker cookie is configured", () => {
+        expect(sessionInvalidated("", "")).toBe(false);
     });
 });
 

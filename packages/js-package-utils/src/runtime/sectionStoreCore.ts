@@ -170,6 +170,21 @@ export function needsHydration(
 }
 
 /**
+ * True when the session marker cookie is gone. Magento's login/logout controllers
+ * delete it server-side, so its absence means cached sections are stale (the
+ * version cookie doesn't move on logout). False when no marker is configured.
+ */
+export function sessionInvalidated(
+    cookieString: string | null | undefined,
+    sessionCookieName: string,
+): boolean {
+    if (!sessionCookieName) {
+        return false;
+    }
+    return readCookie(cookieString, sessionCookieName) === "";
+}
+
+/**
  * The expirable sections that have aged out and must be re-fetched, mirroring the
  * lifetime branch of Magento's native `getExpiredSectionNames`: a section listed
  * in `expirableNames` expires once `data_id + lifetimeSeconds <= now`.

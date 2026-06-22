@@ -58,7 +58,7 @@ class InterceptorManager {
      * legacy `this`-based access keep working (arrow functions now have a path
      * to the subject they could not reach via `this`).
      */
-    executeSync(target: string, originalMethod: Function, context: any, ...args: any[]): any {
+    executeSync(target: string, originalMethod: (...args: any[]) => any, context: any, ...args: any[]): any {
         const interceptors = this.interceptors[target] || emptyBuckets();
 
         // Execute 'before' interceptors
@@ -101,7 +101,7 @@ class InterceptorManager {
      * ...args), around(subject, proceed, ...args), after(subject, result,
      * ...args), with `this` still bound to the subject for backward compat.
      */
-    async execute(target: string, originalMethod: Function, context: any, ...args: any[]): Promise<any> {
+    async execute(target: string, originalMethod: (...args: any[]) => any, context: any, ...args: any[]): Promise<any> {
         const interceptors = this.interceptors[target] || emptyBuckets();
 
         // Execute 'before' interceptors

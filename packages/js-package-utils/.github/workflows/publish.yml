@@ -32,5 +32,8 @@ jobs:
             - name: Install dependencies
               run: pnpm install
 
+            - name: Build distribution
+              run: pnpm build
+
             - name: Publish to npm
               run: pnpm publish --no-git-checks

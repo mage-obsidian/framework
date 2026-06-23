@@ -129,7 +129,9 @@ describe("i18n facade", () => {
     });
 
     it("passes the phrase through before the dictionary resolves", () => {
-        globalThis.window = { __MAGE_OBSIDIAN_I18N__: { locale: "es_ES", dictionaryUrl: "/d.json" } };
+        globalThis.window = {
+            __MAGE_OBSIDIAN_I18N__: { locale: "es_ES", dictionaryUrl: "/d.json" },
+        };
         globalThis.fetch = vi
             .fn()
             .mockResolvedValue({ ok: true, json: () => Promise.resolve(dict) });
@@ -137,7 +139,9 @@ describe("i18n facade", () => {
     });
 
     it("translates and interpolates once the dictionary loads, fetching once", async () => {
-        globalThis.window = { __MAGE_OBSIDIAN_I18N__: { locale: "es_ES", dictionaryUrl: "/d.json" } };
+        globalThis.window = {
+            __MAGE_OBSIDIAN_I18N__: { locale: "es_ES", dictionaryUrl: "/d.json" },
+        };
         const fetchImpl = vi
             .fn()
             .mockResolvedValue({ ok: true, json: () => Promise.resolve(dict) });

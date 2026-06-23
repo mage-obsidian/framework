@@ -1,1 +1,3 @@
 node_modules/
+# Build output (published to npm, not committed)
+dist/

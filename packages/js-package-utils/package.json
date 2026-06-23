@@ -1,13 +1,19 @@
 {
     "name": "mage-obsidian",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Mage Obsidian Ultis",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/mage-obsidian/js-package-utils.git"
     },
-    "main": "./src/cli/buildThemes.ts",
+    "main": "./dist/cli/buildThemes.js",
+    "types": "./dist/cli/buildThemes.d.ts",
+    "files": [
+        "dist"
+    ],
     "scripts": {
+        "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+        "prepublishOnly": "npm run build",
         "test": "vitest run",
         "test:watch": "vitest",
         "typecheck": "tsc --noEmit",
@@ -25,7 +31,7 @@
     "license": "MIT",
     "type": "module",
     "bin": {
-        "mage-obsidian:build-themes": "./src/cli/buildThemes.ts"
+        "mage-obsidian:build-themes": "./dist/cli/buildThemes.js"
     },
     "imports": {
         "#core/*": "./src/core/*",
@@ -36,13 +42,58 @@
         "#config/*": "./src/config/*"
     },
     "exports": {
-        ".": "./src/cli/buildThemes.ts",
-        "./core/*": "./src/core/*",
-        "./vite/*": "./src/vite/*",
-        "./runtime/*": "./src/runtime/*",
-        "./cli/*": "./src/cli/*",
-        "./utils/*": "./src/utils/*",
-        "./config/*": "./src/config/*"
+        ".": {
+            "types": "./dist/cli/buildThemes.d.ts",
+            "default": "./dist/cli/buildThemes.js"
+        },
+        "./core/*.ts": {
+            "types": "./dist/core/*.d.ts",
+            "default": "./dist/core/*.js"
+        },
+        "./core/*": {
+            "types": "./dist/core/*.d.ts",
+            "default": "./dist/core/*.js"
+        },
+        "./vite/*.ts": {
+            "types": "./dist/vite/*.d.ts",
+            "default": "./dist/vite/*.js"
+        },
+        "./vite/*": {
+            "types": "./dist/vite/*.d.ts",
+            "default": "./dist/vite/*.js"
+        },
+        "./runtime/*.ts": {
+            "types": "./dist/runtime/*.d.ts",
+            "default": "./dist/runtime/*.js"
+        },
+        "./runtime/*": {
+            "types": "./dist/runtime/*.d.ts",
+            "default": "./dist/runtime/*.js"
+        },
+        "./cli/*.ts": {
+            "types": "./dist/cli/*.d.ts",
+            "default": "./dist/cli/*.js"
+        },
+        "./cli/*": {
+            "types": "./dist/cli/*.d.ts",
+            "default": "./dist/cli/*.js"
+        },
+        "./utils/*.ts": {
+            "types": "./dist/utils/*.d.ts",
+            "default": "./dist/utils/*.js"
+        },
+        "./utils/*": {
+            "types": "./dist/utils/*.d.ts",
+            "default": "./dist/utils/*.js"
+        },
+        "./config/*.ts": {
+            "types": "./dist/config/*.d.ts",
+            "default": "./dist/config/*.js"
+        },
+        "./config/*": {
+            "types": "./dist/config/*.d.ts",
+            "default": "./dist/config/*.js"
+        }
     },
     "dependencies": {
         "chalk": "^5.4.1",

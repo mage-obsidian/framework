@@ -2,6 +2,10 @@
     "name": "mage-obsidian",
     "version": "2.0.0",
     "description": "Mage Obsidian Ultis",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mage-obsidian/js-package-utils.git"
+    },
     "main": "./src/cli/buildThemes.ts",
     "scripts": {
         "test": "vitest run",

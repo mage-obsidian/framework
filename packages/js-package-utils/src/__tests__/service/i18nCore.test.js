@@ -4,7 +4,9 @@ import {
     translatePhrase,
     readI18nConfig,
     loadDictionary,
+    i18n,
     _resetDictionaryCache,
+    _resetI18nFacade,
 } from "../../runtime/i18nCore.ts";
 
 describe("interpolate", () => {
@@ -102,5 +104,55 @@ describe("loadDictionary", () => {
     it("degrades to {} when fetch rejects", async () => {
         const fetchImpl = vi.fn().mockRejectedValue(new Error("network"));
         await expect(loadDictionary("/boom.json", fetchImpl)).resolves.toEqual({});
+    });
+});
+
+describe("i18n facade", () => {
+    const dict = { "Added to cart": "Producto agregado", "Remove %1": "Quitar %1" };
+    let originalWindow;
+    let originalFetch;
+
+    beforeEach(() => {
+        _resetDictionaryCache();
+        _resetI18nFacade();
+        originalWindow = globalThis.window;
+        originalFetch = globalThis.fetch;
+    });
+
+    afterEach(() => {
+        globalThis.window = originalWindow;
+        globalThis.fetch = originalFetch;
+    });
+
+    it("exposes $t as a method so the call token survives minification", () => {
+        expect(typeof i18n.$t).toBe("function");
+    });
+
+    it("passes the phrase through before the dictionary resolves", () => {
+        globalThis.window = { __MAGE_OBSIDIAN_I18N__: { locale: "es_ES", dictionaryUrl: "/d.json" } };
+        globalThis.fetch = vi
+            .fn()
+            .mockResolvedValue({ ok: true, json: () => Promise.resolve(dict) });
+        expect(i18n.$t("Added to cart")).toBe("Added to cart");
+    });
+
+    it("translates and interpolates once the dictionary loads, fetching once", async () => {
+        globalThis.window = { __MAGE_OBSIDIAN_I18N__: { locale: "es_ES", dictionaryUrl: "/d.json" } };
+        const fetchImpl = vi
+            .fn()
+            .mockResolvedValue({ ok: true, json: () => Promise.resolve(dict) });
+        globalThis.fetch = fetchImpl;
+
+        i18n.$t("Added to cart"); // first call kicks the one-shot load
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(i18n.$t("Added to cart")).toBe("Producto agregado");
+        expect(i18n.$t("Remove %1", "boots")).toBe("Quitar boots");
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+
+    it("degrades to passthrough when no config is published", () => {
+        globalThis.window = {};
+        expect(i18n.$t("Added to cart")).toBe("Added to cart");
     });
 });

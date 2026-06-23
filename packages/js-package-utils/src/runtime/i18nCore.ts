@@ -111,3 +111,41 @@ export function loadDictionary(
 export function _resetDictionaryCache(): void {
     dictionaryCache.clear();
 }
+
+let facadeDictionary: Dictionary = {};
+let facadeLoadStarted = false;
+
+function ensureFacadeDictionary(): void {
+    if (facadeLoadStarted) {
+        return;
+    }
+    facadeLoadStarted = true;
+    const { dictionaryUrl } = readI18nConfig();
+    loadDictionary(dictionaryUrl).then((loaded) => {
+        facadeDictionary = loaded;
+    });
+}
+
+/**
+ * i18n facade for plain (non-Vue) ESM enhancers. Translation is exposed as a
+ * `$t` METHOD on purpose: minifiers preserve property names, so the compiled
+ * bundle keeps the literal `$t("…")` call that Magento's native JS translation
+ * scanner discovers (`Magento\Translation\Model\Js\Config`). A bare imported
+ * function would be renamed to a single letter and the phrase would never reach
+ * `js-translation.json`. The dictionary loads once (shared cache with the Vue
+ * runtime) and translation degrades to the original phrase until it resolves.
+ */
+export const i18n = {
+    $t(phrase: string, ...args: unknown[]): string {
+        ensureFacadeDictionary();
+        return translatePhrase(facadeDictionary, phrase, args);
+    },
+};
+
+/**
+ * Test-only: reset the facade dictionary state between cases.
+ */
+export function _resetI18nFacade(): void {
+    facadeDictionary = {};
+    facadeLoadStarted = false;
+}

@@ -63,7 +63,7 @@ describe("generateJsconfigPaths", () => {
         mockFiles({});
         const result = await paths();
         expect(result["mage-obsidian/*"]).toEqual([
-            path.join(process.cwd(), "node_modules", "mage-obsidian", "src", "*"),
+            path.join(process.cwd(), "node_modules", "mage-obsidian", "dist", "*"),
         ]);
     });
 

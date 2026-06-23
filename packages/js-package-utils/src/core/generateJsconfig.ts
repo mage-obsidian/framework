@@ -41,13 +41,14 @@ function nodeModulesWildcard(map: Array<[string, string]>): string {
 }
 
 // Engine subpath imports (`mage-obsidian/runtime/*`, `/service/*`, …) route
-// through the package's `exports` (`./runtime/*` → `./src/runtime/*`), which the
+// through the package's `exports` (`./runtime/*` → `./dist/runtime/*`), which the
 // bare `"*"` wildcard's literal substitution would miss — it would look under the
-// package root, not `src/`. A more-specific `mage-obsidian/*` → `src/*` pattern
-// resolves them (TS prefers the longer match over `"*"`).
+// package root, not `dist/`. A more-specific `mage-obsidian/*` → `dist/*` pattern
+// resolves them (TS prefers the longer match over `"*"`). The published package
+// ships compiled JS plus `.d.ts`, so the editor reads types from `dist/`.
 function engineSrcWildcard(map: Array<[string, string]>): string {
     return path.join(
-        remapPath(path.resolve(process.cwd(), "node_modules", "mage-obsidian", "src"), map),
+        remapPath(path.resolve(process.cwd(), "node_modules", "mage-obsidian", "dist"), map),
         "*",
     );
 }

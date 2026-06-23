@@ -24,10 +24,12 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Collects `$t('...')` phrases from the `.vue` sources of every compatible
- * module/theme and merges them into the standard Magento `i18n/<locale>.csv`
- * dictionary of each component. New phrases default to themselves so they reach
- * `js-translation.json` through the native deploy once translated.
+ * Collects `$t('...')` phrases from the `.vue`/`.ts`/`.js` sources of every
+ * compatible module/theme and merges them into the standard Magento
+ * `i18n/<locale>.csv` dictionary of each component. New phrases default to
+ * themselves so they reach `js-translation.json` through the native deploy once
+ * translated. Plain ESM enhancers translate via the framework i18n facade
+ * (`i18n.$t('...')`), the same call signature scanned here.
  */
 class I18nCollectCommand extends Command
 {
@@ -47,7 +49,7 @@ class I18nCollectCommand extends Command
     protected function configure(): void
     {
         $this->setName('mage-obsidian:i18n:collect')
-            ->setDescription('Collect translatable $t() phrases from .vue files into each component i18n CSV.')
+            ->setDescription('Collect translatable $t() phrases from .vue/.ts/.js into each component i18n CSV.')
             ->addOption(
                 self::OPTION_LOCALE,
                 null,
@@ -89,7 +91,7 @@ class I18nCollectCommand extends Command
             }
 
             if ($rows === []) {
-                $io->warning('No $t() phrases found in any .vue source.');
+                $io->warning('No $t() phrases found in any .vue/.ts/.js source.');
                 return Command::SUCCESS;
             }
 
@@ -127,7 +129,8 @@ class I18nCollectCommand extends Command
     }
 
     /**
-     * Extract the unique phrases from every `.vue` file under a component root.
+     * Extract the unique phrases from every scannable source under a component
+     * root (`.vue`/`.ts`/`.js`).
      *
      * @param string $root
      * @return string[]
@@ -141,10 +144,7 @@ class I18nCollectCommand extends Command
 
         $phrases = [];
         foreach ($this->fileDriver->readDirectoryRecursively($root) as $path) {
-            if (!str_ends_with($path, '.vue')
-                || str_contains($path, '/generated/')
-                || str_contains($path, '/node_modules/')
-            ) {
+            if (!$this->isScannableSource((string)$path)) {
                 continue;
             }
             foreach ($this->extractor->extractFromString($this->fileDriver->fileGetContents($path)) as $phrase) {
@@ -155,6 +155,32 @@ class I18nCollectCommand extends Command
         }
 
         return $phrases;
+    }
+
+    /**
+     * Whether a path is a translatable front-end source. Covers `.vue` and plain
+     * ESM (`.ts`/`.js`), but skips build output, dependencies, type declarations
+     * and test files so fixtures never leak into the shipped dictionaries.
+     *
+     * @param string $path
+     * @return bool
+     */
+    private function isScannableSource(string $path): bool
+    {
+        if (str_contains($path, '/generated/') || str_contains($path, '/node_modules/')) {
+            return false;
+        }
+        if (str_ends_with($path, '.d.ts')
+            || str_ends_with($path, '.test.ts')
+            || str_ends_with($path, '.spec.ts')
+            || str_ends_with($path, '.test.js')
+            || str_ends_with($path, '.spec.js')
+        ) {
+            return false;
+        }
+        return str_ends_with($path, '.vue')
+            || str_ends_with($path, '.ts')
+            || str_ends_with($path, '.js');
     }
 
     /**

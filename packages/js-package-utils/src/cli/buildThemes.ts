@@ -203,9 +203,15 @@ const typecheckThemes = async (themeNames) => {
     for (const themeName of themeNames) {
         await preCompileMagentoFiles(themeName);
     }
-    console.log(chalk.cyan(`Type-checking ${themeNames.length} theme(s): ${themeNames.join(", ")}`));
+    console.log(
+        chalk.cyan(`Type-checking ${themeNames.length} theme(s): ${themeNames.join(", ")}`),
+    );
 
-    const results = await runWithConcurrency(themeNames, (themeName) => spawnTypecheck(themeName), 1);
+    const results = await runWithConcurrency(
+        themeNames,
+        (themeName) => spawnTypecheck(themeName),
+        1,
+    );
 
     const failed = results.filter((result) => result.code !== 0);
     if (failed.length > 0) {

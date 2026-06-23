@@ -102,32 +102,39 @@ describe("buildSectionLoadUrl", () => {
 
     it("joins section names and defaults force flag to false", () => {
         expect(buildSectionLoadUrl(ENDPOINT, ["cart", "customer"])).toBe(
-            "/customer/section/load/?sections=cart,customer&force_new_section_timestamp=false"
+            "/customer/section/load/?sections=cart,customer&force_new_section_timestamp=false",
         );
     });
 
     it("omits the sections param for an empty list (server returns all; rejects sections=*)", () => {
         expect(buildSectionLoadUrl(ENDPOINT, [])).toBe(
-            "/customer/section/load/?force_new_section_timestamp=false"
+            "/customer/section/load/?force_new_section_timestamp=false",
         );
     });
 
     it("honors a custom base URL and the force flag", () => {
         expect(
-            buildSectionLoadUrl(ENDPOINT, ["cart"], { baseUrl: "https://shop.test", forceNewTimestamp: true })
-        ).toBe("https://shop.test/customer/section/load/?sections=cart&force_new_section_timestamp=true");
+            buildSectionLoadUrl(ENDPOINT, ["cart"], {
+                baseUrl: "https://shop.test",
+                forceNewTimestamp: true,
+            }),
+        ).toBe(
+            "https://shop.test/customer/section/load/?sections=cart&force_new_section_timestamp=true",
+        );
     });
 
     it("tolerates a leading slash in the endpoint", () => {
         expect(buildSectionLoadUrl("/customer/section/load/", ["cart"])).toBe(
-            "/customer/section/load/?sections=cart&force_new_section_timestamp=false"
+            "/customer/section/load/?sections=cart&force_new_section_timestamp=false",
         );
     });
 });
 
 describe("readCookie", () => {
     it("reads a cookie value by name", () => {
-        expect(readCookie("form_key=abc; private_content_version=v1", "private_content_version")).toBe("v1");
+        expect(
+            readCookie("form_key=abc; private_content_version=v1", "private_content_version"),
+        ).toBe("v1");
     });
 
     it("trims surrounding whitespace and decodes the value", () => {
@@ -216,11 +223,19 @@ describe("readSectionRuntimeConfig", () => {
 
     it("falls back to a disabled config (lifetime 0, no sections) when the global is absent", () => {
         expect(readSectionRuntimeConfig({})).toEqual({ lifetimeSeconds: 0, expirableSections: [] });
-        expect(readSectionRuntimeConfig(undefined)).toEqual({ lifetimeSeconds: 0, expirableSections: [] });
+        expect(readSectionRuntimeConfig(undefined)).toEqual({
+            lifetimeSeconds: 0,
+            expirableSections: [],
+        });
     });
 
     it("coerces a non-positive or non-numeric lifetime to 0 and keeps only string section names", () => {
-        const scope = { __MAGE_OBSIDIAN_SECTIONS__: { lifetime: "x", expirable: ["cart", 5, null] } };
-        expect(readSectionRuntimeConfig(scope)).toEqual({ lifetimeSeconds: 0, expirableSections: ["cart"] });
+        const scope = {
+            __MAGE_OBSIDIAN_SECTIONS__: { lifetime: "x", expirable: ["cart", 5, null] },
+        };
+        expect(readSectionRuntimeConfig(scope)).toEqual({
+            lifetimeSeconds: 0,
+            expirableSections: ["cart"],
+        });
     });
 });

@@ -59,12 +59,17 @@ export function parseSectionStorage(raw: string | null | undefined): SectionMap 
 /**
  * Return a single section, or null when it is absent or not an object.
  */
-export function selectSection(sections: SectionMap | null | undefined, name: string): SectionData | null {
+export function selectSection(
+    sections: SectionMap | null | undefined,
+    name: string,
+): SectionData | null {
     if (!sections || typeof sections !== "object") {
         return null;
     }
     const value = sections[name];
-    return value && typeof value === "object" && !Array.isArray(value) ? (value as SectionData) : null;
+    return value && typeof value === "object" && !Array.isArray(value)
+        ? (value as SectionData)
+        : null;
 }
 
 /**
@@ -209,7 +214,11 @@ export function expiredSectionNames(
     const expired: string[] = [];
     for (const name of expirableNames) {
         const section = map[name];
-        if (section && typeof section === "object" && isSectionStale(section, lifetimeSeconds, nowSeconds)) {
+        if (
+            section &&
+            typeof section === "object" &&
+            isSectionStale(section, lifetimeSeconds, nowSeconds)
+        ) {
             expired.push(name);
         }
     }

@@ -72,7 +72,8 @@ export default async function generateJsconfigPaths(
     // The editor jsconfig remaps container paths to the host mount so go-to-def
     // lands on the files the editor opens. The typecheck gate runs where the build
     // runs (same filesystem as the sources), so it opts out and keeps real paths.
-    const map = options.remap === false ? [] : parsePathMap(process.env.MAGE_OBSIDIAN_TYPES_PATH_MAP);
+    const map =
+        options.remap === false ? [] : parsePathMap(process.env.MAGE_OBSIDIAN_TYPES_PATH_MAP);
 
     const paths: Record<string, string[]> = {
         "mage-obsidian/*": [engineSrcWildcard(map)],

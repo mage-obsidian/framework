@@ -11,6 +11,7 @@ let scenarios = [
                     includeCssSourceFromParentThemes: true,
                     ignoredCssFromModules: ["Vendor_ModuleNameA"],
                     exposeNpmPackages: [],
+                    vue: { runtimeOnly: false },
                 },
             },
             {
@@ -19,6 +20,7 @@ let scenarios = [
                     includeCssSourceFromParentThemes: true,
                     ignoredCssFromModules: ["Vendor_ModuleNameA", "Vendor_ModuleNameNoConfig"],
                     exposeNpmPackages: [],
+                    vue: { runtimeOnly: false },
                 },
             },
             {
@@ -27,6 +29,7 @@ let scenarios = [
                     includeCssSourceFromParentThemes: true,
                     ignoredCssFromModules: ["Vendor_ModuleNameA", "Vendor_ModuleNameNoConfig"],
                     exposeNpmPackages: [],
+                    vue: { runtimeOnly: false },
                 },
             },
             {
@@ -35,6 +38,7 @@ let scenarios = [
                     includeCssSourceFromParentThemes: false,
                     ignoredCssFromModules: [],
                     exposeNpmPackages: [],
+                    vue: { runtimeOnly: false },
                 },
             },
         ],

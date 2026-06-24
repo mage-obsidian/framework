@@ -52,6 +52,7 @@ export async function getThemeConfig(themeName) {
     themeConfig.includeCssSourceFromParentThemes ??= true;
     themeConfig.ignoredCssFromModules ??= [];
     themeConfig.exposeNpmPackages ??= [];
+    themeConfig.vue ??= { runtimeOnly: false };
     if (themeDefinition.parent) {
         const parentConfig = await getThemeConfig(themeDefinition.parent);
         themeConfig = deepmerge(parentConfig || {}, themeConfig);

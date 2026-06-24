@@ -9,6 +9,7 @@ import chalk from "chalk";
 import configResolver from "../core/configResolver.ts";
 import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
 import runWithConcurrency from "../utils/runWithConcurrency.ts";
+import { selectThemeForDevServer } from "./selectTheme.ts";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -24,12 +25,27 @@ program.parse(process.argv);
 const options = program.opts();
 const themesConfig = configResolver.getMagentoConfig().themes;
 
-if (options.devServer && !options.theme) {
-    console.error(chalk.red("Error: The --theme option is required when using --dev-server."));
-    process.exit(1);
+let theme: string;
+if (options.devServer) {
+    const selected = selectThemeForDevServer(
+        options.theme,
+        Object.keys(themesConfig),
+        Boolean(process.stdin.isTTY),
+        (themes) => readlineSync.keyInSelect(themes, "Select a theme to serve"),
+    );
+    if (!selected) {
+        console.error(
+            chalk.red(
+                "Error: The --theme option is required when using --dev-server. "
+                + "Pass --theme <Vendor/theme>, or run from an interactive terminal to pick one.",
+            ),
+        );
+        process.exit(1);
+    }
+    theme = selected;
+} else {
+    theme = options.theme || "all";
 }
-
-const theme = options.theme || "all";
 
 const executeCommand = (command) => {
     try {

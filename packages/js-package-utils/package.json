@@ -1,6 +1,6 @@
 {
     "name": "mage-obsidian",
-    "version": "2.3.0",
+    "version": "2.4.0",
     "description": "Mage Obsidian Ultis",
     "repository": {
         "type": "git",
@@ -96,6 +96,7 @@
         }
     },
     "dependencies": {
+        "beasties": "^0.4.2",
         "chalk": "^5.4.1",
         "commander": "^13.1.0",
         "deepmerge": "^4.3.1",

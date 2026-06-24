@@ -36,6 +36,10 @@
                     name="mage-obsidian-modern-frontend:generate-theme:command"
                     xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\GenerateThemeCommand
                 </item>
+                <item
+                    name="mage-obsidian-modern-frontend:critical-css:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\CriticalCssCommand
+                </item>
             </argument>
         </arguments>
     </type>
@@ -50,6 +54,11 @@
         </arguments>
     </type>
     <type name="MageObsidian\ModernFrontendCli\Console\Command\FrontendDevCommand">
+        <arguments>
+            <argument name="fileDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontendCli\Console\Command\CriticalCssCommand">
         <arguments>
             <argument name="fileDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
         </arguments>

@@ -1,6 +1,27 @@
 {
     "name": "mage-obsidian/module-modern-frontend-cli",
     "description": "Magento 2 module that provides a CLI to manage modern frontend tools.",
+    "keywords": [
+        "magento",
+        "magento2",
+        "frontend",
+        "vite",
+        "vue",
+        "tailwindcss",
+        "cli"
+    ],
+    "homepage": "https://mage-obsidian.jeanmarcos.dev/",
+    "support": {
+        "issues": "https://github.com/mage-obsidian/module-modern-frontend-cli/issues",
+        "docs": "https://mage-obsidian.jeanmarcos.dev/",
+        "source": "https://github.com/mage-obsidian/module-modern-frontend-cli"
+    },
+    "authors": [
+        {
+            "name": "Jeanmarcos Juarez",
+            "homepage": "https://github.com/jeanmarcos-dev"
+        }
+    ],
     "require": {
         "mage-obsidian/module-modern-frontend": "^2.3"
     },

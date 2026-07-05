@@ -1,7 +1,11 @@
 {
     "name": "mage-obsidian",
     "version": "2.4.0",
-    "description": "Mage Obsidian Ultis",
+    "description": "The MageObsidian JS build engine for Magento 2 frontends: theme inheritance resolution, precompilation and JS interceptors for Vite builds.",
+    "homepage": "https://mage-obsidian.jeanmarcos.dev/",
+    "bugs": {
+        "url": "https://github.com/mage-obsidian/js-package-utils/issues"
+    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/mage-obsidian/js-package-utils.git"
@@ -24,8 +28,16 @@
         "format:check": "prettier --check ."
     },
     "keywords": [
-        "Magento",
-        "MageObsidian"
+        "magento",
+        "magento2",
+        "mageobsidian",
+        "vite",
+        "vue",
+        "tailwindcss",
+        "frontend",
+        "theme",
+        "build-tools",
+        "esm"
     ],
     "author": "Jeanmarcos Juarez",
     "license": "MIT",

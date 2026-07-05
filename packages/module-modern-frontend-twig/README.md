@@ -1,5 +1,10 @@
 # MageObsidian ModernFrontend — Twig engine (optional)
 
+[![Latest Version](https://img.shields.io/packagist/v/mage-obsidian/module-modern-frontend-twig.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/module-modern-frontend-twig)
+[![License](https://img.shields.io/packagist/l/mage-obsidian/module-modern-frontend-twig.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/module-modern-frontend-twig)
+
+📚 [Documentation](https://mage-obsidian.jeanmarcos.dev/) · 🚀 [Live demo](https://mage-obsidian-demo.jeanmarcos.dev/) · 💬 [Discussions](https://github.com/mage-obsidian/module-modern-frontend/discussions)
+
 Optional add-on for [`mage-obsidian/module-modern-frontend`](https://packagist.org/packages/mage-obsidian/module-modern-frontend).
 Installing this module registers a **`.twig` template engine alongside Magento's native `.phtml`**;
 removing it leaves only `.phtml`. Nothing else opts in — the engine is enabled by the module's presence.

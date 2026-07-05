@@ -93,11 +93,10 @@ export function loadDictionary(
         }
         const promise: Promise<Dictionary> = fetchImpl(url)
             .then((res) => (res && res.ok ? res.json() : {}))
-            .then(
-                (data: unknown): Dictionary =>
-                    data && typeof data === "object" && !Array.isArray(data)
-                        ? (data as Dictionary)
-                        : {},
+            .then((data: unknown): Dictionary =>
+                data && typeof data === "object" && !Array.isArray(data)
+                    ? (data as Dictionary)
+                    : {},
             )
             .catch((): Dictionary => ({}));
         dictionaryCache.set(url, promise);

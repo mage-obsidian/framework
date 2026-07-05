@@ -16,7 +16,7 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ matrix.node }}
-            - run: npm install
+            - run: npm ci
             - run: npm test
 
     lint:
@@ -27,7 +27,7 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: "22"
-            - run: npm install
+            - run: npm ci
             - name: Typecheck
               run: npm run typecheck
             - name: Oxlint (fast pre-filter)

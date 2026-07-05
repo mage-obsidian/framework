@@ -12,11 +12,5 @@
         "allowJs": false
     },
     "include": ["src/**/*.ts"],
-    "exclude": [
-        "node_modules",
-        "dist",
-        ".precompiled",
-        "src/__tests__",
-        "src/__mocks__"
-    ]
+    "exclude": ["node_modules", "dist", ".precompiled", "src/__tests__", "src/__mocks__"]
 }

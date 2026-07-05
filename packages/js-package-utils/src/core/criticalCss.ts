@@ -41,10 +41,7 @@ export interface ExtractCriticalOptions {
 //
 // Beasties resolves <link> hrefs from disk, so the sheet is written to a temp
 // dir and the page's stylesheet link is repointed at it.
-export async function extractCritical({
-    html,
-    css,
-}: ExtractCriticalOptions): Promise<string> {
+export async function extractCritical({ html, css }: ExtractCriticalOptions): Promise<string> {
     const dir = mkdtempSync(join(tmpdir(), "mo-critical-"));
     try {
         const sheet = "sheet.css";

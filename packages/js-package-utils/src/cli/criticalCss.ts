@@ -14,9 +14,7 @@ const cssFile = arg("--css");
 const outFile = arg("--out");
 
 if (!htmlFile || !cssFile || !outFile) {
-    console.error(
-        "usage: criticalCss --html <file> --css <file> --out <file>",
-    );
+    console.error("usage: criticalCss --html <file> --css <file> --out <file>");
     process.exit(1);
 }
 

@@ -36,8 +36,8 @@ if (options.devServer) {
     if (!selected) {
         console.error(
             chalk.red(
-                "Error: The --theme option is required when using --dev-server. "
-                + "Pass --theme <Vendor/theme>, or run from an interactive terminal to pick one.",
+                "Error: The --theme option is required when using --dev-server. " +
+                    "Pass --theme <Vendor/theme>, or run from an interactive terminal to pick one.",
             ),
         );
         process.exit(1);

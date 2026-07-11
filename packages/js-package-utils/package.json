@@ -1,131 +1,131 @@
 {
-  "name": "mage-obsidian",
-  "version": "2.4.1",
-  "description": "The MageObsidian JS build engine for Magento 2 frontends: theme inheritance resolution, precompilation and JS interceptors for Vite builds.",
-  "homepage": "https://mage-obsidian.jeanmarcos.dev/",
-  "bugs": {
-    "url": "https://github.com/mage-obsidian/js-package-utils/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mage-obsidian/js-package-utils.git"
-  },
-  "main": "./dist/cli/buildThemes.js",
-  "types": "./dist/cli/buildThemes.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
-    "prepublishOnly": "npm run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "lint:fast": "oxlint",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
-  },
-  "keywords": [
-    "magento",
-    "magento2",
-    "mageobsidian",
-    "vite",
-    "vue",
-    "tailwindcss",
-    "frontend",
-    "theme",
-    "build-tools",
-    "esm"
-  ],
-  "author": "Jeanmarcos Juarez",
-  "license": "MIT",
-  "type": "module",
-  "bin": {
-    "mage-obsidian:build-themes": "./dist/cli/buildThemes.js"
-  },
-  "imports": {
-    "#core/*": "./src/core/*",
-    "#vite/*": "./src/vite/*",
-    "#runtime/*": "./src/runtime/*",
-    "#cli/*": "./src/cli/*",
-    "#utils/*": "./src/utils/*",
-    "#config/*": "./src/config/*"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/cli/buildThemes.d.ts",
-      "default": "./dist/cli/buildThemes.js"
+    "name": "mage-obsidian",
+    "version": "2.4.1",
+    "description": "The MageObsidian JS build engine for Magento 2 frontends: theme inheritance resolution, precompilation and JS interceptors for Vite builds.",
+    "homepage": "https://mage-obsidian.jeanmarcos.dev/",
+    "bugs": {
+        "url": "https://github.com/mage-obsidian/js-package-utils/issues"
     },
-    "./core/*.ts": {
-      "types": "./dist/core/*.d.ts",
-      "default": "./dist/core/*.js"
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mage-obsidian/js-package-utils.git"
     },
-    "./core/*": {
-      "types": "./dist/core/*.d.ts",
-      "default": "./dist/core/*.js"
+    "main": "./dist/cli/buildThemes.js",
+    "types": "./dist/cli/buildThemes.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+        "prepublishOnly": "npm run build",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "lint:fast": "oxlint",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
-    "./vite/*.ts": {
-      "types": "./dist/vite/*.d.ts",
-      "default": "./dist/vite/*.js"
+    "keywords": [
+        "magento",
+        "magento2",
+        "mageobsidian",
+        "vite",
+        "vue",
+        "tailwindcss",
+        "frontend",
+        "theme",
+        "build-tools",
+        "esm"
+    ],
+    "author": "Jeanmarcos Juarez",
+    "license": "MIT",
+    "type": "module",
+    "bin": {
+        "mage-obsidian:build-themes": "./dist/cli/buildThemes.js"
     },
-    "./vite/*": {
-      "types": "./dist/vite/*.d.ts",
-      "default": "./dist/vite/*.js"
+    "imports": {
+        "#core/*": "./src/core/*",
+        "#vite/*": "./src/vite/*",
+        "#runtime/*": "./src/runtime/*",
+        "#cli/*": "./src/cli/*",
+        "#utils/*": "./src/utils/*",
+        "#config/*": "./src/config/*"
     },
-    "./runtime/*.ts": {
-      "types": "./dist/runtime/*.d.ts",
-      "default": "./dist/runtime/*.js"
+    "exports": {
+        ".": {
+            "types": "./dist/cli/buildThemes.d.ts",
+            "default": "./dist/cli/buildThemes.js"
+        },
+        "./core/*.ts": {
+            "types": "./dist/core/*.d.ts",
+            "default": "./dist/core/*.js"
+        },
+        "./core/*": {
+            "types": "./dist/core/*.d.ts",
+            "default": "./dist/core/*.js"
+        },
+        "./vite/*.ts": {
+            "types": "./dist/vite/*.d.ts",
+            "default": "./dist/vite/*.js"
+        },
+        "./vite/*": {
+            "types": "./dist/vite/*.d.ts",
+            "default": "./dist/vite/*.js"
+        },
+        "./runtime/*.ts": {
+            "types": "./dist/runtime/*.d.ts",
+            "default": "./dist/runtime/*.js"
+        },
+        "./runtime/*": {
+            "types": "./dist/runtime/*.d.ts",
+            "default": "./dist/runtime/*.js"
+        },
+        "./cli/*.ts": {
+            "types": "./dist/cli/*.d.ts",
+            "default": "./dist/cli/*.js"
+        },
+        "./cli/*": {
+            "types": "./dist/cli/*.d.ts",
+            "default": "./dist/cli/*.js"
+        },
+        "./utils/*.ts": {
+            "types": "./dist/utils/*.d.ts",
+            "default": "./dist/utils/*.js"
+        },
+        "./utils/*": {
+            "types": "./dist/utils/*.d.ts",
+            "default": "./dist/utils/*.js"
+        },
+        "./config/*.ts": {
+            "types": "./dist/config/*.d.ts",
+            "default": "./dist/config/*.js"
+        },
+        "./config/*": {
+            "types": "./dist/config/*.d.ts",
+            "default": "./dist/config/*.js"
+        }
     },
-    "./runtime/*": {
-      "types": "./dist/runtime/*.d.ts",
-      "default": "./dist/runtime/*.js"
+    "dependencies": {
+        "beasties": "^0.4.2",
+        "chalk": "^5.4.1",
+        "commander": "^13.1.0",
+        "deepmerge": "^4.3.1",
+        "dotenv": "^16.6.1",
+        "readline-sync": "^1.4.10"
     },
-    "./cli/*.ts": {
-      "types": "./dist/cli/*.d.ts",
-      "default": "./dist/cli/*.js"
-    },
-    "./cli/*": {
-      "types": "./dist/cli/*.d.ts",
-      "default": "./dist/cli/*.js"
-    },
-    "./utils/*.ts": {
-      "types": "./dist/utils/*.d.ts",
-      "default": "./dist/utils/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/utils/*.d.ts",
-      "default": "./dist/utils/*.js"
-    },
-    "./config/*.ts": {
-      "types": "./dist/config/*.d.ts",
-      "default": "./dist/config/*.js"
-    },
-    "./config/*": {
-      "types": "./dist/config/*.d.ts",
-      "default": "./dist/config/*.js"
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^22.19.21",
+        "eslint": "^10.5.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-vue": "^10.9.2",
+        "globals": "^17.6.0",
+        "oxlint": "^1.70.0",
+        "prettier": "^3.8.4",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.61.1",
+        "vitest": "^3.2.6"
     }
-  },
-  "dependencies": {
-    "beasties": "^0.4.2",
-    "chalk": "^5.4.1",
-    "commander": "^13.1.0",
-    "deepmerge": "^4.3.1",
-    "dotenv": "^16.6.1",
-    "readline-sync": "^1.4.10"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^22.19.21",
-    "eslint": "^10.5.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-vue": "^10.9.2",
-    "globals": "^17.6.0",
-    "oxlint": "^1.70.0",
-    "prettier": "^3.8.4",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.61.1",
-    "vitest": "^3.2.6"
-  }
 }

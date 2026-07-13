@@ -50,6 +50,13 @@ if (process.env.VITE_SERVER_ALLOWED_HOSTS) {
     ALLOWED_HOSTS.push(...extraHosts);
 }
 
+// A fixed hmr.host pins the wss connection to one host, so a shared theme served
+// on a second website (different host) opens a cross-origin socket. Leaving
+// MAGENTO_HOST empty omits hmr.host, letting the Vite client derive it from
+// window.location — same-origin HMR per website. Set it only behind a proxy/tunnel
+// that needs a fixed public host.
+const MAGENTO_HOST = String(process.env.MAGENTO_HOST ?? '').trim();
+
 export default defineConfig(async () => {
     await ensurePrecompiled(CURRENT_THEME);
     const themeConfig = await themeResolver.getThemeConfig(CURRENT_THEME);
@@ -139,7 +146,7 @@ export default defineConfig(async () => {
                 allow: getFsAllowList(rootDir),
             },
             hmr: {
-                host: process.env.MAGENTO_HOST,
+                ...(MAGENTO_HOST ? { host: MAGENTO_HOST } : {}),
                 protocol: VITE_SERVER_SECURE ? 'wss' : 'ws',
                 path: process.env.VITE_HMR_PATH,
             }

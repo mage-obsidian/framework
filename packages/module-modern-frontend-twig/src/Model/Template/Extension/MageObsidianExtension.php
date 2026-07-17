@@ -52,8 +52,8 @@ class MageObsidianExtension extends AbstractExtension
         return [
             new TwigFunction(
                 'render_vue',
-                fn(array $context, string $name, array $props = [], bool $eager = false): string
-                    => $this->bridge->renderVue($context['block'], $name, $props, $eager),
+                fn(array $context, string $name, array $props = [], bool $eager = false, string $placeholder = ''): string
+                    => $this->bridge->renderVue($context['block'], $name, $props, $eager, $placeholder),
                 $safeHtml
             ),
             new TwigFunction(

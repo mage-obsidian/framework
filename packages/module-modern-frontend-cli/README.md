@@ -4,6 +4,8 @@
 [![CI](https://github.com/mage-obsidian/module-modern-frontend-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mage-obsidian/module-modern-frontend-cli/actions/workflows/ci.yml)
 [![License](https://img.shields.io/packagist/l/mage-obsidian/module-modern-frontend-cli.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/module-modern-frontend-cli)
 
+[![Star MageObsidian](https://img.shields.io/github/stars/mage-obsidian/module-modern-frontend?style=flat-square&label=Star%20the%20core%20repo&logo=github)](https://github.com/mage-obsidian/module-modern-frontend)
+
 📚 [Documentation](https://mage-obsidian.jeanmarcos.dev/) · 🚀 [Live demo](https://mage-obsidian-demo.jeanmarcos.dev/) · 💬 [Discussions](https://github.com/mage-obsidian/module-modern-frontend/discussions)
 
 `bin/magento` console commands for [MageObsidian](https://github.com/mage-obsidian/module-modern-frontend), a modern frontend for Magento 2.

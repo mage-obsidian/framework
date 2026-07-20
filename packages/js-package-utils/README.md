@@ -4,6 +4,8 @@
 [![CI](https://github.com/mage-obsidian/js-package-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/mage-obsidian/js-package-utils/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
+[![Star MageObsidian](https://img.shields.io/github/stars/mage-obsidian/module-modern-frontend?style=flat-square&label=Star%20the%20core%20repo&logo=github)](https://github.com/mage-obsidian/module-modern-frontend)
+
 📚 [Documentation](https://mage-obsidian.jeanmarcos.dev/) · 🚀 [Live demo](https://mage-obsidian-demo.jeanmarcos.dev/) · 💬 [Discussions](https://github.com/mage-obsidian/module-modern-frontend/discussions)
 
 The JavaScript build engine behind [MageObsidian](https://github.com/mage-obsidian/module-modern-frontend), a modern frontend for Magento 2. ESM-only, consumed by the [Vite harness](https://github.com/mage-obsidian/component-modern-frontend) as the `mage-obsidian` npm package.

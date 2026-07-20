@@ -4,6 +4,8 @@
 [![CI](https://github.com/mage-obsidian/component-modern-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/mage-obsidian/component-modern-frontend/actions/workflows/ci.yml)
 [![License](https://img.shields.io/packagist/l/mage-obsidian/component-modern-frontend.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/component-modern-frontend)
 
+[![Star MageObsidian](https://img.shields.io/github/stars/mage-obsidian/module-modern-frontend?style=flat-square&label=Star%20the%20core%20repo&logo=github)](https://github.com/mage-obsidian/module-modern-frontend)
+
 📚 [Documentation](https://mage-obsidian.jeanmarcos.dev/) · 🚀 [Live demo](https://mage-obsidian-demo.jeanmarcos.dev/) · 💬 [Discussions](https://github.com/mage-obsidian/module-modern-frontend/discussions)
 
 The **entry point** to [MageObsidian](https://github.com/mage-obsidian/module-modern-frontend), a modern frontend for Magento 2 built on Vite, Tailwind CSS 4 and Vue. This Composer package ships the `vite/` build harness (`vite.config.js`, `package.json`) and maps it into your Magento root, pulling in the core module as a dependency.

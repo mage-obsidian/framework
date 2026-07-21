@@ -1,4 +1,9 @@
-# esbuild (pulled in by Vitest) ships its binary via the platform-specific
-# @esbuild/<platform> package, so its postinstall script is not required.
+# Kept as a guard: esbuild is no longer installed (vite 8 uses rolldown), but if
+# it returns it ships its binary via @esbuild/<platform>, so no postinstall.
 allowBuilds:
     esbuild: false
+
+# Vitest accepts vite ^6 || ^7 || ^8; pin the major so the resolver cannot fall
+# back to vite 7, which depends on a vulnerable esbuild (GHSA-g7r4-m6w7-qqqr).
+overrides:
+    vite: ^8.1.5

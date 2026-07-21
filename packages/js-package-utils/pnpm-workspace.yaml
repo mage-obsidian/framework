@@ -5,5 +5,7 @@ allowBuilds:
 
 # Vitest accepts vite ^6 || ^7 || ^8; pin the major so the resolver cannot fall
 # back to vite 7, which depends on a vulnerable esbuild (GHSA-g7r4-m6w7-qqqr).
+# Mirrored in package.json "overrides" for npm, which CI uses and which does not
+# read this file — keep both in sync.
 overrides:
     vite: ^8.1.5

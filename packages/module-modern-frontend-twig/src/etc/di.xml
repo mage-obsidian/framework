@@ -27,4 +27,8 @@
             </argument>
         </arguments>
     </type>
+    <type name="Magento\Framework\App\Cache\Manager">
+        <plugin name="mage_obsidian_twig_flush_compiled_templates"
+                type="MageObsidian\ModernFrontendTwig\Plugin\App\Cache\FlushCompiledTemplates"/>
+    </type>
 </config>

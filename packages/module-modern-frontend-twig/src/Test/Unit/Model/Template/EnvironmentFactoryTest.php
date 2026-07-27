@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace MageObsidian\ModernFrontendTwig\Test\Unit\Model\Template;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
+use MageObsidian\ModernFrontendTwig\Model\Cache\CompiledTemplateCache;
 use MageObsidian\ModernFrontendTwig\Model\Template\EnvironmentFactory;
 use MageObsidian\ModernFrontendTwig\Model\Template\FilesystemLoader;
 use PHPUnit\Framework\TestCase;
@@ -28,15 +28,15 @@ class EnvironmentFactoryTest extends TestCase
         }
     }
 
-    private function factory(array $extensions): EnvironmentFactory
+    private function factory(array $extensions, string|false $cacheDirectory = null): EnvironmentFactory
     {
         $loader = $this->createMock(FilesystemLoader::class);
-        $directoryList = $this->createMock(DirectoryList::class);
-        $directoryList->method('getPath')->willReturn(sys_get_temp_dir());
+        $compiledCache = $this->createMock(CompiledTemplateCache::class);
+        $compiledCache->method('getDirectory')->willReturn($cacheDirectory ?? sys_get_temp_dir());
         $state = $this->createMock(State::class);
         $state->method('getMode')->willReturn(State::MODE_PRODUCTION);
 
-        return new EnvironmentFactory($loader, $directoryList, $state, $extensions);
+        return new EnvironmentFactory($loader, $compiledCache, $state, $extensions);
     }
 
     private function markerExtension(): AbstractExtension
@@ -68,5 +68,22 @@ class EnvironmentFactoryTest extends TestCase
         $factory = $this->factory([$this->markerExtension()]);
 
         $this->assertSame($factory->create(), $factory->create());
+    }
+
+    public function testTakesTheCacheLocationFromTheCompiledTemplateCache(): void
+    {
+        $directory = sys_get_temp_dir() . '/twig-build-signature';
+
+        $this->assertSame($directory, $this->factory([], $directory)->create()->getCache());
+    }
+
+    public function testDisablesCachingWhenTheCacheTypeIsOff(): void
+    {
+        $this->assertFalse($this->factory([], false)->create()->getCache());
+    }
+
+    public function testKeepsAutoReloadOnInProductionMode(): void
+    {
+        $this->assertTrue($this->factory([])->create()->isAutoReload());
     }
 }

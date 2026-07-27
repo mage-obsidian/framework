@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+    Declares the compiled Twig templates as a real cache type, so `cache:status`,
+    `cache:clean`, `cache:disable` and the admin grid all know it exists.
+    Disabling the type turns off compilation caching (templates recompile on
+    every request), which is the supported way to debug a stuck template.
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
+    <type name="twig_templates"
+          translate="label,description"
+          instance="MageObsidian\ModernFrontendTwig\Model\Cache\Type\CompiledTemplates">
+        <label>Twig Templates</label>
+        <description>Compiled Twig template classes.</description>
+    </type>
+</config>

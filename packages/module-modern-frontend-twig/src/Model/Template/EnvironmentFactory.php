@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace MageObsidian\ModernFrontendTwig\Model\Template;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
+use MageObsidian\ModernFrontendTwig\Model\Cache\CompiledTemplateCache;
 use Twig\Environment;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\ExtensionInterface;
@@ -19,10 +19,12 @@ use UnexpectedValueException;
 /**
  * Builds the shared Twig environment.
  *
- * Compiled templates are cached under `var/cache/twig`. In developer mode the
- * cache is kept but `auto_reload` recompiles a template whenever its source
- * changes, `debug` enables `{{ dump() }}`, and `strict_variables` turns an
- * undefined variable into an error instead of a silent empty string. HTML
+ * Where compiled templates go, and when they are dropped, belongs to
+ * {@see CompiledTemplateCache}. `auto_reload` recompiles a template whose source
+ * is newer than the cache, which covers templates edited in place; it is on in
+ * every mode because the alternative is silently serving stale HTML. `debug`
+ * enables `{{ dump() }}` and `strict_variables` turns an undefined variable into
+ * an error instead of a silent empty string, both developer-mode only. HTML
  * auto-escaping is always on — the main security gain over raw phtml. The
  * environment is built once and reused (declared shared in di.xml).
  *
@@ -34,19 +36,17 @@ use UnexpectedValueException;
  */
 class EnvironmentFactory
 {
-    private const CACHE_SUBDIR = 'cache/twig';
-
     private ?Environment $environment = null;
 
     /**
      * @param FilesystemLoader $loader
-     * @param DirectoryList $directoryList
+     * @param CompiledTemplateCache $compiledTemplateCache
      * @param State $appState
      * @param ExtensionInterface[] $extensions Twig extensions to register, injected via di.xml.
      */
     public function __construct(
         private readonly FilesystemLoader $loader,
-        private readonly DirectoryList $directoryList,
+        private readonly CompiledTemplateCache $compiledTemplateCache,
         private readonly State $appState,
         private readonly array $extensions = []
     ) {
@@ -64,9 +64,9 @@ class EnvironmentFactory
         $isDeveloper = $this->appState->getMode() === State::MODE_DEVELOPER;
 
         $environment = new Environment($this->loader, [
-            'cache' => $this->directoryList->getPath(DirectoryList::VAR_DIR) . '/' . self::CACHE_SUBDIR,
+            'cache' => $this->compiledTemplateCache->getDirectory(),
             'autoescape' => 'html',
-            'auto_reload' => $isDeveloper,
+            'auto_reload' => true,
             'debug' => $isDeveloper,
             'strict_variables' => $isDeveloper,
         ]);

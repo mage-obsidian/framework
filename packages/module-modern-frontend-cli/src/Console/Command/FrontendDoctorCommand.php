@@ -10,9 +10,14 @@ declare(strict_types=1);
 
 namespace MageObsidian\ModernFrontendCli\Console\Command;
 
+use Magento\Framework\App\Area;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
 use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\ObjectManager\ConfigLoaderInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use MageObsidian\ModernFrontend\Api\Data\ConfigInterface;
 use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
 use MageObsidian\ModernFrontend\Model\Config\ConfigProvider;
@@ -46,6 +51,13 @@ class FrontendDoctorCommand extends Command
         'VITE_SERVER_ALLOWED_HOSTS',
     ];
 
+    private const XML_PATH_CACHING_APPLICATION = 'system/full_page_cache/caching_application';
+
+    private const XML_PATH_CURRENCY_ALLOW = 'currency/options/allow';
+
+    /** Value of Magento\PageCache\Model\Config::VARNISH, inlined to avoid the module dependency. */
+    private const CACHING_APPLICATION_VARNISH = 2;
+
     public function __construct(
         private readonly State $state,
         private readonly ConfigProvider $configProvider,
@@ -53,7 +65,10 @@ class FrontendDoctorCommand extends Command
         private readonly HttpProberInterface $prober,
         private readonly DevDiagnostics $diagnostics,
         private readonly DirectoryList $directoryList,
-        private readonly DriverInterface $fileDriver
+        private readonly DriverInterface $fileDriver,
+        private readonly ConfigLoaderInterface $diConfigLoader,
+        private readonly ScopeConfigInterface $scopeConfig,
+        private readonly StoreManagerInterface $storeManager
     ) {
         parent::__construct();
     }
@@ -87,6 +102,13 @@ class FrontendDoctorCommand extends Command
             $this->diagnostics->evaluateHmr($mode, $hmrEnabled),
             $this->diagnostics->evaluateDevServer($hmrEnabled, $devProbe),
             $this->diagnostics->evaluateEnv($this->findMissingEnvVars($env)),
+            $this->diagnostics->evaluatePageCacheVary(
+                $this->isVarnishEnabled(),
+                $this->diagnostics->resolvePageCacheIdentifier(
+                    $this->diConfigLoader->load(Area::AREA_FRONTEND)
+                ),
+                $this->findVaryingDimensions()
+            ),
         ];
 
         // Drift only makes sense to evaluate against an existing contract; the
@@ -125,6 +147,36 @@ class FrontendDoctorCommand extends Command
         }
 
         return $this->prober->probe(sprintf('http://%s:%s/@vite/client', $host, $port));
+    }
+
+    private function isVarnishEnabled(): bool
+    {
+        return (int)$this->scopeConfig->getValue(self::XML_PATH_CACHING_APPLICATION)
+            === self::CACHING_APPLICATION_VARNISH;
+    }
+
+    /**
+     * Context dimensions that actually differ in this install, i.e. the ones the
+     * page cache would have to tell apart. Store view is deliberately absent:
+     * IdentifierForSave mixes store cache tags into the key, so multistore keeps
+     * working even while the vary cookie is ignored.
+     *
+     * @return string[]
+     */
+    private function findVaryingDimensions(): array
+    {
+        foreach ($this->storeManager->getStores() as $store) {
+            $allowed = (string)$this->scopeConfig->getValue(
+                self::XML_PATH_CURRENCY_ALLOW,
+                ScopeInterface::SCOPE_STORE,
+                $store->getCode()
+            );
+            if (count(array_unique(array_filter(explode(',', $allowed)))) > 1) {
+                return ['currency'];
+            }
+        }
+
+        return [];
     }
 
     /**

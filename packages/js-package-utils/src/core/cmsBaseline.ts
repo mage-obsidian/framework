@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { CMS_BASELINE_FILE, CMS_CANDIDATES_FILE, CMS_CONTENT_DIR, OUTPUT_THEME_DIR } from "../config/default.ts";
+import {
+    CMS_BASELINE_FILE,
+    CMS_CANDIDATES_FILE,
+    CMS_CONTENT_DIR,
+    OUTPUT_THEME_DIR,
+} from "../config/default.ts";
 import configResolver from "./configResolver.ts";
 
 const { getThemeDefinition } = configResolver;

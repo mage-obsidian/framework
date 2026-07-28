@@ -77,7 +77,9 @@ export class EventManager {
      *          amended it — so a dispatcher can read back what they changed.
      */
     async dispatch<T extends object>(event: string, data: T): Promise<T> {
-        for (const entry of [...(this.observers[event] ?? [])]) {
+        // Snapshot: an observer may unsubscribe mid-dispatch, and splicing the
+        // live array would make the loop skip the entry that follows it.
+        for (const entry of (this.observers[event] ?? []).slice()) {
             try {
                 await (entry.observer as EventObserver<T>)(data);
             } catch (error) {
@@ -100,6 +102,9 @@ export class EventManager {
             this.deps.onError(event, name, error);
             return;
         }
-        console.error(`[MageObsidian] Observer "${name}" of "${event}" threw and was skipped.`, error);
+        console.error(
+            `[MageObsidian] Observer "${name}" of "${event}" threw and was skipped.`,
+            error,
+        );
     }
 }

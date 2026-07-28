@@ -45,9 +45,13 @@ describe("EventManager", () => {
         const seen = [];
         const events = new EventManager({ onError });
 
-        events.observe("cart_add_after", () => {
-            throw new Error("analytics is down");
-        }, { name: "analytics" });
+        events.observe(
+            "cart_add_after",
+            () => {
+                throw new Error("analytics is down");
+            },
+            { name: "analytics" },
+        );
         events.observe("cart_add_after", () => seen.push("toast"), { sortOrder: 20 });
 
         await events.dispatch("cart_add_after", {});

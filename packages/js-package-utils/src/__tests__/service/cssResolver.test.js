@@ -133,7 +133,9 @@ describe("getTemplateSources", () => {
             }));
             const { getTemplateSources } = await import("#core/cssResolver.ts");
 
-            expect(await getTemplateSources("Vendor/theme-a")).not.toContain(`@source "${SCENARIOS}"`);
+            expect(await getTemplateSources("Vendor/theme-a")).not.toContain(
+                `@source "${SCENARIOS}"`,
+            );
         });
     });
 });

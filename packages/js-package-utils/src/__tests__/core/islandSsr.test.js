@@ -9,7 +9,7 @@ describe("extractTemplate", () => {
     });
 
     it("keeps a nested template element intact", () => {
-        const sfc = "<template><div><template v-if=\"x\"><b>y</b></template></div></template>";
+        const sfc = '<template><div><template v-if="x"><b>y</b></template></div></template>';
 
         expect(extractTemplate(sfc)).toBe('<div><template v-if="x"><b>y</b></template></div>');
     });

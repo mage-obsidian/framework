@@ -35,7 +35,11 @@ function tagBoundary(text: string, offset: number, context: number): number {
     return opening >= floor ? opening : floor;
 }
 
-export function diffHydration(server: string, client: string, context = CONTEXT): HydrationMismatch | null {
+export function diffHydration(
+    server: string,
+    client: string,
+    context = CONTEXT,
+): HydrationMismatch | null {
     if (server === client) {
         return null;
     }

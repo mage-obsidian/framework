@@ -37,7 +37,10 @@ describe("writeCmsBaseline", () => {
     test("copies the exported class list into the theme's build output", async () => {
         const cms = path.join(workDir, "cms");
         await fs.mkdir(cms, { recursive: true });
-        await fs.writeFile(path.join(cms, "candidates.json"), '["bg-sheen-violet","md:grid-cols-3"]');
+        await fs.writeFile(
+            path.join(cms, "candidates.json"),
+            '["bg-sheen-violet","md:grid-cols-3"]',
+        );
 
         const writeCmsBaseline = await load(cms);
         const target = await writeCmsBaseline("Vendor/known");

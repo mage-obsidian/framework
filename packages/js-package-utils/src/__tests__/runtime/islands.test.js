@@ -125,7 +125,11 @@ describe("placeholder markup", () => {
     it("clears a container that is not marked for hydration", async () => {
         const el = island({ component: "/static/Card.js" });
         el.innerHTML = "<span>skeleton</span>";
-        const d = deps({ clearContainer: vi.fn((e) => { e.innerHTML = ""; }) });
+        const d = deps({
+            clearContainer: vi.fn((e) => {
+                e.innerHTML = "";
+            }),
+        });
 
         await hydrateIsland(el, d);
 

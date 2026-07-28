@@ -1,17 +1,18 @@
 /**
  * Framework island runtime — the browser side of `renderVueComponent`.
  *
- * PHP emits an inert marker per component
- * (`<div data-mage-island data-component data-props data-strategy>`); this
- * module turns each marker into a mounted Vue app. Every island is its own app
- * (preserving isolation), but the Vue runtime and the i18n plugin are loaded
- * once per page and shared, and "visible" islands hydrate only when they enter
- * the viewport — so below-the-fold components cost nothing until scrolled to.
+ * PHP emits a marker per component
+ * (`<div data-mage-island data-component data-props data-strategy>`), optionally
+ * carrying the component's server-rendered initial state; this module turns each
+ * marker into a mounted Vue app. Every island is its own app (preserving
+ * isolation), but the Vue runtime and the i18n plugin are loaded once per page
+ * and shared, and "visible" islands hydrate only when they enter the viewport —
+ * so below-the-fold components cost nothing until scrolled to.
  *
  * All side effects (dynamic import, app creation, plugin wiring, viewport
  * observation) are injected, so the discovery/hydration logic is unit-testable
  * in Node without a DOM, a bundler, or Vue. The concrete wiring lives in the
- * module's `web/js/islands.js`.
+ * module's `web/js/islands.ts`.
  */
 
 // Set synchronously before the async import so a second observer callback for
@@ -28,8 +29,17 @@ interface AppLike {
 
 interface HydrateDeps {
     importComponent(source: string): Promise<{ default?: unknown }>;
-    createApp(component: unknown, props?: Record<string, unknown>): AppLike;
+    /**
+     * `hydrate` tells the factory which Vue entry point to use. Adopting server
+     * markup needs `createSSRApp`; a container about to be cleared needs
+     * `createApp`, which otherwise warns that it found nothing to hydrate.
+     */
+    createApp(component: unknown, props: Record<string, unknown>, hydrate: boolean): AppLike;
     configureApp(app: AppLike): void;
+    clearContainer?(element: IslandElement): void;
+    /** Opaque state captured before mounting, handed back to `onMounted`. */
+    snapshot?(element: IslandElement): unknown;
+    onMounted?(element: IslandElement, snapshot: unknown): void;
 }
 
 interface DiscoverDeps extends HydrateDeps {
@@ -60,9 +70,20 @@ export async function hydrateIsland(
     const component = module.default ?? module;
     const props = element.dataset.props ? JSON.parse(element.dataset.props) : {};
 
-    const app = deps.createApp(component, props);
+    const hydrate = Boolean(element.dataset.hydrate);
+    // Captured before the container is cleared: the baseline is what the page
+    // painted, not what is left after a placeholder is thrown away.
+    const snapshot = deps.snapshot?.(element);
+    if (!hydrate) {
+        deps.clearContainer?.(element);
+    }
+
+    const app = deps.createApp(component, props, hydrate);
     deps.configureApp(app);
     app.mount(element);
+    // Read back before yielding to the event loop, so what is compared is what
+    // hydration did and not what a later reactive effect changed.
+    deps.onMounted?.(element, snapshot);
     return app;
 }
 

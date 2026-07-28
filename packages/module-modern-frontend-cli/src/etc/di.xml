@@ -40,6 +40,10 @@
                     name="mage-obsidian-modern-frontend:critical-css:command"
                     xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\CriticalCssCommand
                 </item>
+                <item
+                    name="mage-obsidian-modern-frontend:cms-export:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\CmsExportCommand
+                </item>
             </argument>
         </arguments>
     </type>

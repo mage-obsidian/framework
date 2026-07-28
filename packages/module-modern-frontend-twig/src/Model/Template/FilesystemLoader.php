@@ -22,14 +22,22 @@ use Twig\Source;
  * `{% include %}`) written as `Vendor_Module::path.twig` are resolved with the
  * same theme fallback the native phtml engine uses, so a child theme can
  * override a parent's `.twig` exactly like a `.phtml`.
+ *
+ * Two namespaced forms sit on top of that: `@alias/path.twig` shortens the
+ * module reference ({@see TemplateNamespaces}), and `@parent` reaches the copy
+ * one level up the theme chain ({@see TemplateHierarchy}).
  */
 class FilesystemLoader implements LoaderInterface
 {
     /**
      * @param ViewFileSystem $viewFileSystem
+     * @param TemplateNamespaces $namespaces
+     * @param TemplateHierarchy $hierarchy
      */
     public function __construct(
-        private readonly ViewFileSystem $viewFileSystem
+        private readonly ViewFileSystem $viewFileSystem,
+        private readonly TemplateNamespaces $namespaces,
+        private readonly TemplateHierarchy $hierarchy
     ) {
     }
 
@@ -43,7 +51,8 @@ class FilesystemLoader implements LoaderInterface
         if ($code === false) {
             throw new LoaderError(sprintf('Unable to read Twig template "%s" (%s).', $name, $path));
         }
-        return new Source($code, $name, $path);
+
+        return new Source($this->hierarchy->rewrite($code, $path), $name, $path);
     }
 
     /**
@@ -89,6 +98,21 @@ class FilesystemLoader implements LoaderInterface
             return $name;
         }
 
+        if ($this->hierarchy->isLevelled($name)) {
+            $path = $this->hierarchy->resolveLevelled($name);
+            if ($path !== null) {
+                return $path;
+            }
+
+            throw new LoaderError(sprintf(
+                'No copy of "%s" exists above the theme that referenced it with "%s".',
+                $this->hierarchy->templateOf($name),
+                TemplateHierarchy::PARENT
+            ));
+        }
+
+        $name = $this->expandAlias($name);
+
         if (str_contains($name, '::')) {
             $file = $this->viewFileSystem->getTemplateFileName($name);
             if ($file && is_file($file)) {
@@ -97,5 +121,33 @@ class FilesystemLoader implements LoaderInterface
         }
 
         throw new LoaderError(sprintf('Twig template "%s" could not be resolved through the theme fallback.', $name));
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return string
+     * @throws LoaderError When the name uses an alias no module owns.
+     */
+    private function expandAlias(string $name): string
+    {
+        if (!str_starts_with($name, TemplateNamespaces::PREFIX)) {
+            return $name;
+        }
+
+        $expanded = $this->namespaces->expand($name);
+        if ($expanded !== null) {
+            return $expanded;
+        }
+
+        $alias = strstr(substr($name, 1), '/', true) ?: substr($name, 1);
+        $suggestions = $this->namespaces->suggest($alias);
+
+        throw new LoaderError(sprintf(
+            'Twig namespace "%s%s" is not registered.%s',
+            TemplateNamespaces::PREFIX,
+            $alias,
+            $suggestions === [] ? '' : ' Did you mean ' . implode(', ', $suggestions) . '?'
+        ));
     }
 }

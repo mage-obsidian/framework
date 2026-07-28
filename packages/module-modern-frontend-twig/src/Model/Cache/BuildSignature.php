@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace MageObsidian\ModernFrontendTwig\Model\Cache;
 
+use MageObsidian\ModernFrontendTwig\Model\Template\TemplateNamespaces;
+
 /**
  * Identifies the deployed code, so compiled templates from a previous build are
  * never read after an update.
@@ -32,9 +34,11 @@ class BuildSignature
 
     /**
      * @param PackageVersions $packageVersions
+     * @param TemplateNamespaces $namespaces
      */
     public function __construct(
-        private readonly PackageVersions $packageVersions
+        private readonly PackageVersions $packageVersions,
+        private readonly TemplateNamespaces $namespaces
     ) {
     }
 
@@ -54,11 +58,16 @@ class BuildSignature
             }
         }
 
+        // A namespace resolves at compile time, so a compiled template outlives a
+        // change to the table and would keep pointing at the old module.
+        $aliases = $this->namespaces->getSignature();
+
         if ($identity === []) {
-            return $this->signature = self::FALLBACK;
+            return $this->signature = self::FALLBACK . '-' . substr($aliases, 0, 8);
         }
 
         ksort($identity);
+        $identity['@namespaces'] = $aliases;
 
         return $this->signature = hash('xxh128', (string)json_encode($identity));
     }

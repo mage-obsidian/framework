@@ -16,6 +16,9 @@
         <testsuite name="MageObsidian ModernFrontendTwig Standalone Unit">
             <directory>src/Test/Unit</directory>
             <exclude>src/Test/Unit/Model/Template/TwigRenderTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/TemplateNamespacesTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/TemplateHierarchyTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/FilesystemLoaderTest.php</exclude>
             <exclude>src/Test/Unit/Model/Template/EnvironmentFactoryTest.php</exclude>
             <exclude>src/Test/Unit/Model/Template/FormatExtensionTest.php</exclude>
             <exclude>src/Test/Unit/Model/Cache/CacheTypeStateTest.php</exclude>

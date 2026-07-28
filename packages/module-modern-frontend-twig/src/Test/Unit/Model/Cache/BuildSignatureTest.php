@@ -5,6 +5,7 @@ namespace MageObsidian\ModernFrontendTwig\Test\Unit\Model\Cache;
 
 use MageObsidian\ModernFrontendTwig\Model\Cache\BuildSignature;
 use MageObsidian\ModernFrontendTwig\Model\Cache\PackageVersions;
+use MageObsidian\ModernFrontendTwig\Model\Template\TemplateNamespaces;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -14,12 +15,15 @@ use PHPUnit\Framework\TestCase;
  */
 class BuildSignatureTest extends TestCase
 {
-    private function signature(array $rawData): string
+    private function signature(array $rawData, string $aliases = 'aliases'): string
     {
         $packageVersions = $this->createMock(PackageVersions::class);
         $packageVersions->method('getAll')->willReturn($rawData);
 
-        return (new BuildSignature($packageVersions))->get();
+        $namespaces = $this->createMock(TemplateNamespaces::class);
+        $namespaces->method('getSignature')->willReturn($aliases);
+
+        return (new BuildSignature($packageVersions, $namespaces))->get();
     }
 
     private function rawData(string $version, string $reference): array
@@ -72,14 +76,28 @@ class BuildSignatureTest extends TestCase
         $this->assertSame($this->signature($ordered), $this->signature($shuffled));
     }
 
+    public function testChangesWhenTheNamespaceTableChanges(): void
+    {
+        $this->assertNotSame(
+            $this->signature($this->rawData('3.1.0.0', 'abc'), 'before'),
+            $this->signature($this->rawData('3.1.0.0', 'abc'), 'after')
+        );
+    }
+
     public function testUsableAsADirectoryName(): void
     {
         $this->assertMatchesRegularExpression('/^[a-z0-9]+$/', $this->signature($this->rawData('3.1.0.0', 'abc')));
+        $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', $this->signature([]));
     }
 
     public function testFallsBackWhenComposerRuntimeDataIsUnavailable(): void
     {
-        $this->assertSame(BuildSignature::FALLBACK, $this->signature([]));
+        $this->assertStringStartsWith(BuildSignature::FALLBACK . '-', $this->signature([]));
+    }
+
+    public function testTheFallbackStillTracksTheNamespaceTable(): void
+    {
+        $this->assertNotSame($this->signature([], 'before'), $this->signature([], 'after'));
     }
 
     public function testMemoizesTheResult(): void
@@ -89,7 +107,7 @@ class BuildSignatureTest extends TestCase
             ->method('getAll')
             ->willReturn($this->rawData('3.1.0.0', 'abc'));
 
-        $buildSignature = new BuildSignature($packageVersions);
+        $buildSignature = new BuildSignature($packageVersions, $this->createMock(TemplateNamespaces::class));
 
         $this->assertSame($buildSignature->get(), $buildSignature->get());
     }

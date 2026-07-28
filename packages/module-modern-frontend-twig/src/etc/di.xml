@@ -31,4 +31,16 @@
         <plugin name="mage_obsidian_twig_flush_compiled_templates"
                 type="MageObsidian\ModernFrontendTwig\Plugin\App\Cache\FlushCompiledTemplates"/>
     </type>
+    <type name="MageObsidian\ModernFrontendTwig\Model\Template\TemplateNamespaces">
+        <arguments>
+            <argument name="namespaces" xsi:type="array"/>
+        </arguments>
+    </type>
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="mageObsidianTwigNamespaces" xsi:type="object">MageObsidian\ModernFrontendTwig\Console\Command\TwigNamespacesCommand</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

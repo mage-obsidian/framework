@@ -19,6 +19,10 @@ export const DEPENDENCY_CONFIG_FILE_PATH = path.resolve(
 // Mirrors ConfigInterface::CMS_CONTENT_PATH on the PHP side; it is a fixed
 // layout rather than a setting, so it stays out of the generated contract.
 export const CMS_CONTENT_DIR = path.resolve(MAGENTO_ROOT, "var/mage-obsidian/cms");
+export const CMS_CANDIDATES_FILE = "candidates.json";
+// Written into each theme's build output so the runtime knows which classes the
+// stylesheet it is serving already covers. Mirrors ConfigInterface::CMS_BASELINE_FILE.
+export const CMS_BASELINE_FILE = "cms-candidates.json";
 
 export const MODULE_WEB_PATH = "view/frontend/web/";
 export const MODULE_TEMPLATES_PATH = "view/frontend/templates";

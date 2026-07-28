@@ -8,6 +8,7 @@ import path from "path";
 import chalk from "chalk";
 import configResolver from "../core/configResolver.ts";
 import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
+import { writeCmsBaseline } from "../core/cmsBaseline.ts";
 import runWithConcurrency from "../utils/runWithConcurrency.ts";
 import { selectThemeForDevServer } from "./selectTheme.ts";
 import dotenv from "dotenv";
@@ -171,6 +172,12 @@ const buildThemes = async (themeNames) => {
             chalk.red(`Build failed for: ${failed.map((result) => result.themeName).join(", ")}`),
         );
         process.exit(1);
+    }
+
+    // Only for what actually built: a baseline next to a stylesheet that was
+    // never produced would tell the storefront it covers classes it does not.
+    for (const { themeName } of results) {
+        await writeCmsBaseline(themeName);
     }
 };
 

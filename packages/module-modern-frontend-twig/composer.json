@@ -24,7 +24,7 @@
         }
     ],
     "require": {
-        "mage-obsidian/module-modern-frontend": "^2.0",
+        "mage-obsidian/module-modern-frontend": "^2.11",
         "twig/twig": "^3.12"
     },
     "type": "magento2-module",

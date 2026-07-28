@@ -43,7 +43,8 @@
     "license": "MIT",
     "type": "module",
     "bin": {
-        "mage-obsidian:build-themes": "./dist/cli/buildThemes.js"
+        "mage-obsidian:build-themes": "./dist/cli/buildThemes.js",
+        "mage-obsidian:island-ssr": "./dist/cli/islandSsr.js"
     },
     "imports": {
         "#core/*": "./src/core/*",

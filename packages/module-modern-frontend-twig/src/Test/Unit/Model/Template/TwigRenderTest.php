@@ -6,6 +6,7 @@ namespace MageObsidian\ModernFrontendTwig\Test\Unit\Model\Template;
 use Magento\Framework\Escaper;
 use Magento\Framework\Phrase;
 use Magento\Framework\Phrase\Renderer\Placeholder;
+use MageObsidian\ModernFrontend\Service\Vue\IslandMarkup;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
 use MageObsidian\ModernFrontendTwig\Model\Template\Extension\MageObsidianExtension;
 use PHPUnit\Framework\TestCase;
@@ -34,7 +35,7 @@ class TwigRenderTest extends TestCase
         $escaper->method('escapeUrl')->willReturnCallback(static fn($v): string => 'URL(' . $v . ')');
 
         $environment = new Environment(new ArrayLoader($templates), ['cache' => false, 'autoescape' => 'html']);
-        $environment->addExtension(new MageObsidianExtension(new BridgeFunctions(), $escaper));
+        $environment->addExtension(new MageObsidianExtension(new BridgeFunctions(), $escaper, new IslandMarkup()));
 
         return $environment;
     }
@@ -101,7 +102,7 @@ class TwigRenderTest extends TestCase
             new ArrayLoader(['t' => '{{ "/c?cat=3&q=bag"|escape_url }}']),
             ['cache' => false, 'autoescape' => 'html']
         );
-        $environment->addExtension(new MageObsidianExtension(new BridgeFunctions(), $escaper));
+        $environment->addExtension(new MageObsidianExtension(new BridgeFunctions(), $escaper, new IslandMarkup()));
 
         $output = $environment->render('t', []);
 
@@ -141,6 +142,48 @@ class TwigRenderTest extends TestCase
 
         $this->assertStringContainsString('&lt;b&gt;', $output);
         $this->assertStringNotContainsString('<b>', $output);
+    }
+
+    public function testIslandListWrapsAnAppliedLoopInFragmentAnchors(): void
+    {
+        $environment = $this->buildEnvironment([
+            't' => "{% apply island_list %}{% for o in options %}<span>{{ o }}</span>{% endfor %}{% endapply %}",
+        ]);
+
+        $output = $environment->render('t', ['options' => ['28', '29']]);
+
+        $this->assertSame('<!--[--><span>28</span><span>29</span><!--]-->', $output);
+    }
+
+    public function testIslandListDoesNotDoubleEscapeTheCapturedMarkup(): void
+    {
+        $environment = $this->buildEnvironment([
+            't' => '{% apply island_list %}<span>{{ label }}</span>{% endapply %}',
+        ]);
+
+        $output = $environment->render('t', ['label' => 'R&D']);
+
+        // The block's own interpolation is escaped once, by Twig, before the
+        // filter ever sees it; the filter must not escape the markup again.
+        $this->assertSame('<!--[--><span>R&amp;D</span><!--]-->', $output);
+    }
+
+    public function testIslandIfEmitsTheMarkupWhenTheConditionHolds(): void
+    {
+        $environment = $this->buildEnvironment([
+            't' => '{% apply island_if(oldPrice) %}<b>{{ oldPrice }}</b>{% endapply %}',
+        ]);
+
+        $this->assertSame('<b>$59.00</b>', $environment->render('t', ['oldPrice' => '$59.00']));
+    }
+
+    public function testIslandIfEmitsVuesPlaceholderWhenTheConditionFails(): void
+    {
+        $environment = $this->buildEnvironment([
+            't' => '{% apply island_if(oldPrice) %}<b>{{ oldPrice }}</b>{% endapply %}',
+        ]);
+
+        $this->assertSame('<!---->', $environment->render('t', ['oldPrice' => null]));
     }
 
     /**

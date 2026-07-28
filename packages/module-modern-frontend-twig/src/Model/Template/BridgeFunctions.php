@@ -32,7 +32,8 @@ class BridgeFunctions
      * @param string $componentName
      * @param array $props
      * @param bool $eager Mount immediately instead of on viewport entry (above-the-fold).
-     * @param string $placeholder Server-rendered markup shown until hydration.
+     * @param string $serverHtml Server-rendered markup to paint inside the marker.
+     * @param bool $hydrate Whether that markup is the component's initial state.
      *
      * @return string
      */
@@ -41,10 +42,11 @@ class BridgeFunctions
         string $componentName,
         array $props = [],
         bool $eager = false,
-        string $placeholder = ''
+        string $serverHtml = '',
+        bool $hydrate = false
     ): string {
         $this->assertSupports($block, 'renderVueComponent', 'render_vue');
-        return $block->renderVueComponent($componentName, $props, $eager, $placeholder);
+        return $block->renderVueComponent($componentName, $props, $eager, $serverHtml, $hydrate);
     }
 
     /**
@@ -108,10 +110,11 @@ class BridgeFunctions
         object $block,
         string $iconName,
         string $iconSet = 'solid',
-        string $size = '24'
+        string $size = '24',
+        string $class = ''
     ): string {
         $this->assertSupports($block, 'getHeroIcon', 'hero_icon');
-        return $block->getHeroIcon($iconName, $iconSet, $size);
+        return $block->getHeroIcon($iconName, $iconSet, $size, $class);
     }
 
     /**

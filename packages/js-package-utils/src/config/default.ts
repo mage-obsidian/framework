@@ -15,6 +15,11 @@ export const DEPENDENCY_CONFIG_FILE_PATH = path.resolve(
     DEPENDENCY_CONFIG_FILENAME,
 );
 
+// Where `mage-obsidian:cms:export` leaves the CMS content Tailwind has to scan.
+// Mirrors ConfigInterface::CMS_CONTENT_PATH on the PHP side; it is a fixed
+// layout rather than a setting, so it stays out of the generated contract.
+export const CMS_CONTENT_DIR = path.resolve(MAGENTO_ROOT, "var/mage-obsidian/cms");
+
 export const MODULE_WEB_PATH = "view/frontend/web/";
 export const MODULE_TEMPLATES_PATH = "view/frontend/templates";
 export const THEME_MODULE_WEB_PATH = "web/";

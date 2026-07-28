@@ -96,4 +96,44 @@ describe("getTemplateSources", () => {
         expect(out).toContain(`@source "${abs("app/design/frontend/Vendor/theme-b")}"`);
         expect(out).toContain(`@source "${abs("app/design/frontend/Vendor/theme-a")}"`);
     });
+
+    describe("exported CMS content", () => {
+        const mockCmsDir = async (dir) => {
+            const actual = await vi.importActual("#config/default.ts");
+            vi.doMock("#config/default.ts", () => ({ ...actual, CMS_CONTENT_DIR: dir }));
+        };
+
+        beforeEach(() => {
+            vi.doMock("#core/configResolver.ts", () => ({
+                __esModule: true,
+                default: createMockConfigResolver("a").default,
+            }));
+        });
+
+        test("emits a @source for it once the export has run", async () => {
+            await mockCmsDir(SCENARIOS);
+            const { getTemplateSources } = await import("#core/cssResolver.ts");
+
+            expect(await getTemplateSources("Vendor/theme-a")).toContain(`@source "${SCENARIOS}"`);
+        });
+
+        test("emits nothing when the export has never run", async () => {
+            const missing = abs("var/mage-obsidian/cms");
+            await mockCmsDir(missing);
+            const { getTemplateSources } = await import("#core/cssResolver.ts");
+
+            expect(await getTemplateSources("Vendor/theme-a")).not.toContain(missing);
+        });
+
+        test("a theme can opt out of scanning it", async () => {
+            await mockCmsDir(SCENARIOS);
+            vi.doMock("#core/themeResolverSync.ts", () => ({
+                __esModule: true,
+                default: { getThemeConfig: vi.fn(async () => ({ scanCmsContent: false })) },
+            }));
+            const { getTemplateSources } = await import("#core/cssResolver.ts");
+
+            expect(await getTemplateSources("Vendor/theme-a")).not.toContain(`@source "${SCENARIOS}"`);
+        });
+    });
 });

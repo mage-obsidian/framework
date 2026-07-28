@@ -1,6 +1,7 @@
 import themeResolver from "./themeResolverSync.ts";
 import path from "node:path";
 import {
+    CMS_CONTENT_DIR,
     MODULE_TEMPLATES_PATH,
     MODULE_WEB_PATH,
     THEME_CSS_FOLDER,
@@ -102,7 +103,25 @@ async function getTemplateSources(themeName) {
     }
 
     sources += await getThemeTemplateSources(themeName);
+    sources += await getCmsContentSource(themeName);
     return sources;
+}
+
+// Classes an author writes in a CMS page or block live in a database, which no
+// scanner can read. `mage-obsidian:cms:export` dumps that content to files;
+// this registers the directory so the build covers everything that existed when
+// it ran. A theme opts out with `scanCmsContent: false`, and a missing
+// directory just means the export was never run.
+async function getCmsContentSource(themeName) {
+    const themeConfig = await themeResolver.getThemeConfig(themeName);
+    if (themeConfig?.scanCmsContent === false) return "";
+
+    try {
+        await fs.access(CMS_CONTENT_DIR);
+    } catch {
+        return "";
+    }
+    return `@source "${CMS_CONTENT_DIR}";\n`;
 }
 
 async function getVueComponentsSource(themeName) {

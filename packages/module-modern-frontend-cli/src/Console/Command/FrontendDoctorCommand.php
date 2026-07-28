@@ -116,6 +116,7 @@ class FrontendDoctorCommand extends Command
         if ($contractExists) {
             $results[] = $this->diagnostics->evaluateDrift($this->configManager->detectDrift());
             $results[] = $this->diagnostics->evaluateShadowedConfigs($this->findShadowedConfigs($config));
+            $results[] = $this->diagnostics->evaluateIslandHydration($this->findUnhydratedIslands($config));
         }
 
         $this->renderResults($io, $results);
@@ -258,6 +259,73 @@ class FrontendDoctorCommand extends Command
         }
 
         return array_values(array_unique($shadows));
+    }
+
+    /**
+     * Eager islands still handing the browser an empty container, by template.
+     *
+     * Scans the same sources as the config check: module templates and the
+     * theme's per-module template overrides. The rule itself lives in
+     * DevDiagnostics; this only supplies file contents.
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return array<string, string[]>
+     */
+    private function findUnhydratedIslands(array $config): array
+    {
+        $roots = [];
+        foreach (($config['modules'] ?? []) as $module) {
+            if (is_string($module['src'] ?? null)) {
+                $roots[] = $module['src'] . '/view/frontend/templates';
+            }
+        }
+        foreach (($config['themes'] ?? []) as $theme) {
+            if (!is_string($theme['src'] ?? null)) {
+                continue;
+            }
+            foreach ($this->themeModuleOverrideDirs($theme['src']) as $overrideWebDir) {
+                $roots[] = dirname($overrideWebDir) . '/templates';
+            }
+        }
+
+        $islands = [];
+        foreach (array_unique($roots) as $root) {
+            foreach ($this->templatesIn($root) as $path) {
+                $source = $this->fileDriver->fileGetContents($path);
+                $found = $this->diagnostics->eagerIslandsWithoutHydration((string)$source);
+                if ($found !== []) {
+                    $islands[$path] = $found;
+                }
+            }
+        }
+
+        return $islands;
+    }
+
+    /**
+     * Every .twig / .phtml under a directory, recursively.
+     *
+     * @return string[]
+     */
+    private function templatesIn(string $dir): array
+    {
+        if (!$this->fileDriver->isExists($dir) || !$this->fileDriver->isDirectory($dir)) {
+            return [];
+        }
+
+        $templates = [];
+        foreach ($this->fileDriver->readDirectory($dir) as $path) {
+            if ($this->fileDriver->isDirectory($path)) {
+                $templates = array_merge($templates, $this->templatesIn($path));
+                continue;
+            }
+            if (in_array(pathinfo($path, PATHINFO_EXTENSION), ['twig', 'phtml'], true)) {
+                $templates[] = $path;
+            }
+        }
+
+        return $templates;
     }
 
     /**

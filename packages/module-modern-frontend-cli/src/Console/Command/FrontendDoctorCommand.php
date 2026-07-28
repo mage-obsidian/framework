@@ -21,6 +21,8 @@ use Magento\Store\Model\StoreManagerInterface;
 use MageObsidian\ModernFrontend\Api\Data\ConfigInterface;
 use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
 use MageObsidian\ModernFrontend\Model\Config\ConfigProvider;
+use MageObsidian\ModernFrontend\Service\Cms\DeltaStylesheet;
+use MageObsidian\ModernFrontend\Service\Cms\TailwindCli;
 use MageObsidian\ModernFrontend\Service\Dev\CheckResult;
 use MageObsidian\ModernFrontend\Service\Dev\DevDiagnostics;
 use MageObsidian\ModernFrontend\Service\Dev\HttpProberInterface;
@@ -68,7 +70,9 @@ class FrontendDoctorCommand extends Command
         private readonly DriverInterface $fileDriver,
         private readonly ConfigLoaderInterface $diConfigLoader,
         private readonly ScopeConfigInterface $scopeConfig,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly TailwindCli $tailwind,
+        private readonly DeltaStylesheet $cmsDelta
     ) {
         parent::__construct();
     }
@@ -95,6 +99,7 @@ class FrontendDoctorCommand extends Command
         $schemaVersion = $contractExists ? ($config['schema_version'] ?? null) : null;
 
         $devProbe = $this->probeDevServer($hmrEnabled, $env);
+        $cmsDeltaState = $this->cmsDelta->state();
 
         $results = [
             $this->diagnostics->evaluateMode($mode),
@@ -108,6 +113,16 @@ class FrontendDoctorCommand extends Command
                     $this->diConfigLoader->load(Area::AREA_FRONTEND)
                 ),
                 $this->findVaryingDimensions()
+            ),
+            $this->diagnostics->evaluateTailwindBinary(
+                $this->tailwind->isAvailable(),
+                $this->tailwind->getBinaryPath(),
+                $this->tailwind->getVersion()
+            ),
+            $this->diagnostics->evaluateCmsDelta(
+                $cmsDeltaState['classes'],
+                $cmsDeltaState['unresolved'],
+                $this->cmsDelta->hasBaseline()
             ),
         ];
 

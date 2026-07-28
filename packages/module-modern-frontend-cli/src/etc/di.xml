@@ -44,6 +44,10 @@
                     name="mage-obsidian-modern-frontend:cms-export:command"
                     xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\CmsExportCommand
                 </item>
+                <item
+                    name="mage-obsidian-modern-frontend:cms-jit:command"
+                    xsi:type="object">MageObsidian\ModernFrontendCli\Console\Command\CmsJitCommand
+                </item>
             </argument>
         </arguments>
     </type>

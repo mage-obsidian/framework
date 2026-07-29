@@ -223,3 +223,56 @@ describe("app factory", () => {
         expect(seen).toEqual([true, false]);
     });
 });
+
+describe("announce", () => {
+    function recorder() {
+        const seen = [];
+        return { seen, announce: (phase, detail) => seen.push({ phase, ...detail }) };
+    }
+
+    it("brackets a successful mount with before and after", async () => {
+        const { seen, announce } = recorder();
+        let clock = 0;
+        const el = island({ component: "/static/Card.js", strategy: "eager" });
+
+        await hydrateIsland(el, deps({ announce, now: () => (clock += 12) }));
+
+        expect(seen.map((entry) => entry.phase)).toEqual(["before", "after"]);
+        expect(seen[0]).toMatchObject({ component: "/static/Card.js", strategy: "eager", element: el });
+        expect(seen[1].durationMs).toBe(12);
+    });
+
+    it("defaults the strategy the same way discovery does", async () => {
+        const { seen, announce } = recorder();
+
+        await hydrateIsland(island({ component: "/static/Card.js" }), deps({ announce }));
+
+        expect(seen[0].strategy).toBe("visible");
+    });
+
+    it("announces a failure and still lets the error surface", async () => {
+        const { seen, announce } = recorder();
+        const boom = new Error("chunk 404");
+        const d = deps({
+            announce,
+            importComponent: vi.fn(async () => {
+                throw boom;
+            }),
+        });
+
+        await expect(hydrateIsland(island({ component: "/static/Card.js" }), d)).rejects.toBe(boom);
+        expect(seen.map((entry) => entry.phase)).toEqual(["before", "failed"]);
+        expect(seen[1].error).toBe(boom);
+    });
+
+    it("says nothing for an element already claimed", async () => {
+        const { seen, announce } = recorder();
+        const el = island({ component: "/static/Card.js" });
+        const d = deps({ announce });
+
+        await hydrateIsland(el, d);
+        await hydrateIsland(el, d);
+
+        expect(seen).toHaveLength(2);
+    });
+});

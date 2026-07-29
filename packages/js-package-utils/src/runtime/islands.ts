@@ -15,16 +15,33 @@
  * module's `web/js/islands.ts`.
  */
 
+import { MutationPhase } from "./mutationEvent.ts";
+
 // Set synchronously before the async import so a second observer callback for
 // the same element is a no-op (dataset key for `data-mage-island-mounted`).
 const MOUNTED_FLAG = "mageIslandMounted";
 
-interface IslandElement {
+export const IslandStrategy = {
+    Eager: "eager",
+    Visible: "visible",
+} as const;
+
+export type IslandStrategy = (typeof IslandStrategy)[keyof typeof IslandStrategy];
+
+export interface IslandElement {
     dataset: Record<string, string | undefined>;
 }
 
 interface AppLike {
     mount(el: unknown): unknown;
+}
+
+export interface IslandAnnouncement {
+    component: string;
+    strategy: string;
+    element: IslandElement;
+    durationMs?: number;
+    error?: unknown;
 }
 
 interface HydrateDeps {
@@ -40,6 +57,8 @@ interface HydrateDeps {
     /** Opaque state captured before mounting, handed back to `onMounted`. */
     snapshot?(element: IslandElement): unknown;
     onMounted?(element: IslandElement, snapshot: unknown): void;
+    announce?(phase: MutationPhase, detail: IslandAnnouncement): void;
+    now?(): number;
 }
 
 interface DiscoverDeps extends HydrateDeps {
@@ -66,24 +85,42 @@ export async function hydrateIsland(
         throw new Error("Island marker is missing data-component.");
     }
 
-    const module = await deps.importComponent(source);
-    const component = module.default ?? module;
-    const props = element.dataset.props ? JSON.parse(element.dataset.props) : {};
+    const strategy = element.dataset.strategy ?? IslandStrategy.Visible;
+    const clock = deps.now ?? (() => (typeof performance !== "undefined" ? performance.now() : 0));
+    const startedAt = deps.announce ? clock() : 0;
+    deps.announce?.(MutationPhase.Before, { component: source, strategy, element });
 
-    const hydrate = Boolean(element.dataset.hydrate);
-    // Captured before the container is cleared: the baseline is what the page
-    // painted, not what is left after a placeholder is thrown away.
-    const snapshot = deps.snapshot?.(element);
-    if (!hydrate) {
-        deps.clearContainer?.(element);
+    let app: AppLike;
+    try {
+        const module = await deps.importComponent(source);
+        const component = module.default ?? module;
+        const props = element.dataset.props ? JSON.parse(element.dataset.props) : {};
+
+        const hydrate = Boolean(element.dataset.hydrate);
+        // Captured before the container is cleared: the baseline is what the page
+        // painted, not what is left after a placeholder is thrown away.
+        const snapshot = deps.snapshot?.(element);
+        if (!hydrate) {
+            deps.clearContainer?.(element);
+        }
+
+        app = deps.createApp(component, props, hydrate);
+        deps.configureApp(app);
+        app.mount(element);
+        // Read back before yielding to the event loop, so what is compared is what
+        // hydration did and not what a later reactive effect changed.
+        deps.onMounted?.(element, snapshot);
+    } catch (error) {
+        deps.announce?.(MutationPhase.Failed, { component: source, strategy, element, error });
+        throw error;
     }
 
-    const app = deps.createApp(component, props, hydrate);
-    deps.configureApp(app);
-    app.mount(element);
-    // Read back before yielding to the event loop, so what is compared is what
-    // hydration did and not what a later reactive effect changed.
-    deps.onMounted?.(element, snapshot);
+    deps.announce?.(MutationPhase.After, {
+        component: source,
+        strategy,
+        element,
+        durationMs: clock() - startedAt,
+    });
     return app;
 }
 
@@ -93,8 +130,8 @@ export async function hydrateIsland(
  */
 export function hydrateAll(elements: Iterable<IslandElement>, deps: DiscoverDeps): void {
     for (const element of elements) {
-        const strategy = element.dataset.strategy ?? "visible";
-        if (strategy === "eager") {
+        const strategy = element.dataset.strategy ?? IslandStrategy.Visible;
+        if (strategy === IslandStrategy.Eager) {
             void hydrateIsland(element, deps);
         } else {
             deps.observe(element, () => {

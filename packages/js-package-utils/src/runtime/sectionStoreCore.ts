@@ -83,6 +83,18 @@ export function mergeSections(
     return { ...pickObjectEntries(current), ...pickObjectEntries(incoming) };
 }
 
+export function patchSection(
+    sections: SectionMap | null | undefined,
+    name: string,
+    partial: SectionData,
+): SectionMap {
+    const current = pickObjectEntries(sections);
+    if (!name) {
+        return current;
+    }
+    return { ...current, [name]: { ...(selectSection(current, name) ?? {}), ...partial } };
+}
+
 /**
  * Whether a section should be (re)fetched. A missing section is stale; a
  * section without a positive `data_id` is a client-side section that never

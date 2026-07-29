@@ -2,6 +2,7 @@ import {
     parseSectionStorage,
     selectSection,
     mergeSections,
+    patchSection,
     isSectionStale,
     buildSectionLoadUrl,
     readCookie,
@@ -237,5 +238,45 @@ describe("readSectionRuntimeConfig", () => {
             lifetimeSeconds: 0,
             expirableSections: ["cart"],
         });
+    });
+});
+
+describe("patchSection", () => {
+    it("overlays fields without dropping the rest of the section", () => {
+        const before = { cart: { summary_count: 2, subtotal: "$24.00" } };
+
+        const after = patchSection(before, "cart", { summary_count: 3 });
+
+        expect(after.cart).toEqual({ summary_count: 3, subtotal: "$24.00" });
+    });
+
+    it("replaces the section object so an earlier copy is a valid rollback point", () => {
+        const before = { cart: { summary_count: 2 } };
+        const rollback = { ...before };
+
+        const after = patchSection(before, "cart", { summary_count: 9 });
+
+        expect(after).not.toBe(before);
+        expect(after.cart).not.toBe(before.cart);
+        expect(rollback.cart.summary_count).toBe(2);
+    });
+
+    it("creates a section that was not there yet", () => {
+        expect(patchSection({}, "cart", { summary_count: 1 })).toEqual({
+            cart: { summary_count: 1 },
+        });
+    });
+
+    it("leaves the other sections alone", () => {
+        const before = { cart: { summary_count: 1 }, customer: { firstname: "Ada" } };
+
+        expect(patchSection(before, "cart", { summary_count: 2 }).customer).toEqual({
+            firstname: "Ada",
+        });
+    });
+
+    it("tolerates a missing map and an empty name", () => {
+        expect(patchSection(null, "cart", { a: 1 })).toEqual({ cart: { a: 1 } });
+        expect(patchSection({ cart: { a: 1 } }, "", { b: 2 })).toEqual({ cart: { a: 1 } });
     });
 });

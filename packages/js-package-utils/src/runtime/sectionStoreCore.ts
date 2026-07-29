@@ -92,7 +92,7 @@ export function patchSection(
     if (!name) {
         return current;
     }
-    return { ...current, [name]: { ...(selectSection(current, name) ?? {}), ...partial } };
+    return { ...current, [name]: { ...selectSection(current, name), ...partial } };
 }
 
 /**

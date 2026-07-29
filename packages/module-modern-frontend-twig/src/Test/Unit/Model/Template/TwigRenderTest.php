@@ -8,6 +8,7 @@ use Magento\Framework\Phrase;
 use Magento\Framework\Phrase\Renderer\Placeholder;
 use MageObsidian\ModernFrontend\Service\Vue\IslandMarkup;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
+use MageObsidian\ModernFrontendTwig\Model\Template\ViewFileInliner;
 use MageObsidian\ModernFrontendTwig\Model\Template\Extension\MageObsidianExtension;
 use PHPUnit\Framework\TestCase;
 use Twig\Environment;
@@ -35,7 +36,12 @@ class TwigRenderTest extends TestCase
         $escaper->method('escapeUrl')->willReturnCallback(static fn($v): string => 'URL(' . $v . ')');
 
         $environment = new Environment(new ArrayLoader($templates), ['cache' => false, 'autoescape' => 'html']);
-        $environment->addExtension(new MageObsidianExtension(new BridgeFunctions(), $escaper, new IslandMarkup()));
+        $environment->addExtension(new MageObsidianExtension(
+            new BridgeFunctions(),
+            $escaper,
+            new IslandMarkup(),
+            $this->createMock(ViewFileInliner::class)
+        ));
 
         return $environment;
     }
@@ -102,12 +108,35 @@ class TwigRenderTest extends TestCase
             new ArrayLoader(['t' => '{{ "/c?cat=3&q=bag"|escape_url }}']),
             ['cache' => false, 'autoescape' => 'html']
         );
-        $environment->addExtension(new MageObsidianExtension(new BridgeFunctions(), $escaper, new IslandMarkup()));
+        $environment->addExtension(new MageObsidianExtension(
+            new BridgeFunctions(),
+            $escaper,
+            new IslandMarkup(),
+            $this->createMock(ViewFileInliner::class)
+        ));
 
         $output = $environment->render('t', []);
 
         $this->assertStringContainsString('cat=3&amp;q=bag', $output);
         $this->assertStringNotContainsString('&amp;amp;', $output);
+    }
+
+    public function testInlineViewFileEmitsTheFileVerbatim(): void
+    {
+        $inliner = $this->createMock(ViewFileInliner::class);
+        $inliner->method('inline')
+            ->with('Magento_Theme::css/view-transitions.css')
+            ->willReturn('::view-transition-old(root) { animation: none; }');
+
+        $environment = new Environment(
+            new ArrayLoader(['t' => "{{ inline_view_file('Magento_Theme::css/view-transitions.css') }}"]),
+            ['cache' => false, 'autoescape' => 'html']
+        );
+        $environment->addExtension(
+            new MageObsidianExtension(new BridgeFunctions(), $this->createMock(Escaper::class), new IslandMarkup(), $inliner)
+        );
+
+        $this->assertSame('::view-transition-old(root) { animation: none; }', $environment->render('t', []));
     }
 
     public function testTranslateFunctionReturnsTextWhenNoPlaceholders(): void

@@ -13,6 +13,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\Phrase;
 use MageObsidian\ModernFrontend\Service\Vue\IslandMarkup;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
+use MageObsidian\ModernFrontendTwig\Model\Template\ViewFileInliner;
 use Twig\Extension\AbstractExtension;
 use Twig\Error\RuntimeError;
 use Twig\TwigFilter;
@@ -37,11 +38,13 @@ class MageObsidianExtension extends AbstractExtension
      * @param BridgeFunctions $bridge
      * @param Escaper $escaper
      * @param IslandMarkup $islandMarkup
+     * @param ViewFileInliner $viewFileInliner
      */
     public function __construct(
         private readonly BridgeFunctions $bridge,
         private readonly Escaper $escaper,
-        private readonly IslandMarkup $islandMarkup
+        private readonly IslandMarkup $islandMarkup,
+        private readonly ViewFileInliner $viewFileInliner
     ) {
     }
 
@@ -131,6 +134,11 @@ class MageObsidianExtension extends AbstractExtension
                 fn(array $context, string $name): string
                     => $this->bridge->componentPath($this->blockOf($context), $name),
                 $url
+            ),
+            new TwigFunction(
+                'inline_view_file',
+                fn(string $fileId): string => $this->viewFileInliner->inline($fileId),
+                ['is_safe' => ['html']]
             ),
             new TwigFunction(
                 'view_file_url',

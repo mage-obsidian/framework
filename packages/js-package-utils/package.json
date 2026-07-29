@@ -1,6 +1,6 @@
 {
     "name": "mage-obsidian",
-    "version": "2.6.0",
+    "version": "2.6.1",
     "description": "The MageObsidian JS build engine for Magento 2 frontends: theme inheritance resolution, precompilation and JS interceptors for Vite builds.",
     "homepage": "https://mage-obsidian.jeanmarcos.dev/",
     "bugs": {

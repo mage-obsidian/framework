@@ -15,8 +15,10 @@ export interface FlowEvent<Operation extends string = string, Result = unknown> 
     result?: Result;
 }
 
-export interface MutationEvent<Operation extends string = string, Result = unknown>
-    extends FlowEvent<Operation, Result> {
+export interface MutationEvent<
+    Operation extends string = string,
+    Result = unknown,
+> extends FlowEvent<Operation, Result> {
     action: string;
     body: FormData;
 }

@@ -295,7 +295,9 @@ describe("mergeSections as a scoped rollback", () => {
     });
 
     it("adds back a section that was dropped while the mutation was in flight", () => {
-        expect(mergeSections({ customer: { firstname: "Ada" } }, { cart: { summary_count: 2 } })).toEqual({
+        expect(
+            mergeSections({ customer: { firstname: "Ada" } }, { cart: { summary_count: 2 } }),
+        ).toEqual({
             customer: { firstname: "Ada" },
             cart: { summary_count: 2 },
         });

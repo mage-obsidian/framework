@@ -238,7 +238,11 @@ describe("announce", () => {
         await hydrateIsland(el, deps({ announce, now: () => (clock += 12) }));
 
         expect(seen.map((entry) => entry.phase)).toEqual(["before", "after"]);
-        expect(seen[0]).toMatchObject({ component: "/static/Card.js", strategy: "eager", element: el });
+        expect(seen[0]).toMatchObject({
+            component: "/static/Card.js",
+            strategy: "eager",
+            element: el,
+        });
         expect(seen[1].durationMs).toBe(12);
     });
 

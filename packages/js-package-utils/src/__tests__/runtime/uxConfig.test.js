@@ -12,7 +12,10 @@ describe("readUxRuntimeConfig", () => {
 
     it("defaults to optimistic when the page published nothing", () => {
         expect(readUxRuntimeConfig({})).toEqual({ optimistic: true, summaryCountsQty: true });
-        expect(readUxRuntimeConfig(undefined)).toEqual({ optimistic: true, summaryCountsQty: true });
+        expect(readUxRuntimeConfig(undefined)).toEqual({
+            optimistic: true,
+            summaryCountsQty: true,
+        });
     });
 
     it("ignores a non-boolean rather than coercing it", () => {

@@ -7,6 +7,7 @@ export default [
     {
         ignores: [
             "node_modules/**",
+            "dist/**",
             ".precompiled/**",
             "src/__tests__/magento_scenarios/**",
             "src/__tests__/fixtures/**",

@@ -280,3 +280,24 @@ describe("patchSection", () => {
         expect(patchSection({ cart: { a: 1 } }, "", { b: 2 })).toEqual({ cart: { a: 1 } });
     });
 });
+
+describe("mergeSections as a scoped rollback", () => {
+    // A rollback owns the sections it captured and nothing else: put one back and
+    // whatever moved in the meantime has to survive.
+    it("puts back only the captured section", () => {
+        const rollback = { cart: { summary_count: 1 } };
+        const moved = { cart: { summary_count: 9 }, customer: { firstname: "Grace" } };
+
+        expect(mergeSections(moved, rollback)).toEqual({
+            cart: { summary_count: 1 },
+            customer: { firstname: "Grace" },
+        });
+    });
+
+    it("adds back a section that was dropped while the mutation was in flight", () => {
+        expect(mergeSections({ customer: { firstname: "Ada" } }, { cart: { summary_count: 2 } })).toEqual({
+            customer: { firstname: "Ada" },
+            cart: { summary_count: 2 },
+        });
+    });
+});

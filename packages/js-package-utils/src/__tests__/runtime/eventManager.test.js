@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { EventManager } from "../../runtime/eventManager.ts";
 
 describe("EventManager", () => {
@@ -113,5 +113,199 @@ describe("EventManager", () => {
         await events.dispatch("cart_add_after", {});
 
         expect(seen).toEqual(["first", "second"]);
+    });
+});
+
+describe("sticky events", () => {
+    it("catches up an observer that subscribed after the event fired", async () => {
+        const events = new EventManager();
+        await events.dispatch("page_ready", { url: "/women.html" }, { sticky: true });
+
+        const seen = [];
+        events.observe("page_ready", (data) => seen.push(data.url));
+        await Promise.resolve();
+
+        expect(seen).toEqual(["/women.html"]);
+    });
+
+    it("does not replay an event that was not marked sticky", async () => {
+        const events = new EventManager();
+        await events.dispatch("cart_add_after", { ok: true });
+
+        const seen = [];
+        events.observe("cart_add_after", () => seen.push("late"));
+        await Promise.resolve();
+
+        expect(seen).toEqual([]);
+    });
+
+    it("hands the remembered payload to code that cannot observe", async () => {
+        const events = new EventManager();
+
+        expect(events.sticky("page_ready")).toBeUndefined();
+        await events.dispatch("page_ready", { url: "/" }, { sticky: true });
+
+        expect(events.sticky("page_ready")).toEqual({ url: "/" });
+    });
+
+    it("replays only the last payload", async () => {
+        const events = new EventManager();
+        await events.dispatch("page_ready", { url: "/a" }, { sticky: true });
+        await events.dispatch("page_ready", { url: "/b" }, { sticky: true });
+
+        const seen = [];
+        events.observe("page_ready", (data) => seen.push(data.url));
+        await Promise.resolve();
+
+        expect(seen).toEqual(["/b"]);
+    });
+});
+
+describe("observeOnce", () => {
+    it("runs for the first dispatch and never again", async () => {
+        const events = new EventManager();
+        const seen = [];
+
+        events.observeOnce("cart_add_after", () => seen.push("once"));
+        await events.dispatch("cart_add_after", {});
+        await events.dispatch("cart_add_after", {});
+
+        expect(seen).toEqual(["once"]);
+        expect(events.observersOf("cart_add_after")).toEqual([]);
+    });
+
+    it("unsubscribes cleanly when a sticky replay fires it immediately", async () => {
+        const events = new EventManager();
+        await events.dispatch("page_ready", { url: "/" }, { sticky: true });
+
+        const seen = [];
+        events.observeOnce("page_ready", () => seen.push("once"));
+        await Promise.resolve();
+        await events.dispatch("page_ready", { url: "/next" }, { sticky: true });
+
+        expect(seen).toEqual(["once"]);
+        expect(events.observersOf("page_ready")).toEqual([]);
+    });
+});
+
+describe("dispatch hooks", () => {
+    it("wraps every dispatch, whatever the event", async () => {
+        const events = new EventManager();
+        const seen = [];
+        events.onDispatch({
+            start: (event) => seen.push(`start:${event}`),
+            end: (event) => seen.push(`end:${event}`),
+        });
+
+        await events.dispatch("cart_add_before", {});
+        await events.dispatch("wishlist_add_after", {});
+
+        expect(seen).toEqual([
+            "start:cart_add_before",
+            "end:cart_add_before",
+            "start:wishlist_add_after",
+            "end:wishlist_add_after",
+        ]);
+    });
+
+    it("runs start before the observers and end after they amended the data", async () => {
+        const events = new EventManager();
+        const seen = [];
+        events.onDispatch({
+            start: (event, data) => seen.push(`start:${data.qty}`),
+            end: (event, data) => seen.push(`end:${data.qty}`),
+        });
+        events.observe("cart_add_before", (data) => {
+            data.qty = 5;
+        });
+
+        await events.dispatch("cart_add_before", { qty: 1 });
+
+        expect(seen).toEqual(["start:1", "end:5"]);
+    });
+
+    it("passes the dispatch options through, so a hook can honour mirror opt-out", async () => {
+        const events = new EventManager();
+        const seen = [];
+        events.onDispatch({ end: (event, data, options) => seen.push(options.mirror) });
+
+        await events.dispatch("search_query_change", {}, { mirror: false });
+        await events.dispatch("cart_add_after", {});
+
+        expect(seen).toEqual([false, undefined]);
+    });
+
+    it("reports a hook that throws instead of failing the dispatch", async () => {
+        const onError = vi.fn();
+        const events = new EventManager({ onError });
+        events.onDispatch({
+            start: () => {
+                throw new Error("tracker is broken");
+            },
+        });
+
+        await expect(events.dispatch("cart_add_before", { a: 1 })).resolves.toEqual({ a: 1 });
+        expect(onError).toHaveBeenCalledWith("cart_add_before", "hook:start", expect.any(Error));
+    });
+
+    it("returns an unsubscribe", async () => {
+        const events = new EventManager();
+        const seen = [];
+        const off = events.onDispatch({ start: (event) => seen.push(event) });
+        off();
+
+        await events.dispatch("cart_add_before", {});
+
+        expect(seen).toEqual([]);
+    });
+});
+
+describe("debug", () => {
+    beforeEach(() => {
+        vi.spyOn(console, "debug").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("warns about an observer slow enough to cost a frame", async () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        let clock = 0;
+        const events = new EventManager({ debug: true, now: () => clock });
+
+        events.observe(
+            "cart_add_after",
+            () => {
+                clock += 40;
+            },
+            { name: "analytics" },
+        );
+        events.observe("cart_add_after", () => {}, { name: "toast", sortOrder: 20 });
+
+        await events.dispatch("cart_add_after", {});
+
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn.mock.calls[0][0]).toContain('"analytics"');
+        expect(warn.mock.calls[0][0]).toContain("40.0ms");
+        warn.mockRestore();
+    });
+
+    it("stays quiet until it is turned on", async () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        let clock = 0;
+        const events = new EventManager({ now: () => clock });
+        events.observe("cart_add_after", () => {
+            clock += 40;
+        });
+
+        await events.dispatch("cart_add_after", {});
+        expect(warn).not.toHaveBeenCalled();
+
+        events.debug();
+        await events.dispatch("cart_add_after", {});
+        expect(warn).toHaveBeenCalledTimes(1);
+
+        warn.mockRestore();
     });
 });

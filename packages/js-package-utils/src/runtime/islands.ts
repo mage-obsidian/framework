@@ -21,6 +21,8 @@ import { MutationPhase } from "./mutationEvent.ts";
 // the same element is a no-op (dataset key for `data-mage-island-mounted`).
 const MOUNTED_FLAG = "mageIslandMounted";
 
+const READY_FLAG = "mageIslandReady";
+
 export const IslandStrategy = {
     Eager: "eager",
     Visible: "visible",
@@ -107,6 +109,7 @@ export async function hydrateIsland(
         app = deps.createApp(component, props, hydrate);
         deps.configureApp(app);
         app.mount(element);
+        element.dataset[READY_FLAG] = "1";
         // Read back before yielding to the event loop, so what is compared is what
         // hydration did and not what a later reactive effect changed.
         deps.onMounted?.(element, snapshot);

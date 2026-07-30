@@ -8,6 +8,7 @@ use Magento\Framework\Phrase;
 use Magento\Framework\Phrase\Renderer\Placeholder;
 use MageObsidian\ModernFrontend\Service\Vue\IslandMarkup;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
+use MageObsidian\ModernFrontendTwig\Model\Template\ScriptTag;
 use MageObsidian\ModernFrontendTwig\Model\Template\ViewFileInliner;
 use MageObsidian\ModernFrontendTwig\Model\Template\Extension\MageObsidianExtension;
 use PHPUnit\Framework\TestCase;
@@ -40,7 +41,8 @@ class TwigRenderTest extends TestCase
             new BridgeFunctions(),
             $escaper,
             new IslandMarkup(),
-            $this->createMock(ViewFileInliner::class)
+            $this->createMock(ViewFileInliner::class),
+            $this->createMock(ScriptTag::class)
         ));
 
         return $environment;
@@ -112,7 +114,8 @@ class TwigRenderTest extends TestCase
             new BridgeFunctions(),
             $escaper,
             new IslandMarkup(),
-            $this->createMock(ViewFileInliner::class)
+            $this->createMock(ViewFileInliner::class),
+            $this->createMock(ScriptTag::class)
         ));
 
         $output = $environment->render('t', []);
@@ -133,10 +136,41 @@ class TwigRenderTest extends TestCase
             ['cache' => false, 'autoescape' => 'html']
         );
         $environment->addExtension(
-            new MageObsidianExtension(new BridgeFunctions(), $this->createMock(Escaper::class), new IslandMarkup(), $inliner)
+            new MageObsidianExtension(
+                new BridgeFunctions(),
+                $this->createMock(Escaper::class),
+                new IslandMarkup(),
+                $inliner,
+                $this->createMock(ScriptTag::class)
+            )
         );
 
         $this->assertSame('::view-transition-old(root) { animation: none; }', $environment->render('t', []));
+    }
+
+    public function testScriptEmitsTheTagUnescapedAndNeedsNoRenderingBlock(): void
+    {
+        $scriptTag = $this->createMock(ScriptTag::class);
+        $scriptTag->method('module')
+            ->with('MageObsidian_Storefront::js/nav-select')
+            ->willReturn('<script type="module" src="/x.js?a=1&b=2"></script>');
+
+        $environment = new Environment(
+            new ArrayLoader(['t' => "{{ script('MageObsidian_Storefront::js/nav-select') }}"]),
+            ['cache' => false, 'autoescape' => 'html']
+        );
+        $environment->addExtension(
+            new MageObsidianExtension(
+                new BridgeFunctions(),
+                $this->createMock(Escaper::class),
+                new IslandMarkup(),
+                $this->createMock(ViewFileInliner::class),
+                $scriptTag
+            )
+        );
+
+        // Rendered with an empty context: unlike vite_url, this must not need `block`.
+        $this->assertSame('<script type="module" src="/x.js?a=1&b=2"></script>', $environment->render('t', []));
     }
 
     public function testTranslateFunctionReturnsTextWhenNoPlaceholders(): void

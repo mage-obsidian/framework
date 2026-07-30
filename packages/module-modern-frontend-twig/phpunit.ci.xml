@@ -21,6 +21,7 @@
             <exclude>src/Test/Unit/Model/Template/FilesystemLoaderTest.php</exclude>
             <exclude>src/Test/Unit/Model/Template/EnvironmentFactoryTest.php</exclude>
             <exclude>src/Test/Unit/Model/Template/FormatExtensionTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/ScriptTagTest.php</exclude>
             <exclude>src/Test/Unit/Model/Cache/CacheTypeStateTest.php</exclude>
             <exclude>src/Test/Unit/Model/Cache/CompiledTemplateCacheTest.php</exclude>
             <exclude>src/Test/Unit/Setup/Patch/Data/EnableCompiledTemplatesCacheTest.php</exclude>

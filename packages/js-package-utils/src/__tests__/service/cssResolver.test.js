@@ -8,6 +8,39 @@ const __dirname = path.dirname(__filename);
 const SCENARIOS = path.resolve(__dirname, "../magento_scenarios");
 const abs = (p) => path.resolve(SCENARIOS, p);
 
+describe("getCssImports", () => {
+    beforeEach(async () => {
+        vi.resetModules();
+        vi.doMock("#core/configResolver.ts", () => ({
+            __esModule: true,
+            default: createMockConfigResolver("a").default,
+        }));
+        // The component list is read from a .precompiled artifact a build writes;
+        // the layer declaration does not depend on it.
+        const moduleResolver = await vi.importActual("#core/moduleResolver.ts");
+        vi.doMock("#core/moduleResolver.ts", () => ({
+            ...moduleResolver,
+            getAllJsVueFilesWithInheritanceCached: vi.fn(async () => ({})),
+        }));
+    });
+
+    test("declares the layer order before anything else", async () => {
+        const getCssImports = (await import("#core/cssResolver.ts")).default;
+
+        const out = await getCssImports("Vendor/theme-a");
+
+        expect(out.startsWith("@layer theme, base, components, utilities;\n")).toBe(true);
+    });
+
+    test("declares it ahead of every @import, or the browser drops the statement", async () => {
+        const getCssImports = (await import("#core/cssResolver.ts")).default;
+
+        const out = await getCssImports("Vendor/theme-a");
+
+        expect(out.indexOf("@layer theme")).toBeLessThan(out.indexOf("@import"));
+    });
+});
+
 describe("getTemplateSources", () => {
     beforeEach(() => {
         vi.resetModules();

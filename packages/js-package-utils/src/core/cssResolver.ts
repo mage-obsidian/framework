@@ -17,6 +17,13 @@ const { getMagentoConfig, getModuleDefinition, getThemeDefinition, getModulesCon
 const MODULE_CSS_EXTEND_FILE = getMagentoConfig().MODULE_CSS_EXTEND_FILE;
 const THEME_CSS_SOURCE_FILE = getMagentoConfig().THEME_CSS_SOURCE_FILE;
 
+// Module CSS is imported before Tailwind's own entry, so a module that opens
+// `@layer components` would be the first to name it and the layer would end up
+// ordered ahead of `base` — where preflight resets `background`/`border-radius`
+// on every button. Declaring the order up front (legal before @import, and the
+// same list Tailwind emits) keeps components between base and utilities.
+const LAYER_ORDER = "@layer theme, base, components, utilities;\n";
+
 async function getThemeImports(themeName, themeConfig?) {
     if (!themeConfig) {
         themeConfig = await themeResolver.getThemeConfig(themeName);
@@ -165,7 +172,7 @@ async function getCssImports(themeName) {
     cssImports += await getThemeImports(themeName);
 
     const templateSources = await getTemplateSources(themeName);
-    return `${cssSource}${templateSources}\n${cssImports}`;
+    return `${LAYER_ORDER}${cssSource}${templateSources}\n${cssImports}`;
 }
 
 export default getCssImports;

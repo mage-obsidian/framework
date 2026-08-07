@@ -98,7 +98,11 @@ export async function hydrateIsland(
         const component = module.default ?? module;
         const props = element.dataset.props ? JSON.parse(element.dataset.props) : {};
 
-        const hydrate = Boolean(element.dataset.hydrate);
+        // Presence, not truth: PHP emits `data-hydrate` with no value, and the
+        // DOM reports a valueless attribute as the empty string — which is
+        // falsy, so testing the value threw away the server markup of every
+        // island that asked to be adopted.
+        const hydrate = element.dataset.hydrate !== undefined;
         // Captured before the container is cleared: the baseline is what the page
         // painted, not what is left after a placeholder is thrown away.
         const snapshot = deps.snapshot?.(element);

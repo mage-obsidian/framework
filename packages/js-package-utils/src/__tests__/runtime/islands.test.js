@@ -137,9 +137,10 @@ describe("placeholder markup", () => {
         expect(el.innerHTML).toBe("");
     });
 
+    // The empty string is what the DOM reports for the valueless `data-hydrate`
+    // PHP emits, so it is the only value this case is ever called with.
     it("leaves a hydration target alone", async () => {
         const el = island({ component: "/static/Card.js", hydrate: "" });
-        el.dataset.hydrate = "true";
         el.innerHTML = "<span>server</span>";
         const d = deps({ clearContainer: vi.fn() });
 
@@ -147,6 +148,25 @@ describe("placeholder markup", () => {
 
         expect(d.clearContainer).not.toHaveBeenCalled();
         expect(el.innerHTML).toBe("<span>server</span>");
+    });
+
+    it("tells the app factory to hydrate when the marker carries the flag", async () => {
+        const el = island({ component: "/static/Card.js", hydrate: "" });
+        el.innerHTML = "<span>server</span>";
+        const d = deps();
+
+        await hydrateIsland(el, d);
+
+        expect(d.createApp).toHaveBeenCalledWith("component:/static/Card.js", {}, true);
+    });
+
+    it("tells the app factory to mount fresh when the marker has no flag", async () => {
+        const el = island({ component: "/static/Card.js" });
+        const d = deps();
+
+        await hydrateIsland(el, d);
+
+        expect(d.createApp).toHaveBeenCalledWith("component:/static/Card.js", {}, false);
     });
 });
 

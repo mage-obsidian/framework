@@ -70,6 +70,40 @@ describe("inherit-resolver", () => {
         vi.resetModules();
     });
 
+    // The dev server keeps one plugin instance for its whole life while the
+    // resolver hands back a fresh object every time the precompiled map is
+    // rewritten. Reading the map at factory time freezes the very first one, so
+    // a component added while the server is up never resolves — the promise that
+    // no restart is needed only holds if the map is read inside the handler.
+    test("resolves a component registered after the plugin was created", async () => {
+        process.env.CURRENT_THEME = "Vendor/theme-a";
+
+        let components = { "Vendor_ModuleNameA/js/test": "/TEST/web/js/test.js" };
+
+        vi.doMock("#core/configResolver.ts", () => ({
+            __esModule: true,
+            default: createMockConfigResolver("a").default,
+        }));
+        vi.doMock("#core/moduleResolver.ts", () => ({
+            __esModule: true,
+            default: {
+                getAllJsVueFilesWithInheritanceCached: vi.fn(() => components),
+            },
+        }));
+
+        const { default: factory } = await import("#vite/inheritModuleResolver.ts");
+        const plugin = factory();
+
+        components = {
+            ...components,
+            "Vendor_ModuleNameA/js/fresh": "/TEST/web/js/fresh.js",
+        };
+
+        expect(plugin.resolveId.handler("Vendor_ModuleNameA::js/fresh")).toBe(
+            "/TEST/web/js/fresh.js",
+        );
+    });
+
     test.each(
         scenarios.flatMap(({ scenario, themes }) =>
             themes.map(({ code, codeImport, expected }) => [scenario, code, codeImport, expected]),

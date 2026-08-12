@@ -97,9 +97,6 @@ describe("theme-source-watcher", () => {
         expect(mocks.precompileJs).not.toHaveBeenCalled();
     });
 
-    // The interceptor caches used to survive this: adding a component refreshed
-    // the inheritance map but an interceptor pointing at it stayed compiled from
-    // the boot-time config, so the plugin silently never applied until restart.
     test("drops the interceptor caches alongside the module ones", async () => {
         const { server } = await boot();
 

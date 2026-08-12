@@ -294,10 +294,6 @@ ${exportsCode}
 `;
 }
 
-// Both maps are keyed by theme and outlive a dev-server session. The watcher
-// calls this alongside moduleResolver.invalidateTheme so an interceptor added,
-// retargeted or deactivated while the server is up takes effect on the next
-// build instead of waiting for a restart.
 function invalidateTheme(themeName?) {
     themeName = themeName ?? process.env.CURRENT_THEME;
     interceptorsRegisteredByTheme.delete(themeName);

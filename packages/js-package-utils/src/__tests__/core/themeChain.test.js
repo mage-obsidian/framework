@@ -40,10 +40,6 @@ describe("getThemeChain", () => {
         expect(getThemeChain("V/leaf")).toEqual(["V/leaf"]);
     });
 
-    // Without this the six walkers that follow `theme.parent` recurse until the
-    // stack dies, and the contract validator never looks at parents, so a typo
-    // that points a theme at itself surfaces as "Maximum call stack size
-    // exceeded" from somewhere deep in the build.
     test("stops on a theme that is its own parent", async () => {
         const { getThemeChain } = await chainWith({
             "V/loop": { src: "/loop", parent: "V/loop" },

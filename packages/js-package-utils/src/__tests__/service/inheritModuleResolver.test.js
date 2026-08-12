@@ -70,11 +70,6 @@ describe("inherit-resolver", () => {
         vi.resetModules();
     });
 
-    // The dev server keeps one plugin instance for its whole life while the
-    // resolver hands back a fresh object every time the precompiled map is
-    // rewritten. Reading the map at factory time freezes the very first one, so
-    // a component added while the server is up never resolves — the promise that
-    // no restart is needed only holds if the map is read inside the handler.
     test("resolves a component registered after the plugin was created", async () => {
         process.env.CURRENT_THEME = "Vendor/theme-a";
 

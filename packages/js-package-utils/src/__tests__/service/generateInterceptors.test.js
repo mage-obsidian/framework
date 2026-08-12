@@ -201,10 +201,6 @@ describe("generateInterceptors", () => {
         consoleSpy.mockRestore();
     });
 
-    // Both caches here are keyed by theme and were never dropped by anything, so
-    // in dev an interceptor added or retargeted after the server booted stayed
-    // invisible until a restart — moduleResolver.invalidateTheme cleared its own
-    // maps and these two kept answering with the boot-time result.
     test("invalidateTheme makes the next generation read the config again", async () => {
         const themeName = "Vendor/theme-test";
 

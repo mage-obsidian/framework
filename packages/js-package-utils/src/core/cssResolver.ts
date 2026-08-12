@@ -30,9 +30,6 @@ async function getThemeImports(themeName, themeConfig?) {
         themeConfig = await themeResolver.getThemeConfig(themeName);
     }
 
-    // Root first, so a child theme's stylesheet is imported after everything it
-    // inherits and its rules win on equal specificity. With the parent source
-    // opted out, only this theme's own sheet is emitted.
     const chain = themeConfig.includeCssSourceFromParentThemes
         ? getThemeChainFromRoot(themeName)
         : [themeName];

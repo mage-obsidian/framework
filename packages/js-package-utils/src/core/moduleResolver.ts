@@ -54,7 +54,6 @@ async function getAllJsVueFilesFromActiveModules() {
 async function getAllJsVueFilesFromTheme(themeName) {
     let result = {};
 
-    // Root first so a child theme's files land on top of what it inherits.
     for (const name of getThemeChainFromRoot(themeName)) {
         const theme = configResolver.getMagentoConfig().themes[name];
 
@@ -141,7 +140,6 @@ function getModuleConfigPath(moduleSrc) {
 }
 
 function resolveFileByTheme(themeName, moduleName, filePath) {
-    // Nearest first: the most specific override of a file wins.
     for (const name of getThemeChain(themeName)) {
         const theme = configResolver.getMagentoConfig().themes[name];
         const fullFilePath = path.join(theme.src, moduleName, "web", filePath);

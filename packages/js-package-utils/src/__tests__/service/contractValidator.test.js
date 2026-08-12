@@ -96,9 +96,6 @@ describe("validateContract", () => {
         expect(validateContract(contract).ok).toBe(true);
     });
 
-    // Every resolver in the engine follows theme.parent. A cycle there is not a
-    // slow build, it is an unbounded walk that dies as "Maximum call stack size
-    // exceeded" from whichever resolver got there first, naming no theme.
     it("rejects a theme that is its own ancestor", () => {
         const contract = makeValidContract({
             themes: {

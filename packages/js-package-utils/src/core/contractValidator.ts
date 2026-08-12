@@ -1,10 +1,4 @@
-/**
- * Themes whose ancestry loops back on itself, as human-readable paths.
- *
- * Pure, and deliberately here rather than next to the theme-chain walker: this
- * module is imported by configResolver, so it cannot import anything that reads
- * the contract back.
- */
+/** Themes whose ancestry loops back on itself, as human-readable paths. */
 export function findThemeCycles(themes: Record<string, { parent?: string }>): string[] {
     const cycles: string[] = [];
     const settled = new Set<string>();
@@ -86,9 +80,6 @@ export function validateContract(config, expectedVersion = EXPECTED_SCHEMA_VERSI
         }
     }
 
-    // Theme inheritance is followed by every resolver in the engine. A contract
-    // whose parents loop is not a slow build, it is an unbounded walk, so it is
-    // rejected here where the theme at fault can still be named.
     if (config.themes && typeof config.themes === "object" && !Array.isArray(config.themes)) {
         for (const cycle of findThemeCycles(config.themes)) {
             errors.push(`Theme inheritance is cyclic: ${cycle}.`);

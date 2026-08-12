@@ -9,7 +9,6 @@ export default function customAssetsResolverPlugin() {
     const MODULE_ASSETS_PATH = "view/frontend/web";
 
     function tryResolveAssetPathByTheme(themeName, filePath) {
-        // Nearest first: the most specific override of an asset wins.
         for (const name of getThemeChain(themeName)) {
             const themeAssetPath = path.join(configResolver.getThemeDefinition(name).src, filePath);
             if (fs.existsSync(themeAssetPath)) {

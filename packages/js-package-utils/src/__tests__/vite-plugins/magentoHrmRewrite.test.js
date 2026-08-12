@@ -55,9 +55,6 @@ describe("handle-magento-routes-middleware", () => {
         expect(nextCalls).toBe(1);
     });
 
-    // Same freeze as inherit-resolver: the middleware is registered once when the
-    // dev server boots, so reading the map outside the request handler pins it to
-    // whatever existed at boot and a component added later 404s until restart.
     test("serves a component registered after the server was configured", async () => {
         let components = { "Vendor_Module/js/known": "/abs/js/known.js" };
         const server = await withComponents(() => components);

@@ -56,9 +56,6 @@ export async function getThemeConfig(themeName) {
     themeConfig.exposeNpmPackages ??= [];
     themeConfig.vue ??= { runtimeOnly: false };
 
-    // Nearest ancestor first, each folded in as a base under what is already
-    // merged, so precedence reads own > parent > grandparent. Cycle-safe: the
-    // chain visits each theme once.
     for (const name of getThemeChain(themeName).slice(1)) {
         const ancestorConfig = await loadThemeConfig(themes[name], name);
         themeConfig = deepmerge(ancestorConfig || {}, themeConfig);

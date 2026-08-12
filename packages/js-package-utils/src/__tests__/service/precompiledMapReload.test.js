@@ -55,10 +55,6 @@ describe("getAllJsVueFilesWithInheritanceCached", () => {
         });
     });
 
-    // The other half of what makes the dev server live: the watcher rewrites this
-    // file when a source appears, and the reader has to notice. It keys its cache
-    // on mtime, so a rewrite with a newer stamp must be re-read rather than served
-    // from memory.
     test("re-reads the map once the file has been rewritten", () => {
         write({ "Vendor_Module/js/a": "/abs/a.js" }, 1_700_000_000);
         moduleResolver.getAllJsVueFilesWithInheritanceCached(THEME);

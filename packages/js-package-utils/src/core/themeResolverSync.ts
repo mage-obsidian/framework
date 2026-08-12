@@ -65,7 +65,6 @@ export async function getThemeConfig(themeName) {
     return themeConfig;
 }
 
-// Export default con todo
 export default {
     getThemeConfig,
 };

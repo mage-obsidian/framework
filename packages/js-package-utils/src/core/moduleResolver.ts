@@ -164,7 +164,6 @@ async function resolveModuleConfig(moduleName, themeName) {
         return null;
     }
 
-    // Importación dinámica común en ESModules
     const moduleConfig = await import(moduleConfigSourcePath);
     return moduleConfig.default ?? moduleConfig;
 }

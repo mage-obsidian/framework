@@ -230,11 +230,6 @@ function generateInterceptorCode(target, targetPath, interceptors, targetExports
     const imports = [];
     const registrations = [];
 
-    // Import PluginManager (Assuming it's available via alias or relative path in the build environment)
-    // For Vite, we might need to adjust this path or use a virtual module ID.
-    // Using a relative path from this service file might not work in the generated code context.
-    // We'll assume '@mage-obsidian/plugin-manager' or similar alias is set up,
-    // or use the absolute path which Vite handles.
     // All string literals go through JSON.stringify so paths or interceptor
     // names containing quotes/backslashes can't break (or inject into) the
     // generated module. Identifiers (export names) come from Object.keys of a

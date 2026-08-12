@@ -84,4 +84,34 @@ describe("validateContract", () => {
             expect(Object.prototype.hasOwnProperty.call(contract, key)).toBe(true);
         }
     });
+
+    it("accepts a theme tree that terminates", () => {
+        const contract = makeValidContract({
+            themes: {
+                "V/leaf": { src: "/leaf", parent: "V/root" },
+                "V/root": { src: "/root" },
+            },
+        });
+
+        expect(validateContract(contract).ok).toBe(true);
+    });
+
+    // Every resolver in the engine follows theme.parent. A cycle there is not a
+    // slow build, it is an unbounded walk that dies as "Maximum call stack size
+    // exceeded" from whichever resolver got there first, naming no theme.
+    it("rejects a theme that is its own ancestor", () => {
+        const contract = makeValidContract({
+            themes: {
+                "V/a": { src: "/a", parent: "V/b" },
+                "V/b": { src: "/b", parent: "V/a" },
+            },
+        });
+
+        const result = validateContract(contract);
+
+        expect(result.ok).toBe(false);
+        expect(result.errors).toEqual(
+            expect.arrayContaining([expect.stringContaining("Theme inheritance is cyclic")]),
+        );
+    });
 });

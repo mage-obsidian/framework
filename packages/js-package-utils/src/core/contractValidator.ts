@@ -1,3 +1,37 @@
+/**
+ * Themes whose ancestry loops back on itself, as human-readable paths.
+ *
+ * Pure, and deliberately here rather than next to the theme-chain walker: this
+ * module is imported by configResolver, so it cannot import anything that reads
+ * the contract back.
+ */
+export function findThemeCycles(themes: Record<string, { parent?: string }>): string[] {
+    const cycles: string[] = [];
+    const settled = new Set<string>();
+
+    for (const start of Object.keys(themes)) {
+        if (settled.has(start)) continue;
+
+        const path: string[] = [];
+        const onPath = new Set<string>();
+        let name: string | undefined = start;
+
+        while (name && themes[name] && !onPath.has(name) && !settled.has(name)) {
+            path.push(name);
+            onPath.add(name);
+            name = themes[name].parent;
+        }
+
+        if (name && onPath.has(name)) {
+            cycles.push([...path.slice(path.indexOf(name)), name].join(" -> "));
+        }
+
+        for (const visited of path) settled.add(visited);
+    }
+
+    return cycles;
+}
+
 // Contract version this build engine understands. Must match
 // ConfigInterface::SCHEMA_VERSION on the PHP side; a mismatch means the module
 // and the JS engine are out of sync and the contract cannot be trusted.
@@ -49,6 +83,15 @@ export function validateContract(config, expectedVersion = EXPECTED_SCHEMA_VERSI
     for (const key of REQUIRED_CONTRACT_KEYS) {
         if (!Object.prototype.hasOwnProperty.call(config, key)) {
             errors.push(`Missing required key "${key}".`);
+        }
+    }
+
+    // Theme inheritance is followed by every resolver in the engine. A contract
+    // whose parents loop is not a slow build, it is an unbounded walk, so it is
+    // rejected here where the theme at fault can still be named.
+    if (config.themes && typeof config.themes === "object" && !Array.isArray(config.themes)) {
+        for (const cycle of findThemeCycles(config.themes)) {
+            errors.push(`Theme inheritance is cyclic: ${cycle}.`);
         }
     }
 

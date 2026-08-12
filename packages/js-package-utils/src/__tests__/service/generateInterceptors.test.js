@@ -200,4 +200,39 @@ describe("generateInterceptors", () => {
 
         consoleSpy.mockRestore();
     });
+
+    // Both caches here are keyed by theme and were never dropped by anything, so
+    // in dev an interceptor added or retargeted after the server booted stayed
+    // invisible until a restart — moduleResolver.invalidateTheme cleared its own
+    // maps and these two kept answering with the boot-time result.
+    test("invalidateTheme makes the next generation read the config again", async () => {
+        const themeName = "Vendor/theme-test";
+
+        themeResolverMock.getThemeConfig.mockReturnValue({ src: "/path/to/theme" });
+        moduleResolverMock.getAllJsVueFilesWithInheritanceCached.mockReturnValue({
+            "Vendor_TargetModule/js/target": targetModulePath,
+            "Vendor_PluginModule/js/plugin": pluginModulePath,
+        });
+        moduleResolverMock.getModuleConfigByThemeConfig.mockResolvedValue({ interceptors: {} });
+
+        expect(await generateInterceptorsService.generateInterceptors(themeName)).toEqual({});
+
+        moduleResolverMock.getModuleConfigByThemeConfig.mockResolvedValue({
+            interceptors: {
+                TestPlugin: {
+                    name: "TestPlugin",
+                    target: "Vendor_TargetModule::js/target.js",
+                    interceptor: "Vendor_PluginModule::js/plugin.js",
+                    sortOrder: 10,
+                    active: true,
+                },
+            },
+        });
+
+        generateInterceptorsService.invalidateTheme(themeName);
+
+        const regenerated = await generateInterceptorsService.generateInterceptors(themeName);
+
+        expect(regenerated["Vendor_TargetModule::js/target.js"]).toBeDefined();
+    });
 });

@@ -1,5 +1,6 @@
 import path from "node:path";
 import configResolver from "../core/configResolver.ts";
+import generateInterceptors from "../core/generateInterceptors.ts";
 import moduleResolver from "../core/moduleResolver.ts";
 import { precompileJs, precompileJsconfig, precompileTsconfig } from "../core/preCompileFiles.ts";
 import { MODULE_WEB_PATH } from "../config/default.ts";
@@ -60,6 +61,7 @@ export default function themeSourceWatcher(themeName) {
                 running = true;
                 try {
                     moduleResolver.invalidateTheme(themeName);
+                    generateInterceptors.invalidateTheme(themeName);
                     await precompileJs(themeName);
                     await precompileJsconfig(themeName);
                     await precompileTsconfig(themeName);

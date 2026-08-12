@@ -1,5 +1,6 @@
 import path from "path";
 import configResolver from "../core/configResolver.ts";
+import { getThemeChain } from "../core/themeChain.ts";
 import fs from "fs";
 
 export default function customAssetsResolverPlugin() {
@@ -8,19 +9,12 @@ export default function customAssetsResolverPlugin() {
     const MODULE_ASSETS_PATH = "view/frontend/web";
 
     function tryResolveAssetPathByTheme(themeName, filePath) {
-        const themeDefinition = configResolver.getThemeDefinition(themeName);
-        if (!themeDefinition) {
-            return null;
-        }
-
-        const themeAssetPath = path.join(themeDefinition.src, filePath);
-
-        if (fs.existsSync(themeAssetPath)) {
-            return themeAssetPath;
-        }
-
-        if (themeDefinition.parent) {
-            return tryResolveAssetPathByTheme(themeDefinition.parent, filePath);
+        // Nearest first: the most specific override of an asset wins.
+        for (const name of getThemeChain(themeName)) {
+            const themeAssetPath = path.join(configResolver.getThemeDefinition(name).src, filePath);
+            if (fs.existsSync(themeAssetPath)) {
+                return themeAssetPath;
+            }
         }
 
         return null;

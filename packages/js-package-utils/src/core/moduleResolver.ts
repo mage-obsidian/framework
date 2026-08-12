@@ -7,6 +7,7 @@ import {
     THEME_MODULE_WEB_PATH,
 } from "../config/default.ts";
 import getFilesFromFolders from "../utils/findComponents.ts";
+import { getThemeChain, getThemeChainFromRoot } from "./themeChain.ts";
 import fs from "fs";
 import deepmerge from "deepmerge";
 
@@ -52,28 +53,31 @@ async function getAllJsVueFilesFromActiveModules() {
 
 async function getAllJsVueFilesFromTheme(themeName) {
     let result = {};
-    const theme = configResolver.getMagentoConfig().themes[themeName];
-    if (!theme) {
-        return {};
-    }
 
-    if (theme.parent) {
-        result = await getAllJsVueFilesFromTheme(theme.parent);
-    }
+    // Root first so a child theme's files land on top of what it inherits.
+    for (const name of getThemeChainFromRoot(themeName)) {
+        const theme = configResolver.getMagentoConfig().themes[name];
 
-    for (const moduleName of configResolver.getAllMagentoModulesEnabled()) {
-        const modulePath = path.resolve(theme.src, moduleName, THEME_MODULE_WEB_PATH);
-        const moduleResult = await getFilesFromFolders(moduleName, modulePath, defaultFoldersToMap);
-        if (moduleResult) {
-            result = deepmerge(result, moduleResult);
+        for (const moduleName of configResolver.getAllMagentoModulesEnabled()) {
+            const modulePath = path.resolve(theme.src, moduleName, THEME_MODULE_WEB_PATH);
+            const moduleResult = await getFilesFromFolders(
+                moduleName,
+                modulePath,
+                defaultFoldersToMap,
+            );
+            if (moduleResult) {
+                result = deepmerge(result, moduleResult);
+            }
         }
+
+        const moduleResult = await getFilesFromFolders(
+            configResolver.getMagentoConfig().THEME_FILES_PATH,
+            path.resolve(theme.src, THEME_MODULE_WEB_PATH),
+            defaultFoldersToMap,
+        );
+        result = deepmerge(result, moduleResult);
     }
-    const moduleResult = await getFilesFromFolders(
-        configResolver.getMagentoConfig().THEME_FILES_PATH,
-        path.resolve(theme.src, THEME_MODULE_WEB_PATH),
-        defaultFoldersToMap,
-    );
-    result = deepmerge(result, moduleResult);
+
     return result;
 }
 
@@ -137,14 +141,13 @@ function getModuleConfigPath(moduleSrc) {
 }
 
 function resolveFileByTheme(themeName, moduleName, filePath) {
-    const theme = configResolver.getMagentoConfig().themes[themeName];
-    const fullFilePath = path.join(theme.src, moduleName, "web", filePath);
-    if (fs.existsSync(fullFilePath)) {
-        return fullFilePath;
-    }
-
-    if (theme.parent) {
-        return resolveFileByTheme(theme.parent, moduleName, filePath);
+    // Nearest first: the most specific override of a file wins.
+    for (const name of getThemeChain(themeName)) {
+        const theme = configResolver.getMagentoConfig().themes[name];
+        const fullFilePath = path.join(theme.src, moduleName, "web", filePath);
+        if (fs.existsSync(fullFilePath)) {
+            return fullFilePath;
+        }
     }
     return null;
 }

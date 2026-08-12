@@ -9,6 +9,7 @@ import {
 } from "../config/default.ts";
 import { resolveFileByTheme, getAllJsVueFilesWithInheritanceCached } from "./moduleResolver.ts";
 import configResolver from "./configResolver.ts";
+import { getThemeChainFromRoot } from "./themeChain.ts";
 import fs from "node:fs/promises";
 
 const { getMagentoConfig, getModuleDefinition, getThemeDefinition, getModulesConfigArray } =
@@ -28,15 +29,19 @@ async function getThemeImports(themeName, themeConfig?) {
     if (!themeConfig) {
         themeConfig = await themeResolver.getThemeConfig(themeName);
     }
-    const themeDefinition = getThemeDefinition(themeName);
-    const themePath = themeDefinition.src;
+
+    // Root first, so a child theme's stylesheet is imported after everything it
+    // inherits and its rules win on equal specificity. With the parent source
+    // opted out, only this theme's own sheet is emitted.
+    const chain = themeConfig.includeCssSourceFromParentThemes
+        ? getThemeChainFromRoot(themeName)
+        : [themeName];
 
     let imports = "";
-    if (themeConfig.includeCssSourceFromParentThemes && themeDefinition.parent) {
-        imports += await getThemeImports(themeDefinition.parent, themeConfig);
+    for (const name of chain) {
+        const themePath = getThemeDefinition(name).src;
+        imports += `@import "${path.join(themePath, THEME_MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_CSS_SOURCE_FILE)}";\n`;
     }
-
-    imports += `@import "${path.join(themePath, THEME_MODULE_WEB_PATH, THEME_CSS_FOLDER, THEME_CSS_SOURCE_FILE)}";\n`;
     return imports;
 }
 
@@ -62,14 +67,10 @@ function resolveModuleCssSourcePath(moduleName, themeName) {
 // Tailwind scans the Twig/phtml templates of every theme in the inheritance
 // chain (a child theme's classes plus everything it inherits unchanged).
 async function getThemeTemplateSources(themeName) {
-    const theme = getThemeDefinition(themeName);
-    if (!theme) return "";
-
     let sources = "";
-    if (theme.parent) {
-        sources += await getThemeTemplateSources(theme.parent);
+    for (const name of getThemeChainFromRoot(themeName)) {
+        sources += `@source "${getThemeDefinition(name).src}";\n`;
     }
-    sources += `@source "${theme.src}";\n`;
     return sources;
 }
 

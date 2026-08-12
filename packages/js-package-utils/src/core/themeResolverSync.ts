@@ -3,6 +3,7 @@ import fs from "fs";
 import deepmerge from "deepmerge";
 import { THEME_MODULE_WEB_PATH } from "../config/default.ts";
 import configResolver from "./configResolver.ts";
+import { getThemeChain } from "./themeChain.ts";
 
 const themeConfigCache = new Map();
 const themeConfigPlainCache = new Map();
@@ -43,7 +44,8 @@ function pathToFileUrl(filePath) {
 export async function getThemeConfig(themeName) {
     if (themeConfigCache.has(themeName)) return themeConfigCache.get(themeName);
 
-    const themeDefinition = configResolver.getMagentoConfig().themes[themeName];
+    const themes = configResolver.getMagentoConfig().themes;
+    const themeDefinition = themes[themeName];
     if (!themeDefinition) return null;
 
     let themeConfig = await loadThemeConfig(themeDefinition, themeName);
@@ -53,10 +55,15 @@ export async function getThemeConfig(themeName) {
     themeConfig.ignoredCssFromModules ??= [];
     themeConfig.exposeNpmPackages ??= [];
     themeConfig.vue ??= { runtimeOnly: false };
-    if (themeDefinition.parent) {
-        const parentConfig = await getThemeConfig(themeDefinition.parent);
-        themeConfig = deepmerge(parentConfig || {}, themeConfig);
+
+    // Nearest ancestor first, each folded in as a base under what is already
+    // merged, so precedence reads own > parent > grandparent. Cycle-safe: the
+    // chain visits each theme once.
+    for (const name of getThemeChain(themeName).slice(1)) {
+        const ancestorConfig = await loadThemeConfig(themes[name], name);
+        themeConfig = deepmerge(ancestorConfig || {}, themeConfig);
     }
+
     themeConfigCache.set(themeName, themeConfig);
     return themeConfig;
 }

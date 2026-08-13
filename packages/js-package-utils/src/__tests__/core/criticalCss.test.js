@@ -53,14 +53,18 @@ describe("extractCritical", () => {
     });
 
     test("keeps the selectors of every document when given several", async () => {
-        const css = ".chrome{color:#000}.subcategory-card{gap:1rem}.product-card{margin:0}.unused{color:green}";
+        const css =
+            ".chrome{color:#000}.subcategory-card{gap:1rem}.product-card{margin:0}.unused{color:green}";
         const doc = (inner) =>
             "<!doctype html><html><head>" +
             '<link rel="stylesheet" href="https://x/style.css">' +
             `</head><body><div class="chrome">${inner}</div></body></html>`;
 
         const critical = await extractCritical({
-            html: [doc('<a class="subcategory-card">Bags</a>'), doc('<article class="product-card">Duffle</article>')],
+            html: [
+                doc('<a class="subcategory-card">Bags</a>'),
+                doc('<article class="product-card">Duffle</article>'),
+            ],
             css,
         });
 
@@ -71,7 +75,8 @@ describe("extractCritical", () => {
 
     test("a single document still works when passed as a bare string", async () => {
         const css = ".hero{color:blue}";
-        const html = '<html><head><link rel="stylesheet" href="https://x/style.css"></head><body><p class="hero">Hi</p></body></html>';
+        const html =
+            '<html><head><link rel="stylesheet" href="https://x/style.css"></head><body><p class="hero">Hi</p></body></html>';
 
         expect(await extractCritical({ html, css })).toContain(".hero");
     });
@@ -129,7 +134,9 @@ describe("mergeDocuments", () => {
     });
 
     test("ignores empty documents", () => {
-        expect(mergeDocuments(["", "   ", "<html><body><p>one</p></body></html>"])).toContain("one");
+        expect(mergeDocuments(["", "   ", "<html><body><p>one</p></body></html>"])).toContain(
+            "one",
+        );
         expect(mergeDocuments([])).toBe("");
     });
 
@@ -153,7 +160,9 @@ describe("classesInHtml", () => {
 
 describe("classesInCss", () => {
     test("unescapes the selectors Tailwind emits", () => {
-        const found = classesInCss(".md\\:grid-cols-3{display:grid}.aspect-\\[4\\/5\\]{aspect-ratio:4/5}");
+        const found = classesInCss(
+            ".md\\:grid-cols-3{display:grid}.aspect-\\[4\\/5\\]{aspect-ratio:4/5}",
+        );
         expect(found.has("md:grid-cols-3")).toBe(true);
         expect(found.has("aspect-[4/5]")).toBe(true);
     });
@@ -163,7 +172,8 @@ describe("classCoverage", () => {
     const css = ".product-card{margin:0}.products-grid{display:grid}.chrome{color:#000}";
 
     test("reports the styled classes the critical subset dropped", () => {
-        const html = '<div class="chrome"><ol class="products-grid"><li class="product-card"></li></ol></div>';
+        const html =
+            '<div class="chrome"><ol class="products-grid"><li class="product-card"></li></ol></div>';
         const report = classCoverage(html, css, ".chrome{color:#000}");
 
         expect(report.total).toBe(3);

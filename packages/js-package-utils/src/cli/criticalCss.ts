@@ -25,7 +25,9 @@ const outFile = arg("--out");
 const minCoverage = Number(arg("--min-coverage") ?? "0");
 
 if (htmlFiles.length === 0 || !cssFile || !outFile) {
-    console.error("usage: criticalCss --html <file> [--html <file>…] --css <file> --out <file> [--min-coverage <0..1>]");
+    console.error(
+        "usage: criticalCss --html <file> [--html <file>…] --css <file> --out <file> [--min-coverage <0..1>]",
+    );
     process.exit(1);
 }
 
@@ -37,7 +39,7 @@ writeFileSync(outFile, critical);
 const coverage = classCoverage(mergeDocuments(htmls), css, critical);
 console.log(
     `critical: ${critical.length} bytes -> ${outFile} ` +
-        `(coverage ${(coverage.ratio * 100).toFixed(1)}%, ${coverage.covered}/${coverage.total} classes)`
+        `(coverage ${(coverage.ratio * 100).toFixed(1)}%, ${coverage.covered}/${coverage.total} classes)`,
 );
 
 if (coverage.ratio < minCoverage) {
@@ -45,7 +47,7 @@ if (coverage.ratio < minCoverage) {
         `critical CSS covers ${(coverage.ratio * 100).toFixed(1)}% of the styled classes, ` +
             `below the required ${(minCoverage * 100).toFixed(1)}%. Missing: ` +
             coverage.missing.slice(0, 20).join(", ") +
-            (coverage.missing.length > 20 ? `, and ${coverage.missing.length - 20} more` : "")
+            (coverage.missing.length > 20 ? `, and ${coverage.missing.length - 20} more` : ""),
     );
     process.exit(2);
 }

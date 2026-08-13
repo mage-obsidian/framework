@@ -49,6 +49,7 @@ class CriticalCssCommand extends Command
     private const OPTION_RESOLVE = 'resolve';
     private const OPTION_BIN = 'bin';
     private const OPTION_NODE = 'node';
+    private const OPTION_MIN_COVERAGE = 'min-coverage';
 
     private const DEFAULT_HANDLE = 'cms_index_index';
     private const CRITICAL_DIR = 'critical';
@@ -82,8 +83,16 @@ class CriticalCssCommand extends Command
             ->addOption(
                 self::OPTION_URL,
                 null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'URL to render; repeat it once per page shape the handle serves '
+                . '(default: store secure base URL).'
+            )
+            ->addOption(
+                self::OPTION_MIN_COVERAGE,
+                null,
                 InputOption::VALUE_REQUIRED,
-                'URL to render (default: store secure base URL).'
+                'Fail when the critical CSS covers less than this share (0..1) of the styled classes.',
+                '0'
             )
             ->addOption(
                 self::OPTION_STORE,
@@ -166,22 +175,28 @@ class CriticalCssCommand extends Command
             return -1;
         }
 
-        $url = (string)($input->getOption(self::OPTION_URL)
-            ?: rtrim($store->getBaseUrl(UrlInterface::URL_TYPE_LINK, true), '/') . '/');
-        $html = $this->fetch(
-            $url,
-            (bool)$input->getOption(self::OPTION_INSECURE),
-            $input->getOption(self::OPTION_RESOLVE)
-        );
+        $urls = array_values(array_filter((array)$input->getOption(self::OPTION_URL)));
+        if ($urls === []) {
+            $urls = [rtrim($store->getBaseUrl(UrlInterface::URL_TYPE_LINK, true), '/') . '/'];
+        }
 
         $work = $this->directoryList->getPath(DirectoryList::VAR_DIR) . '/mage_obsidian_critical';
         if (!$this->fileDriver->isExists($work)) {
             $this->fileDriver->createDirectory($work);
         }
-        $htmlTmp = $work . '/' . $handle . '.html';
         $cssTmp = $work . '/' . $handle . '.src.css';
         $outTmp = $work . '/' . $handle . '.out.css';
-        $this->fileDriver->filePutContents($htmlTmp, $html);
+        $htmlTmps = [];
+        foreach ($urls as $index => $url) {
+            $html = $this->fetch(
+                $url,
+                (bool)$input->getOption(self::OPTION_INSECURE),
+                $input->getOption(self::OPTION_RESOLVE)
+            );
+            $htmlTmp = $work . '/' . $handle . '.' . $index . '.html';
+            $this->fileDriver->filePutContents($htmlTmp, $html);
+            $htmlTmps[] = $htmlTmp;
+        }
         $this->fileDriver->filePutContents($cssTmp, $this->fileDriver->fileGetContents($styleSource));
 
         $bin = (string)($input->getOption(self::OPTION_BIN) ?: $this->directoryList->getRoot() . '/' . self::DEFAULT_BIN);
@@ -190,13 +205,22 @@ class CriticalCssCommand extends Command
             return -1;
         }
 
-        $process = new Process([
-            (string)$input->getOption(self::OPTION_NODE),
-            $bin,
-            '--html', $htmlTmp,
-            '--css', $cssTmp,
-            '--out', $outTmp,
-        ]);
+        $command = [(string)$input->getOption(self::OPTION_NODE), $bin];
+        foreach ($htmlTmps as $htmlTmp) {
+            $command[] = '--html';
+            $command[] = $htmlTmp;
+        }
+        array_push(
+            $command,
+            '--css',
+            $cssTmp,
+            '--out',
+            $outTmp,
+            '--min-coverage',
+            (string)$input->getOption(self::OPTION_MIN_COVERAGE)
+        );
+
+        $process = new Process($command);
         $process->setTimeout(180.0);
         $process->run();
         if (!$process->isSuccessful()) {
@@ -205,6 +229,7 @@ class CriticalCssCommand extends Command
             );
             return -1;
         }
+        $io->info(trim($process->getOutput()));
 
         $critical = $this->rewriteFontUrls((string)$this->fileDriver->fileGetContents($outTmp));
         if (trim($critical) === '') {
@@ -223,7 +248,7 @@ class CriticalCssCommand extends Command
         $this->fileDriver->filePutContents($outPath, $critical);
         $io->info('Wrote ' . $outPath);
 
-        foreach ([$htmlTmp, $cssTmp, $outTmp] as $tmp) {
+        foreach ([...$htmlTmps, $cssTmp, $outTmp] as $tmp) {
             if ($this->fileDriver->isExists($tmp)) {
                 $this->fileDriver->deleteFile($tmp);
             }

@@ -12,6 +12,7 @@ namespace MageObsidian\ModernFrontendTwig\Model\Template\Extension;
 use Magento\Framework\Escaper;
 use Magento\Framework\Phrase;
 use MageObsidian\ModernFrontend\Service\Vue\IslandMarkup;
+use MageObsidian\ModernFrontend\ViewModel\Image;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
 use MageObsidian\ModernFrontendTwig\Model\Template\ScriptTag;
 use MageObsidian\ModernFrontendTwig\Model\Template\ViewFileInliner;
@@ -25,9 +26,11 @@ use Twig\TwigFunction;
  *
  * Markup-emitting helpers (render_vue, child_html, hero_icon) are flagged
  * `is_safe => html` so Twig's HTML auto-escaping leaves their output intact;
- * URL helpers are left escaped by default. All read the rendering block from
- * the Twig context (`needs_context`), so nested/recursive renders each address
- * their own block instead of a shared "current block".
+ * URL helpers are left escaped by default. The ones that delegate to the block
+ * read it from the Twig context (`needs_context`), so nested/recursive renders
+ * each address their own block instead of a shared "current block". `image`
+ * needs no block at all, so it stays available to templates rendered by core
+ * blocks such as ListProduct.
  *
  * The remaining Magento context-aware escapers (URL, attribute, JS, CSS) are
  * surfaced as filters mirroring `$escaper->escape*` in phtml; HTML escaping is
@@ -41,13 +44,15 @@ class MageObsidianExtension extends AbstractExtension
      * @param IslandMarkup $islandMarkup
      * @param ViewFileInliner $viewFileInliner
      * @param ScriptTag $scriptTag
+     * @param Image $image
      */
     public function __construct(
         private readonly BridgeFunctions $bridge,
         private readonly Escaper $escaper,
         private readonly IslandMarkup $islandMarkup,
         private readonly ViewFileInliner $viewFileInliner,
-        private readonly ScriptTag $scriptTag
+        private readonly ScriptTag $scriptTag,
+        private readonly Image $image
     ) {
     }
 
@@ -122,9 +127,8 @@ class MageObsidianExtension extends AbstractExtension
             ),
             new TwigFunction(
                 'image',
-                fn(array $context, string $src, array $options = []): string
-                    => $this->bridge->image($this->blockOf($context), $src, $options),
-                $safeHtml
+                fn(string $src, array $options = []): string => $this->image->render($src, $options),
+                ['is_safe' => ['html']]
             ),
             new TwigFunction(
                 'vite_url',

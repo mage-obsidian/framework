@@ -7,6 +7,11 @@ use Magento\Framework\Escaper;
 use Magento\Framework\Phrase;
 use Magento\Framework\Phrase\Renderer\Placeholder;
 use MageObsidian\ModernFrontend\Service\Vue\IslandMarkup;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\View\Asset\Repository;
+use MageObsidian\ModernFrontend\Model\Image\ImageDimensions;
+use MageObsidian\ModernFrontend\Model\Image\ImageRenderer;
+use MageObsidian\ModernFrontend\ViewModel\Image;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
 use MageObsidian\ModernFrontendTwig\Model\Template\ScriptTag;
 use MageObsidian\ModernFrontendTwig\Model\Template\ViewFileInliner;
@@ -42,7 +47,8 @@ class TwigRenderTest extends TestCase
             $escaper,
             new IslandMarkup(),
             $this->createMock(ViewFileInliner::class),
-            $this->createMock(ScriptTag::class)
+            $this->createMock(ScriptTag::class),
+            $this->image()
         ));
 
         return $environment;
@@ -115,7 +121,8 @@ class TwigRenderTest extends TestCase
             $escaper,
             new IslandMarkup(),
             $this->createMock(ViewFileInliner::class),
-            $this->createMock(ScriptTag::class)
+            $this->createMock(ScriptTag::class),
+            $this->image()
         ));
 
         $output = $environment->render('t', []);
@@ -141,7 +148,8 @@ class TwigRenderTest extends TestCase
                 $this->createMock(Escaper::class),
                 new IslandMarkup(),
                 $inliner,
-                $this->createMock(ScriptTag::class)
+                $this->createMock(ScriptTag::class),
+                $this->image()
             )
         );
 
@@ -165,7 +173,8 @@ class TwigRenderTest extends TestCase
                 $this->createMock(Escaper::class),
                 new IslandMarkup(),
                 $this->createMock(ViewFileInliner::class),
-                $scriptTag
+                $scriptTag,
+                $this->image()
             )
         );
 
@@ -247,6 +256,42 @@ class TwigRenderTest extends TestCase
         ]);
 
         $this->assertSame('<!---->', $environment->render('t', ['oldPrice' => null]));
+    }
+
+    private function image(): Image
+    {
+        return new Image(
+            $this->createMock(Repository::class),
+            $this->createMock(RequestInterface::class),
+            new ImageRenderer(),
+            $this->createMock(ImageDimensions::class)
+        );
+    }
+
+    public function testImageRendersWithoutARenderingBlockInContext(): void
+    {
+        $environment = $this->buildEnvironment([
+            't' => '{{ image("https://acme.test/a.jpg", { alt: "A bag", width: 480, height: 600 }) }}',
+        ]);
+
+        $output = $environment->render('t', []);
+
+        $this->assertStringContainsString('src="https://acme.test/a.jpg"', $output);
+        $this->assertStringContainsString('width="480"', $output);
+        $this->assertStringContainsString('height="600"', $output);
+        $this->assertStringNotContainsString('&lt;img', $output);
+    }
+
+    public function testImageCarriesSrcsetAndSizesThrough(): void
+    {
+        $environment = $this->buildEnvironment([
+            't' => '{{ image("https://acme.test/a.jpg", { srcset: "https://acme.test/a-320.jpg 320w", sizes: "(min-width: 48rem) 25vw, 50vw" }) }}',
+        ]);
+
+        $output = $environment->render('t', []);
+
+        $this->assertStringContainsString('srcset="https://acme.test/a-320.jpg 320w"', $output);
+        $this->assertStringContainsString('sizes="(min-width: 48rem) 25vw, 50vw"', $output);
     }
 
     /**

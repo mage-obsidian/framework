@@ -47,6 +47,7 @@ class CriticalCssCommand extends Command
     private const OPTION_STORE = 'store';
     private const OPTION_INSECURE = 'insecure';
     private const OPTION_RESOLVE = 'resolve';
+    private const OPTION_COOKIE = 'cookie';
     private const OPTION_BIN = 'bin';
     private const OPTION_NODE = 'node';
     private const OPTION_MIN_COVERAGE = 'min-coverage';
@@ -111,6 +112,12 @@ class CriticalCssCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED,
                 'curl --resolve entry "host:port:ip" (dev).'
+            )
+            ->addOption(
+                self::OPTION_COOKIE,
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Cookie header for handles that need a session (a checkout needs a cart with items).'
             )
             ->addOption(self::OPTION_BIN, null, InputOption::VALUE_REQUIRED, 'Path to the node critical-css bin.')
             ->addOption(self::OPTION_NODE, null, InputOption::VALUE_REQUIRED, 'node binary.', 'node');
@@ -191,8 +198,19 @@ class CriticalCssCommand extends Command
             $html = $this->fetch(
                 $url,
                 (bool)$input->getOption(self::OPTION_INSECURE),
-                $input->getOption(self::OPTION_RESOLVE)
+                $input->getOption(self::OPTION_RESOLVE),
+                $input->getOption(self::OPTION_COOKIE)
             );
+            if (!$this->servesHandle($html, $handle)) {
+                $io->error(sprintf(
+                    '%s did not render "%s" — it redirected or served another page. '
+                    . 'Pass a --url that renders the handle (a checkout needs a cart with items).',
+                    $url,
+                    $handle
+                ));
+
+                return -1;
+            }
             $htmlTmp = $work . '/' . $handle . '.' . $index . '.html';
             $this->fileDriver->filePutContents($htmlTmp, $html);
             $htmlTmps[] = $htmlTmp;
@@ -257,9 +275,26 @@ class CriticalCssCommand extends Command
         return strlen($critical);
     }
 
-    private function fetch(string $url, bool $insecure, ?string $resolve): string
+    public function servesHandle(string $html, string $handle): bool
+    {
+        if (!preg_match('/<body\b[^>]*\bclass\s*=\s*("([^"]*)"|\'([^\']*)\')/i', $html, $match)) {
+            return true;
+        }
+
+        $attribute = trim(($match[2] ?? '') !== '' ? $match[2] : ($match[3] ?? ''));
+        if ($attribute === '') {
+            return true;
+        }
+
+        return in_array(str_replace('_', '-', $handle), preg_split('/\s+/', $attribute) ?: [], true);
+    }
+
+    private function fetch(string $url, bool $insecure, ?string $resolve, ?string $cookie = null): string
     {
         $options = [CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 30];
+        if ($cookie !== null && $cookie !== '') {
+            $options[CURLOPT_COOKIE] = $cookie;
+        }
         if ($insecure) {
             $options[CURLOPT_SSL_VERIFYPEER] = false;
             $options[CURLOPT_SSL_VERIFYHOST] = 0;

@@ -10,6 +10,7 @@ import {
     sessionInvalidated,
     expiredSectionNames,
     readSectionRuntimeConfig,
+    takeSectionPrefetch,
 } from "../../runtime/sectionStoreCore.ts";
 
 describe("parseSectionStorage", () => {
@@ -301,5 +302,56 @@ describe("mergeSections as a scoped rollback", () => {
             customer: { firstname: "Ada" },
             cart: { summary_count: 2 },
         });
+    });
+});
+
+describe("takeSectionPrefetch", () => {
+    const prefetched = (sections) => ({
+        __MAGE_OBSIDIAN_SECTION_PREFETCH__: {
+            sections,
+            data: Promise.resolve({ "obsidian-checkout": { quote: {} } }),
+        },
+    });
+
+    it("hands over the in-flight response when the requested names match", async () => {
+        const scope = prefetched(["obsidian-checkout"]);
+
+        await expect(takeSectionPrefetch(["obsidian-checkout"], scope)).resolves.toEqual({
+            "obsidian-checkout": { quote: {} },
+        });
+    });
+
+    it("is consumed once so a later reload goes to the network", () => {
+        const scope = prefetched(["obsidian-checkout"]);
+
+        expect(takeSectionPrefetch(["obsidian-checkout"], scope)).not.toBeNull();
+        expect(takeSectionPrefetch(["obsidian-checkout"], scope)).toBeNull();
+    });
+
+    it("ignores a prefetch for a different set of sections", () => {
+        const scope = prefetched(["obsidian-checkout"]);
+
+        expect(takeSectionPrefetch(["cart"], scope)).toBeNull();
+        expect(takeSectionPrefetch(["obsidian-checkout", "cart"], scope)).toBeNull();
+        expect(takeSectionPrefetch([], scope)).toBeNull();
+    });
+
+    it("matches regardless of the order the names are requested in", () => {
+        const scope = prefetched(["cart", "customer"]);
+
+        expect(takeSectionPrefetch(["customer", "cart"], scope)).not.toBeNull();
+    });
+
+    it("returns null when nothing was prefetched or the global is malformed", () => {
+        expect(takeSectionPrefetch(["cart"], {})).toBeNull();
+        expect(takeSectionPrefetch(["cart"], undefined)).toBeNull();
+        expect(
+            takeSectionPrefetch(["cart"], { __MAGE_OBSIDIAN_SECTION_PREFETCH__: {} }),
+        ).toBeNull();
+        expect(
+            takeSectionPrefetch(["cart"], {
+                __MAGE_OBSIDIAN_SECTION_PREFETCH__: { sections: ["cart"], data: "nope" },
+            }),
+        ).toBeNull();
     });
 });

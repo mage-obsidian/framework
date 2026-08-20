@@ -29,10 +29,20 @@ interface SectionRuntimeScope {
     __MAGE_OBSIDIAN_SECTIONS__?: { lifetime?: unknown; expirable?: unknown };
 }
 
+export interface SectionPrefetch {
+    sections?: unknown;
+    data?: unknown;
+}
+
+interface SectionPrefetchScope {
+    __MAGE_OBSIDIAN_SECTION_PREFETCH__?: SectionPrefetch;
+}
+
 // Published by PHP on the page before the ESM runtime loads.
 declare global {
     interface Window {
         __MAGE_OBSIDIAN_SECTIONS__?: { lifetime?: unknown; expirable?: unknown };
+        __MAGE_OBSIDIAN_SECTION_PREFETCH__?: SectionPrefetch;
     }
 }
 
@@ -254,6 +264,38 @@ export function readSectionRuntimeConfig(
             ? expirable.filter((name): name is string => typeof name === "string")
             : [],
     };
+}
+
+/**
+ * Claim the response a page put in flight for these sections before the ESM
+ * runtime existed, so a page whose content IS the private section (checkout)
+ * does not wait for the island graph to load, mount and only then start asking.
+ * Returns null when nothing matches, which leaves the caller on its normal
+ * network path. Consumed once: a response body cannot be read twice.
+ */
+export function takeSectionPrefetch(
+    sectionNames: string[],
+    scope: SectionPrefetchScope | undefined = typeof window !== "undefined" ? window : undefined,
+): Promise<unknown> | null {
+    const pending = scope && scope.__MAGE_OBSIDIAN_SECTION_PREFETCH__;
+    if (!pending || !(pending.data instanceof Promise) || !Array.isArray(pending.sections)) {
+        return null;
+    }
+
+    const wanted = [...sectionNames].sort();
+    const offered = pending.sections
+        .filter((name): name is string => typeof name === "string")
+        .sort();
+    if (wanted.length === 0 || wanted.length !== offered.length) {
+        return null;
+    }
+    if (wanted.some((name, index) => name !== offered[index])) {
+        return null;
+    }
+
+    delete scope.__MAGE_OBSIDIAN_SECTION_PREFETCH__;
+
+    return pending.data;
 }
 
 function pickObjectEntries(value: unknown): SectionMap {

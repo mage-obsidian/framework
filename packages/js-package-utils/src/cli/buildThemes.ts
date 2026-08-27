@@ -11,6 +11,7 @@ import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
 import { writeCmsBaseline } from "../core/cmsBaseline.ts";
 import runWithConcurrency from "../utils/runWithConcurrency.ts";
 import { selectThemeForDevServer } from "./selectTheme.ts";
+import { COMMAND_NOT_FOUND, missingCommand, withLocalBin } from "./spawnTool.ts";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -127,9 +128,10 @@ function validateEnv() {
  */
 const spawnBuild = (themeName) =>
     new Promise<{ themeName: string; code: number }>((resolve) => {
-        const child = spawn("vite build", {
+        const command = "vite build";
+        const child = spawn(command, {
             shell: true,
-            env: { ...process.env, CURRENT_THEME: themeName },
+            env: { ...withLocalBin(process.env, process.cwd()), CURRENT_THEME: themeName },
         });
         const chunks = [];
         child.stdout.on("data", (data) => chunks.push(data));
@@ -140,7 +142,13 @@ const spawnBuild = (themeName) =>
             if (code === 0) {
                 console.log(chalk.green(`✓ ${themeName} built`));
             } else {
-                console.error(chalk.red(`✗ ${themeName} failed (exit ${code})`));
+                console.error(
+                    chalk.red(
+                        code === COMMAND_NOT_FOUND
+                            ? `✗ ${themeName}: ${missingCommand(command)}`
+                            : `✗ ${themeName} failed (exit ${code})`
+                    )
+                );
             }
             resolve({ themeName, code });
         };
@@ -196,9 +204,10 @@ const spawnTypecheck = (themeName) =>
     new Promise<{ themeName: string; code: number }>((resolve) => {
         const themeDefinition = configResolver.getThemeDefinition(themeName);
         const tsconfigPath = path.join(themeDefinition.src, "tsconfig.typecheck.json");
-        const child = spawn(`vue-tsc --noEmit -p "${tsconfigPath}"`, {
+        const command = `vue-tsc --noEmit -p "${tsconfigPath}"`;
+        const child = spawn(command, {
             shell: true,
-            env: { ...process.env, CURRENT_THEME: themeName },
+            env: { ...withLocalBin(process.env, process.cwd()), CURRENT_THEME: themeName },
         });
         const chunks = [];
         child.stdout.on("data", (data) => chunks.push(data));
@@ -209,7 +218,13 @@ const spawnTypecheck = (themeName) =>
             if (code === 0) {
                 console.log(chalk.green(`✓ ${themeName} type-checks`));
             } else {
-                console.error(chalk.red(`✗ ${themeName} has type errors (exit ${code})`));
+                console.error(
+                    chalk.red(
+                        code === COMMAND_NOT_FOUND
+                            ? `✗ ${themeName}: ${missingCommand(command)}`
+                            : `✗ ${themeName} has type errors (exit ${code})`
+                    )
+                );
             }
             resolve({ themeName, code });
         };

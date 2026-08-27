@@ -15,6 +15,7 @@ use MageObsidian\ModernFrontend\Service\Vue\IslandMarkup;
 use MageObsidian\ModernFrontend\ViewModel\Image;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
 use MageObsidian\ModernFrontendTwig\Model\Template\ScriptTag;
+use MageObsidian\ModernFrontendTwig\Model\Template\StyleTag;
 use MageObsidian\ModernFrontendTwig\Model\Template\ViewFileInliner;
 use Twig\Extension\AbstractExtension;
 use Twig\Error\RuntimeError;
@@ -44,6 +45,7 @@ class MageObsidianExtension extends AbstractExtension
      * @param IslandMarkup $islandMarkup
      * @param ViewFileInliner $viewFileInliner
      * @param ScriptTag $scriptTag
+     * @param StyleTag $styleTag
      * @param Image $image
      */
     public function __construct(
@@ -52,6 +54,7 @@ class MageObsidianExtension extends AbstractExtension
         private readonly IslandMarkup $islandMarkup,
         private readonly ViewFileInliner $viewFileInliner,
         private readonly ScriptTag $scriptTag,
+        private readonly StyleTag $styleTag,
         private readonly Image $image
     ) {
     }
@@ -145,6 +148,11 @@ class MageObsidianExtension extends AbstractExtension
             new TwigFunction(
                 'script',
                 fn(string $path): string => $this->scriptTag->module($path),
+                ['is_safe' => ['html']]
+            ),
+            new TwigFunction(
+                'inline_style',
+                fn(string $css, array $attributes = []): string => $this->styleTag->inline($css, $attributes),
                 ['is_safe' => ['html']]
             ),
             new TwigFunction(

@@ -28,7 +28,7 @@ class EnvironmentFactoryTest extends TestCase
         }
     }
 
-    private function factory(array $extensions, string|false $cacheDirectory = null): EnvironmentFactory
+    private function factory(array $extensions, string|false|null $cacheDirectory = null): EnvironmentFactory
     {
         $loader = $this->createMock(FilesystemLoader::class);
         $compiledCache = $this->createMock(CompiledTemplateCache::class);

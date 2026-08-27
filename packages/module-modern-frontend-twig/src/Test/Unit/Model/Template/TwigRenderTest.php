@@ -14,6 +14,7 @@ use MageObsidian\ModernFrontend\Model\Image\ImageRenderer;
 use MageObsidian\ModernFrontend\ViewModel\Image;
 use MageObsidian\ModernFrontendTwig\Model\Template\BridgeFunctions;
 use MageObsidian\ModernFrontendTwig\Model\Template\ScriptTag;
+use MageObsidian\ModernFrontendTwig\Model\Template\StyleTag;
 use MageObsidian\ModernFrontendTwig\Model\Template\ViewFileInliner;
 use MageObsidian\ModernFrontendTwig\Model\Template\Extension\MageObsidianExtension;
 use PHPUnit\Framework\TestCase;
@@ -48,6 +49,7 @@ class TwigRenderTest extends TestCase
             new IslandMarkup(),
             $this->createMock(ViewFileInliner::class),
             $this->createMock(ScriptTag::class),
+            $this->createMock(StyleTag::class),
             $this->image()
         ));
 
@@ -122,6 +124,7 @@ class TwigRenderTest extends TestCase
             new IslandMarkup(),
             $this->createMock(ViewFileInliner::class),
             $this->createMock(ScriptTag::class),
+            $this->createMock(StyleTag::class),
             $this->image()
         ));
 
@@ -149,6 +152,7 @@ class TwigRenderTest extends TestCase
                 new IslandMarkup(),
                 $inliner,
                 $this->createMock(ScriptTag::class),
+                $this->createMock(StyleTag::class),
                 $this->image()
             )
         );
@@ -174,6 +178,7 @@ class TwigRenderTest extends TestCase
                 new IslandMarkup(),
                 $this->createMock(ViewFileInliner::class),
                 $scriptTag,
+                $this->createMock(StyleTag::class),
                 $this->image()
             )
         );

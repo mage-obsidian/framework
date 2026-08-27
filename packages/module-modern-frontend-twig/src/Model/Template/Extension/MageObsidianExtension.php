@@ -151,6 +151,11 @@ class MageObsidianExtension extends AbstractExtension
                 ['is_safe' => ['html']]
             ),
             new TwigFunction(
+                'style_rules',
+                fn(array $rules, array $attributes = []): string => $this->styleTag->rules($rules, $attributes),
+                ['is_safe' => ['html']]
+            ),
+            new TwigFunction(
                 'inline_style',
                 fn(string $css, array $attributes = []): string => $this->styleTag->inline($css, $attributes),
                 ['is_safe' => ['html']]

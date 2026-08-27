@@ -31,6 +31,34 @@ class StyleTag
     }
 
     /**
+     * Render a whitelisted stylesheet built from selector => declarations.
+     *
+     * Per-element values — a swatch's own colour, a transition name per card, a
+     * bar's computed width — cannot live in a style attribute under an enforcing
+     * policy: a nonce does not apply to one and a hash would need one entry per
+     * distinct value. Collected into a single element they are hashed like any
+     * other stylesheet.
+     *
+     * @param array<string, string> $rules
+     * @param array<string, string> $attributes
+     *
+     * @return string
+     */
+    public function rules(array $rules, array $attributes = []): string
+    {
+        $css = '';
+        foreach ($rules as $selector => $declarations) {
+            $declarations = trim((string)$declarations, " \t\n;");
+            if (trim((string)$selector) === '' || $declarations === '') {
+                continue;
+            }
+            $css .= sprintf('%s{%s}', $selector, $declarations);
+        }
+
+        return $this->inline($css, $attributes);
+    }
+
+    /**
      * Render a whitelisted inline stylesheet.
      *
      * @param string $css

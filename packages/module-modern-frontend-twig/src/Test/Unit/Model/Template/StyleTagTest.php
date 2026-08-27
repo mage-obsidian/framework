@@ -39,6 +39,39 @@ class StyleTagTest extends TestCase
         );
     }
 
+    public function testItBuildsOneStylesheetFromEverySelector(): void
+    {
+        $this->secureRenderer->expects($this->once())
+            ->method('renderTag')
+            ->with('style', [], '.a{color:red}.b{width:40%}', false)
+            ->willReturn('<style>…</style>');
+
+        $this->assertSame(
+            '<style>…</style>',
+            $this->styleTag->rules(['.a' => 'color:red', '.b' => ' width:40%; '])
+        );
+    }
+
+    public function testItSkipsARuleWithNoSelectorOrNoDeclarations(): void
+    {
+        $this->secureRenderer->expects($this->once())
+            ->method('renderTag')
+            ->with('style', [], '.a{color:red}', false)
+            ->willReturn('<style>.a{color:red}</style>');
+
+        $this->assertSame(
+            '<style>.a{color:red}</style>',
+            $this->styleTag->rules(['.a' => 'color:red', ' ' => 'color:blue', '.b' => '   '])
+        );
+    }
+
+    public function testARuleSetWithNothingInItEmitsNoElement(): void
+    {
+        $this->secureRenderer->expects($this->never())->method('renderTag');
+
+        $this->assertSame('', $this->styleTag->rules(['.a' => '', '.b' => ';']));
+    }
+
     public function testItEmitsNothingForAnEmptyStylesheet(): void
     {
         $this->secureRenderer->expects($this->never())->method('renderTag');

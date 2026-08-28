@@ -16,7 +16,9 @@ export const COMMAND_NOT_FOUND = 127;
  */
 export const withLocalBin = (env: NodeJS.ProcessEnv, cwd: string): NodeJS.ProcessEnv => ({
     ...env,
-    PATH: [path.resolve(cwd, "node_modules", ".bin"), env.PATH].filter(Boolean).join(path.delimiter),
+    PATH: [path.resolve(cwd, "node_modules", ".bin"), env.PATH]
+        .filter(Boolean)
+        .join(path.delimiter),
 });
 
 export const missingCommand = (command: string): string =>

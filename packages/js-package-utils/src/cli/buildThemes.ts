@@ -146,8 +146,8 @@ const spawnBuild = (themeName) =>
                     chalk.red(
                         code === COMMAND_NOT_FOUND
                             ? `✗ ${themeName}: ${missingCommand(command)}`
-                            : `✗ ${themeName} failed (exit ${code})`
-                    )
+                            : `✗ ${themeName} failed (exit ${code})`,
+                    ),
                 );
             }
             resolve({ themeName, code });
@@ -222,8 +222,8 @@ const spawnTypecheck = (themeName) =>
                     chalk.red(
                         code === COMMAND_NOT_FOUND
                             ? `✗ ${themeName}: ${missingCommand(command)}`
-                            : `✗ ${themeName} has type errors (exit ${code})`
-                    )
+                            : `✗ ${themeName} has type errors (exit ${code})`,
+                    ),
                 );
             }
             resolve({ themeName, code });

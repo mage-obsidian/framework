@@ -41,7 +41,11 @@ class ScriptTagTest extends TestCase
             ->method('renderTag')
             ->with(
                 'script',
-                ['type' => 'module', 'src' => 'https://shop.test/static/generated/js/thing.js'],
+                [
+                    'type' => 'module',
+                    'src' => 'https://shop.test/static/generated/js/thing.js',
+                    'fetchpriority' => 'low',
+                ],
                 '',
                 false
             )

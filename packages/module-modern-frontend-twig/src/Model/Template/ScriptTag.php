@@ -44,7 +44,11 @@ class ScriptTag
     {
         return $this->secureRenderer->renderTag(
             'script',
-            ['type' => 'module', 'src' => $this->viteResolver->getViteFileUrl($path)],
+            [
+                'type' => 'module',
+                'src' => $this->viteResolver->getViteFileUrl($path),
+                'fetchpriority' => 'low',
+            ],
             '',
             false
         );

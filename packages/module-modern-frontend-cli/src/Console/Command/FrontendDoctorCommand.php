@@ -53,6 +53,10 @@ class FrontendDoctorCommand extends Command
         'VITE_SERVER_ALLOWED_HOSTS',
     ];
 
+    private const VITE_MANIFEST_PATH = 'vite/package.json';
+
+    private const VITE_INSTALLED_ENGINE_PATH = 'vite/node_modules/mage-obsidian/package.json';
+
     private const XML_PATH_CACHING_APPLICATION = 'system/full_page_cache/caching_application';
 
     private const XML_PATH_CURRENCY_ALLOW = 'currency/options/allow';
@@ -124,6 +128,10 @@ class FrontendDoctorCommand extends Command
                 $cmsDeltaState['unresolved'],
                 $this->cmsDelta->hasBaseline()
             ),
+            $this->diagnostics->evaluateJsEngine(
+                $this->diagnostics->extractJsEngineRange($this->readRootFile(self::VITE_MANIFEST_PATH)),
+                $this->diagnostics->extractJsEngineVersion($this->readRootFile(self::VITE_INSTALLED_ENGINE_PATH))
+            ),
         ];
 
         // Drift only makes sense to evaluate against an existing contract; the
@@ -193,6 +201,13 @@ class FrontendDoctorCommand extends Command
         }
 
         return [];
+    }
+
+    private function readRootFile(string $relativePath): ?string
+    {
+        $path = $this->directoryList->getRoot() . '/' . $relativePath;
+
+        return $this->fileDriver->isExists($path) ? $this->fileDriver->fileGetContents($path) : null;
     }
 
     /**

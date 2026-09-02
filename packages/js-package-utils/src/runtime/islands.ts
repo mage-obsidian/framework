@@ -30,6 +30,42 @@ export const IslandStrategy = {
 
 export type IslandStrategy = (typeof IslandStrategy)[keyof typeof IslandStrategy];
 
+const GENERATED_SEGMENTS = ["/generated/", "/vite_generated/"];
+
+export function componentKey(source: string): string | null {
+    for (const segment of GENERATED_SEGMENTS) {
+        const at = source.indexOf(segment);
+        if (at === -1) {
+            continue;
+        }
+        const name = source
+            .slice(at + segment.length)
+            .split(/[?#]/)[0]
+            .replace(/\.js$/, "");
+        if (name === "" || name.includes("..")) {
+            return null;
+        }
+        return name;
+    }
+    return null;
+}
+
+export function resolveStrategy(value: string | undefined): IslandStrategy {
+    return value === IslandStrategy.Eager || value === IslandStrategy.Visible
+        ? value
+        : IslandStrategy.Visible;
+}
+
+export class UnknownIslandComponent extends Error {
+    readonly requested: string;
+
+    constructor(requested: string) {
+        super(`Island component "${requested}" is not part of this theme's build.`);
+        this.name = "UnknownIslandComponent";
+        this.requested = requested;
+    }
+}
+
 export interface IslandElement {
     dataset: Record<string, string | undefined>;
 }
@@ -46,8 +82,10 @@ export interface IslandAnnouncement {
     error?: unknown;
 }
 
+export type ComponentLoader = () => Promise<{ default?: unknown }>;
+
 interface HydrateDeps {
-    importComponent(source: string): Promise<{ default?: unknown }>;
+    resolveComponent(name: string): ComponentLoader | undefined;
     /**
      * `hydrate` tells the factory which Vue entry point to use. Adopting server
      * markup needs `createSSRApp`; a container about to be cleared needs
@@ -87,14 +125,26 @@ export async function hydrateIsland(
         throw new Error("Island marker is missing data-component.");
     }
 
-    const strategy = element.dataset.strategy ?? IslandStrategy.Visible;
+    const strategy = resolveStrategy(element.dataset.strategy);
     const clock = deps.now ?? (() => (typeof performance !== "undefined" ? performance.now() : 0));
     const startedAt = deps.announce ? clock() : 0;
     deps.announce?.(MutationPhase.Before, { component: source, strategy, element });
 
+    const name = componentKey(source);
+    const load = name === null ? undefined : deps.resolveComponent(name);
+    if (!load) {
+        deps.announce?.(MutationPhase.Failed, {
+            component: source,
+            strategy,
+            element,
+            error: new UnknownIslandComponent(source),
+        });
+        return undefined;
+    }
+
     let app: AppLike;
     try {
-        const module = await deps.importComponent(source);
+        const module = await load();
         const component = module.default ?? module;
         const props = element.dataset.props ? JSON.parse(element.dataset.props) : {};
 
@@ -137,8 +187,7 @@ export async function hydrateIsland(
  */
 export function hydrateAll(elements: Iterable<IslandElement>, deps: DiscoverDeps): void {
     for (const element of elements) {
-        const strategy = element.dataset.strategy ?? IslandStrategy.Visible;
-        if (strategy === IslandStrategy.Eager) {
+        if (resolveStrategy(element.dataset.strategy) === IslandStrategy.Eager) {
             void hydrateIsland(element, deps);
         } else {
             deps.observe(element, () => {

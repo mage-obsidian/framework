@@ -2,6 +2,7 @@ import inheritModuleResolver from "./inheritModuleResolver.ts";
 import inheritAssetsModuleResolver from "./inheritAssetsModuleResolver.ts";
 import defaultNodeResolve from "./defaultNodeResolver.ts";
 import unresolvedModuleGuard from "./unresolvedModuleGuard.ts";
+import islandComponentsPlugin from "./islandComponentsPlugin.ts";
 import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
 import configResolver from "../core/configResolver.ts";
 
@@ -15,10 +16,11 @@ import configResolver from "../core/configResolver.ts";
  * playground all resolve imports through the exact same chain instead of each
  * reimplementing it and drifting.
  */
-export function getResolverPlugins() {
+export function getResolverPlugins(options = {}) {
     return [
         inheritModuleResolver(),
         inheritAssetsModuleResolver(),
+        islandComponentsPlugin(options),
         defaultNodeResolve,
         unresolvedModuleGuard(),
     ];

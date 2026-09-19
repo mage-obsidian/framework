@@ -11,6 +11,7 @@ import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
 import { writeCmsBaseline } from "../core/cmsBaseline.ts";
 import runWithConcurrency from "../utils/runWithConcurrency.ts";
 import { selectThemeForDevServer } from "./selectTheme.ts";
+import { missingEnvFor } from "./envRequirements.ts";
 import { COMMAND_NOT_FOUND, missingCommand, withLocalBin } from "./spawnTool.ts";
 import dotenv from "dotenv";
 dotenv.config();
@@ -91,29 +92,17 @@ function tryCreateEnvFile() {
     console.log(chalk.green(".env file created successfully."));
 }
 
-function validateEnv() {
-    const requiredEnvVars = [
-        "VITE_SERVER_HOST",
-        "VITE_SERVER_PORT",
-        "VITE_SERVER_SECURE",
-        "VITE_HMR_PATH",
-        "MAGENTO_HOST",
-        "VITE_SERVER_ALLOWED_HOSTS",
-    ];
-    const missingEnvVars = [];
-    for (const envVar of requiredEnvVars) {
-        if (!process.env[envVar]) {
-            missingEnvVars.push(envVar);
-        }
+function validateEnv(devServer: boolean) {
+    const missing = missingEnvFor(devServer, process.env);
+    if (missing.length === 0) {
+        return;
     }
-    if (missingEnvVars.length > 0) {
-        console.error(
-            chalk.red(`Missing required environment variables: ${missingEnvVars.join(", ")}`),
-        );
+    console.error(chalk.red(`Missing required environment variables: ${missing.join(", ")}`));
+    if (process.stdin.isTTY) {
         tryCreateEnvFile();
         console.log(chalk.green("Please restart the script after setting up the .env file."));
-        process.exit(1);
     }
+    process.exit(1);
 }
 
 /**
@@ -279,7 +268,7 @@ const runDevServer = (themeName) => {
     }
 };
 
-validateEnv();
+validateEnv(Boolean(options.devServer));
 
 if (options.devServer) {
     runDevServer(theme);

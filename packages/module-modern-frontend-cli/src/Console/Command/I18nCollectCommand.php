@@ -16,6 +16,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem\DriverInterface;
 use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
 use MageObsidian\ModernFrontend\Service\I18n\CsvDictionary;
+use MageObsidian\ModernFrontend\Service\I18n\TwigPhraseExtractor;
 use MageObsidian\ModernFrontend\Service\I18n\VuePhraseExtractor;
 use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
 use Symfony\Component\Console\Command\Command;
@@ -24,8 +25,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Collects `$t('...')` phrases from the `.vue`/`.ts`/`.js` sources of every
- * compatible module/theme and merges them into the standard Magento
+ * Collects `$t('...')` phrases from the `.vue`/`.ts`/`.js` sources and
+ * `__('...')` phrases from the `.twig` templates of every compatible
+ * module/theme, and merges them into the standard Magento
  * `i18n/<locale>.csv` dictionary of each component. New phrases default to
  * themselves so they reach `js-translation.json` through the native deploy once
  * translated. Plain ESM enhancers translate via the framework i18n facade
@@ -40,6 +42,7 @@ class I18nCollectCommand extends Command
         private readonly State $state,
         private readonly ConfigManagerInterface $configManager,
         private readonly VuePhraseExtractor $extractor,
+        private readonly TwigPhraseExtractor $twigExtractor,
         private readonly CsvDictionary $csvDictionary,
         private readonly DriverInterface $fileDriver
     ) {
@@ -49,7 +52,7 @@ class I18nCollectCommand extends Command
     protected function configure(): void
     {
         $this->setName('mage-obsidian:i18n:collect')
-            ->setDescription('Collect translatable $t() phrases from .vue/.ts/.js into each component i18n CSV.')
+            ->setDescription('Collect translatable phrases from .vue/.ts/.js and .twig into each component i18n CSV.')
             ->addOption(
                 self::OPTION_LOCALE,
                 null,
@@ -91,7 +94,7 @@ class I18nCollectCommand extends Command
             }
 
             if ($rows === []) {
-                $io->warning('No $t() phrases found in any .vue/.ts/.js source.');
+                $io->warning('No translatable phrases found in any .vue/.ts/.js/.twig source.');
                 return Command::SUCCESS;
             }
 
@@ -130,7 +133,8 @@ class I18nCollectCommand extends Command
 
     /**
      * Extract the unique phrases from every scannable source under a component
-     * root (`.vue`/`.ts`/`.js`).
+     * root (`.vue`/`.ts`/`.js`/`.twig`), each read by the extractor its syntax
+     * belongs to.
      *
      * @param string $root
      * @return string[]
@@ -147,7 +151,11 @@ class I18nCollectCommand extends Command
             if (!$this->isScannableSource((string)$path)) {
                 continue;
             }
-            foreach ($this->extractor->extractFromString($this->fileDriver->fileGetContents($path)) as $phrase) {
+            $contents = $this->fileDriver->fileGetContents($path);
+            $found = str_ends_with((string)$path, '.twig')
+                ? $this->twigExtractor->extractFromString($contents)
+                : $this->extractor->extractFromString($contents);
+            foreach ($found as $phrase) {
                 if (!in_array($phrase, $phrases, true)) {
                     $phrases[] = $phrase;
                 }
@@ -158,9 +166,10 @@ class I18nCollectCommand extends Command
     }
 
     /**
-     * Whether a path is a translatable front-end source. Covers `.vue` and plain
-     * ESM (`.ts`/`.js`), but skips build output, dependencies, type declarations
-     * and test files so fixtures never leak into the shipped dictionaries.
+     * Whether a path is a translatable front-end source. Covers `.vue`, plain
+     * ESM (`.ts`/`.js`) and `.twig` templates, but skips build output,
+     * dependencies, type declarations and test files so fixtures never leak into
+     * the shipped dictionaries.
      *
      * @param string $path
      * @return bool
@@ -180,7 +189,8 @@ class I18nCollectCommand extends Command
         }
         return str_ends_with($path, '.vue')
             || str_ends_with($path, '.ts')
-            || str_ends_with($path, '.js');
+            || str_ends_with($path, '.js')
+            || str_ends_with($path, '.twig');
     }
 
     /**

@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace MageObsidian\ModernFrontendCli\Console\Command;
 
+use MageObsidian\ModernFrontendCli\Console\DevelopmentOnly;
 use MageObsidian\ModernFrontendCli\Service\ScaffoldGenerator;
 use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
 use Magento\Framework\App\Filesystem\DirectoryList;
@@ -31,7 +32,8 @@ class GenerateThemeCommand extends Command
 
     public function __construct(
         private readonly DirectoryList $directoryList,
-        private readonly ScaffoldGenerator $generator
+        private readonly ScaffoldGenerator $generator,
+        private readonly DevelopmentOnly $developmentOnly
     ) {
         parent::__construct();
     }
@@ -50,6 +52,10 @@ class GenerateThemeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if ($this->developmentOnly->refuses($output)) {
+            return Command::FAILURE;
+        }
+
         $io = new CustomSymfonyStyle($input, $output);
         $path = (string)$input->getArgument('path');
         $parent = $input->getOption('parent');

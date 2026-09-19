@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace MageObsidian\ModernFrontendCli\Console\Command;
 
 use MageObsidian\ModernFrontend\Service\ConfigManager;
+use MageObsidian\ModernFrontendCli\Console\DevelopmentOnly;
 use MageObsidian\ModernFrontendCli\Service\ScaffoldGenerator;
 use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
 use Magento\Framework\App\State;
@@ -39,7 +40,8 @@ class GenerateComponentCommand extends Command
     public function __construct(
         private readonly State $state,
         private readonly ConfigManager $configManager,
-        private readonly ScaffoldGenerator $generator
+        private readonly ScaffoldGenerator $generator,
+        private readonly DevelopmentOnly $developmentOnly
     ) {
         parent::__construct();
     }
@@ -63,6 +65,10 @@ class GenerateComponentCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if ($this->developmentOnly->refuses($output)) {
+            return Command::FAILURE;
+        }
+
         $io = new CustomSymfonyStyle($input, $output);
         $module = $input->getOption('module');
         $theme = $input->getOption('theme');

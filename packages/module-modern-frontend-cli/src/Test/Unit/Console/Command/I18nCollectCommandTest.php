@@ -10,6 +10,7 @@ use MageObsidian\ModernFrontend\Service\I18n\CsvDictionary;
 use MageObsidian\ModernFrontend\Service\I18n\TwigPhraseExtractor;
 use MageObsidian\ModernFrontend\Service\I18n\VuePhraseExtractor;
 use MageObsidian\ModernFrontendCli\Console\Command\I18nCollectCommand;
+use MageObsidian\ModernFrontendCli\Console\DevelopmentOnly;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -85,6 +86,7 @@ class I18nCollectCommandTest extends TestCase
     private function collect(string $locale = 'en_US'): CommandTester
     {
         $state = $this->createStub(State::class);
+        $state->method('getMode')->willReturn(State::MODE_DEVELOPER);
         $configManager = $this->createStub(ConfigManagerInterface::class);
         $configManager->method('get')->willReturn([
             'modules' => ['Vendor_Storefront' => ['src' => self::MODULE_SRC]],
@@ -97,7 +99,8 @@ class I18nCollectCommandTest extends TestCase
             new VuePhraseExtractor(),
             new TwigPhraseExtractor(),
             new CsvDictionary(),
-            $this->driver()
+            $this->driver(),
+            new DevelopmentOnly($state)
         );
 
         $tester = new CommandTester($command);

@@ -18,6 +18,7 @@ use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
 use MageObsidian\ModernFrontend\Service\I18n\CsvDictionary;
 use MageObsidian\ModernFrontend\Service\I18n\TwigPhraseExtractor;
 use MageObsidian\ModernFrontend\Service\I18n\VuePhraseExtractor;
+use MageObsidian\ModernFrontendCli\Console\DevelopmentOnly;
 use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -44,7 +45,8 @@ class I18nCollectCommand extends Command
         private readonly VuePhraseExtractor $extractor,
         private readonly TwigPhraseExtractor $twigExtractor,
         private readonly CsvDictionary $csvDictionary,
-        private readonly DriverInterface $fileDriver
+        private readonly DriverInterface $fileDriver,
+        private readonly DevelopmentOnly $developmentOnly
     ) {
         parent::__construct();
     }
@@ -66,6 +68,10 @@ class I18nCollectCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if ($this->developmentOnly->refuses($output)) {
+            return Command::FAILURE;
+        }
+
         $io = new CustomSymfonyStyle($input, $output);
         $locale = (string)$input->getOption(self::OPTION_LOCALE);
 

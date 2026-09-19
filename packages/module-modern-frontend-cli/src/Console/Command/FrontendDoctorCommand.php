@@ -15,6 +15,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
 use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\Module\ModuleListInterface;
 use Magento\Framework\ObjectManager\ConfigLoaderInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
@@ -23,6 +24,7 @@ use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
 use MageObsidian\ModernFrontend\Model\Config\ConfigProvider;
 use MageObsidian\ModernFrontend\Service\Cms\DeltaStylesheet;
 use MageObsidian\ModernFrontend\Service\Cms\TailwindCli;
+use MageObsidian\ModernFrontend\Service\Dev\AdobeCommerceInventory;
 use MageObsidian\ModernFrontend\Service\Dev\CheckResult;
 use MageObsidian\ModernFrontend\Service\Dev\DevDiagnostics;
 use MageObsidian\ModernFrontend\Service\Dev\HttpProberInterface;
@@ -76,7 +78,9 @@ class FrontendDoctorCommand extends Command
         private readonly ScopeConfigInterface $scopeConfig,
         private readonly StoreManagerInterface $storeManager,
         private readonly TailwindCli $tailwind,
-        private readonly DeltaStylesheet $cmsDelta
+        private readonly DeltaStylesheet $cmsDelta,
+        private readonly ModuleListInterface $moduleList,
+        private readonly AdobeCommerceInventory $adobeCommerce
     ) {
         parent::__construct();
     }
@@ -143,6 +147,7 @@ class FrontendDoctorCommand extends Command
         }
 
         $this->renderResults($io, $results);
+        $this->reportAdobeCommerce($io);
 
         if ($this->diagnostics->hasError($results)) {
             $io->error('One or more checks failed. See the hints above.');
@@ -400,6 +405,41 @@ class FrontendDoctorCommand extends Command
         }
 
         return $dirs;
+    }
+
+    private function reportAdobeCommerce(CustomSymfonyStyle $io): void
+    {
+        $modules = $this->moduleList->getNames();
+        if (!$this->adobeCommerce->isAdobeCommerce($modules)) {
+            return;
+        }
+
+        $io->section('Adobe Commerce');
+
+        $inventory = $this->adobeCommerce->inventory($modules);
+        if ($inventory === []) {
+            $io->text('Adobe Commerce detected; no Commerce-only storefront module is enabled.');
+            return;
+        }
+
+        $rows = [];
+        $uncovered = 0;
+        foreach ($inventory as $entry) {
+            $covered = $entry['covered'];
+            $uncovered += $covered ? 0 : 1;
+            $rows[] = [
+                $entry['family'],
+                implode(', ', $entry['modules']),
+                $covered ? 'installed' : 'not installed',
+            ];
+        }
+
+        $io->table(['Family', 'Commerce modules', 'MageObsidian'], $rows);
+        $io->text(sprintf(
+            '%d of %d Commerce storefront families have no MageObsidian module installed.',
+            $uncovered,
+            count($inventory)
+        ));
     }
 
     /**

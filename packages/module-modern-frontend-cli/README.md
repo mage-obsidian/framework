@@ -27,6 +27,13 @@ resolves that class through DI, so an older framework makes it fail on
 construction rather than degrade: raise the `composer.json` constraint to that
 release when it is published.
 
+`mage-obsidian:frontend:doctor`'s Adobe Commerce section needs the framework
+release that ships `MageObsidian\ModernFrontend\Service\Dev\AdobeCommerceInventory`
+— the first `mage-obsidian/module-modern-frontend` release after 2.19.0. The
+command resolves that class through DI, so an older framework makes it fail
+on construction rather than degrade: raise the `composer.json` constraint to
+that release when it is published.
+
 ## Installation
 
 Installed automatically with the [Vite harness](https://github.com/mage-obsidian/component-modern-frontend):

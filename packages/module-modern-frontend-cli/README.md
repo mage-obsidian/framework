@@ -16,7 +16,16 @@
 bin/magento mage-obsidian:frontend:config --generate      # write the PHP↔JS config contract
 bin/magento mage-obsidian:frontend:config --show [--modules|--themes]
 bin/magento mage-obsidian:frontend:hmr --enable|--disable|--show
+bin/magento mage-obsidian:i18n:collect [--locale en_US]   # collect phrases into each component i18n CSV
 ```
+
+`mage-obsidian:i18n:collect` reads `.vue`/`.ts`/`.js` and `.twig` sources. Twig
+extraction needs no Twig engine, but it does need the framework release that
+ships `MageObsidian\ModernFrontend\Service\I18n\TwigPhraseExtractor` — the
+first `mage-obsidian/module-modern-frontend` release after 2.19.0. The command
+resolves that class through DI, so an older framework makes it fail on
+construction rather than degrade: raise the `composer.json` constraint to that
+release when it is published.
 
 ## Installation
 

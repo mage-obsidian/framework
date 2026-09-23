@@ -63,43 +63,46 @@ function run(args, extraEnv = {}) {
     });
 }
 
-describe("mage-obsidian:build-themes without a terminal", () => {
-    it("reaches the build without asking for dev server settings", () => {
-        const result = run(["--theme", "Acme/missing"]);
+describe.skipIf(!process.features.typescript)(
+    "mage-obsidian:build-themes without a terminal",
+    () => {
+        it("reaches the build without asking for dev server settings", () => {
+            const result = run(["--theme", "Acme/missing"]);
 
-        expect(result.status).toBe(1);
-        expect(result.stderr).toContain('Theme "Acme/missing" does not exist.');
-        expect(result.stderr).not.toContain("Missing required environment variables");
-    });
-
-    it("reaches the type check without asking for dev server settings", () => {
-        const result = run(["--typecheck", "--theme", "Acme/missing"]);
-
-        expect(result.status).toBe(1);
-        expect(result.stderr).toContain('Theme "Acme/missing" does not exist.');
-        expect(result.stderr).not.toContain("Missing required environment variables");
-    });
-
-    it("refuses the dev server without host and port, and never prompts or writes .env", () => {
-        const result = run(["--dev-server", "--theme", "Acme/missing"]);
-
-        expect(result.status).toBe(1);
-        expect(result.stderr).toContain("VITE_SERVER_HOST");
-        expect(result.stdout).not.toContain("Creating `.env` file");
-        expect(existsSync(path.join(viteDir, ".env"))).toBe(false);
-    });
-
-    it("lets a fully configured dev server through to theme resolution", () => {
-        const result = run(["--dev-server", "--theme", "Acme/missing"], {
-            VITE_SERVER_HOST: "phpfpm",
-            VITE_SERVER_PORT: "5173",
-            VITE_SERVER_SECURE: "true",
-            VITE_HMR_PATH: "/__vite_ping",
-            MAGENTO_HOST: "magento.test",
-            VITE_SERVER_ALLOWED_HOSTS: "magento.test",
+            expect(result.status).toBe(1);
+            expect(result.stderr).toContain('Theme "Acme/missing" does not exist.');
+            expect(result.stderr).not.toContain("Missing required environment variables");
         });
 
-        expect(result.stderr).not.toContain("Missing required environment variables");
-        expect(result.stderr).toContain('Theme "Acme/missing" does not exist.');
-    });
-});
+        it("reaches the type check without asking for dev server settings", () => {
+            const result = run(["--typecheck", "--theme", "Acme/missing"]);
+
+            expect(result.status).toBe(1);
+            expect(result.stderr).toContain('Theme "Acme/missing" does not exist.');
+            expect(result.stderr).not.toContain("Missing required environment variables");
+        });
+
+        it("refuses the dev server without host and port, and never prompts or writes .env", () => {
+            const result = run(["--dev-server", "--theme", "Acme/missing"]);
+
+            expect(result.status).toBe(1);
+            expect(result.stderr).toContain("VITE_SERVER_HOST");
+            expect(result.stdout).not.toContain("Creating `.env` file");
+            expect(existsSync(path.join(viteDir, ".env"))).toBe(false);
+        });
+
+        it("lets a fully configured dev server through to theme resolution", () => {
+            const result = run(["--dev-server", "--theme", "Acme/missing"], {
+                VITE_SERVER_HOST: "phpfpm",
+                VITE_SERVER_PORT: "5173",
+                VITE_SERVER_SECURE: "true",
+                VITE_HMR_PATH: "/__vite_ping",
+                MAGENTO_HOST: "magento.test",
+                VITE_SERVER_ALLOWED_HOSTS: "magento.test",
+            });
+
+            expect(result.stderr).not.toContain("Missing required environment variables");
+            expect(result.stderr).toContain('Theme "Acme/missing" does not exist.');
+        });
+    },
+);

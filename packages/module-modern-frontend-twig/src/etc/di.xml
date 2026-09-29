@@ -1,5 +1,11 @@
 <?xml version="1.0"?>
 <!--
+ This file is part of the MageObsidian - ModernFrontend project.
+
+ SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ SPDX-License-Identifier: MIT
+-->
+<!--
     Registers a "twig" template engine next to Magento's native "phtml".
     The engine name is the file extension (see Magento\Framework\View\Element\Template::fetchView),
     so a block whose template ends in `.twig` is dispatched here while every `.phtml` keeps using the

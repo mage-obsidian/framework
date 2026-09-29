@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+ This file is part of the MageObsidian - ModernFrontend project.
+
+ SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ SPDX-License-Identifier: MIT
+-->
+<!--
     CI unit suite: pure-logic tests that run on a vanilla PHP runner without a
     Magento install or the Twig library. TwigRenderTest needs both (Twig + the
     Magento Escaper type) and is excluded here; it runs in a real Magento root

@@ -10,6 +10,7 @@ import configResolver from "../core/configResolver.ts";
 import preCompileMagentoFiles from "../core/preCompileMagentoFiles.ts";
 import { writeCmsBaseline } from "../core/cmsBaseline.ts";
 import runWithConcurrency from "../utils/runWithConcurrency.ts";
+import { resolveConcurrency } from "../utils/buildConcurrency.ts";
 import { selectThemeForDevServer } from "./selectTheme.ts";
 import { missingEnvFor } from "./envRequirements.ts";
 import { COMMAND_NOT_FOUND, missingCommand, withLocalBin } from "./spawnTool.ts";
@@ -149,8 +150,11 @@ const spawnBuild = (themeName) =>
     });
 
 const buildThemes = async (themeNames) => {
-    const cores = os.cpus()?.length ?? 2;
-    const limit = Math.max(1, Math.min(themeNames.length, cores - 1));
+    const limit = resolveConcurrency(
+        process.env.MAGE_OBSIDIAN_BUILD_CONCURRENCY,
+        themeNames.length,
+        os.cpus()?.length ?? 2,
+    );
     console.log(
         chalk.cyan(
             `Building ${themeNames.length} theme(s) (concurrency ${limit}): ${themeNames.join(", ")}`,

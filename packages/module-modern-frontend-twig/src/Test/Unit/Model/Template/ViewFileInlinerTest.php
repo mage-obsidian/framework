@@ -40,6 +40,32 @@ class ViewFileInlinerTest extends TestCase
         $this->assertSame(self::CSS, $inliner->inline(self::FILE_ID));
     }
 
+    public function testTheLicenseHeaderOfAStylesheetStaysOutOfThePage(): void
+    {
+        $source = "/*\n * This file is part of the MageObsidian - Default Theme project.\n *\n"
+            . " * SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez\n * SPDX-License-Identifier: MIT\n */\n"
+            . self::CSS;
+
+        $this->assertSame(self::CSS, $this->inlinerFor($source)->inline(self::FILE_ID));
+    }
+
+    public function testTheLicenseHeaderOfAScriptStaysOutOfThePage(): void
+    {
+        $script = "(function () {\n    var url = \"https://example.test//path\";\n})();\n";
+        $source = "// This file is part of the MageObsidian - Default Theme project.\n//\n"
+            . "// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez\n// SPDX-License-Identifier: MIT\n"
+            . $script;
+
+        $this->assertSame($script, $this->inlinerFor($source)->inline(self::FILE_ID));
+    }
+
+    public function testALeadingCommentThatIsNotALicenseIsKept(): void
+    {
+        $source = "/* Tokens read before first paint. */\n" . self::CSS;
+
+        $this->assertSame($source, $this->inlinerFor($source)->inline(self::FILE_ID));
+    }
+
     public function testReadsTheFileOnceAcrossRepeatedCalls(): void
     {
         $driver = $this->createMock(File::class);
@@ -66,6 +92,14 @@ class ViewFileInlinerTest extends TestCase
         $this->expectExceptionMessage(self::FILE_ID);
 
         $inliner->inline(self::FILE_ID);
+    }
+
+    private function inlinerFor(string $contents): ViewFileInliner
+    {
+        return new ViewFileInliner(
+            $this->repository($this->asset(self::SOURCE)),
+            $this->driver([self::SOURCE => $contents])
+        );
     }
 
     private function asset(string $source): FileAsset

@@ -19,6 +19,10 @@ use Throwable;
  */
 class ViewFileInliner
 {
+    private const array LEADING_COMMENTS = ['~\A/\*.*?\*/\n?~s', '~\A(?:[ \t]*//[^\n]*\n)+~'];
+
+    private const string LICENSE_MARKER = 'SPDX-License-Identifier';
+
     /** @var array<string, string> */
     private array $cache = [];
 
@@ -55,6 +59,17 @@ class ViewFileInliner
             );
         }
 
-        return $this->cache[$fileId] = $contents;
+        return $this->cache[$fileId] = $this->withoutLicenseHeader($contents);
+    }
+
+    private function withoutLicenseHeader(string $contents): string
+    {
+        foreach (self::LEADING_COMMENTS as $pattern) {
+            if (preg_match($pattern, $contents, $match) && str_contains($match[0], self::LICENSE_MARKER)) {
+                return substr($contents, strlen($match[0]));
+            }
+        }
+
+        return $contents;
     }
 }

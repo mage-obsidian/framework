@@ -129,9 +129,9 @@ class FrontendDoctorCommand extends Command
             ),
             $this->diagnostics->evaluateCmsDelta(
                 $cmsDeltaState['classes'],
-                $cmsDeltaState['unresolved'],
-                $this->cmsDelta->hasBaseline()
+                $cmsDeltaState['unresolved']
             ),
+            $this->diagnostics->evaluateCmsBaseline($this->cmsDelta->baselineStatuses()),
             $this->diagnostics->evaluateJsEngine(
                 $this->diagnostics->extractJsEngineRange($this->readRootFile(self::VITE_MANIFEST_PATH)),
                 $this->diagnostics->extractJsEngineVersion($this->readRootFile(self::VITE_INSTALLED_ENGINE_PATH))

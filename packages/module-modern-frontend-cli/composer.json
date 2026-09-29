@@ -24,7 +24,7 @@
     ],
     "require": {
         "php": ">=8.3",
-        "mage-obsidian/module-modern-frontend": "^2.20"
+        "mage-obsidian/module-modern-frontend": "^2.21"
     },
     "type": "magento2-module",
     "license": [

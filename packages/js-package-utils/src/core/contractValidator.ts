@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 /** Themes whose ancestry loops back on itself, as human-readable paths. */
 export function findThemeCycles(themes: Record<string, { parent?: string }>): string[] {
     const cycles: string[] = [];

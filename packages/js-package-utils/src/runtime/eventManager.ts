@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- augmented per module
 export interface StorefrontEventMap {}
 

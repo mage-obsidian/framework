@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 export const LifecycleEvent = {
     IslandMountBefore: "island_mount_before",
     IslandMountAfter: "island_mount_after",

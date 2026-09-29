@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import configResolver from "./configResolver.ts";
 
 /** The theme and every ancestor it inherits from, nearest first. */

@@ -1,4 +1,8 @@
 #! /usr/bin/env node
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import { Command } from "commander";
 import { execSync, spawn } from "child_process";
 import os from "os";

@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 /**
  * Section store core — pure helpers for mirroring a set of server-pushed,
  * versioned "sections" into a reactive store backed by localStorage.

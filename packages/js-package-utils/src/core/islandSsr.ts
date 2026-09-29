@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 /**
  * Renders an island component's initial state to the HTML a template has to emit
  * for `renderVueComponent`'s `$serverHtml` argument.

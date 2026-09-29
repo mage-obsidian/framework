@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import { DEV_SERVER_REQUIRED_ENV, missingEnvFor } from "../../cli/envRequirements.ts";
 
 describe("missingEnvFor", () => {

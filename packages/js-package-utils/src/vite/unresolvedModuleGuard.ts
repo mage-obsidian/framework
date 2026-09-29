@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import moduleResolver from "../core/moduleResolver.ts";
 
 // The part before `::` must look like a Magento module (Vendor_Module) or the

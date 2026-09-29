@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import path from "node:path";
 import configResolver from "../core/configResolver.ts";
 import generateInterceptors from "../core/generateInterceptors.ts";

@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import { defineConfig } from "vitest/config";
 
 // Engine unit tests run in Node. Vitest transpiles TS/ESM natively, replacing

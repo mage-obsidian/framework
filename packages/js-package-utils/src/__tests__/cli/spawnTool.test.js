@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import path from "path";
 import { COMMAND_NOT_FOUND, missingCommand, withLocalBin } from "../../cli/spawnTool.ts";
 

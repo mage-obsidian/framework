@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 const MODULE_TAIL = /[\\/]runtime[\\/]islandComponents\.(ts|js)$/;
 
 export function isComponentMapModule(id: string): boolean {

@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import inheritModuleResolver from "./inheritModuleResolver.ts";
 import inheritAssetsModuleResolver from "./inheritAssetsModuleResolver.ts";
 import defaultNodeResolve from "./defaultNodeResolver.ts";

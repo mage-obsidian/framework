@@ -1,3 +1,7 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
 import runWithConcurrency from "../../utils/runWithConcurrency.ts";
 
 const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

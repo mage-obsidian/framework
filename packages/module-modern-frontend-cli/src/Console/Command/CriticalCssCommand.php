@@ -36,10 +36,10 @@ use Throwable;
  *
  * The Beasties extraction runs in the node bin shipped with the JS engine
  * (`mage-obsidian/cli/criticalCss`); this command only orchestrates it: it
- * fetches the real HTML, hands it the built stylesheet, and rewrites the
- * relative `@font-face` `url(../*.woff2)` to a root-relative static URL so the
- * font resolves once the critical CSS is inlined in `<head>` (a relative URL
- * would resolve against the document and 404).
+ * fetches the real HTML and hands it the built stylesheet. The relative
+ * `@font-face` `url(../*.woff2)` stays as the build emitted it: the provider
+ * points it at the serving store's static path when it inlines the file, so a
+ * critical CSS committed from one environment works in any other.
  */
 class CriticalCssCommand extends Command
 {
@@ -250,7 +250,7 @@ class CriticalCssCommand extends Command
         }
         $io->info(trim($process->getOutput()));
 
-        $critical = $this->rewriteFontUrls((string)$this->fileDriver->fileGetContents($outTmp));
+        $critical = (string)$this->fileDriver->fileGetContents($outTmp);
         if (trim($critical) === '') {
             $io->warning('Extractor produced empty critical CSS; nothing written.');
             return -1;
@@ -314,36 +314,5 @@ class CriticalCssCommand extends Command
         }
 
         return $this->httpClient->getBody();
-    }
-
-    /**
-     * Repoint the relative `url(../*.woff2)` the build emitted to a root-relative
-     * static URL, so the `@font-face` resolves from `<head>` instead of against
-     * the document path. The URL matches the one fonts.twig preloads.
-     *
-     * @param string $critical
-     * @return string
-     */
-    private function rewriteFontUrls(string $critical): string
-    {
-        return (string)preg_replace_callback(
-            '#url\(\s*([\'"]?)\.\./([A-Za-z0-9._-]+\.woff2)\1\s*\)#',
-            fn (array $m): string => 'url(' . $this->fontUrl($m[2]) . ')',
-            $critical
-        );
-    }
-
-    private function fontUrl(string $name): string
-    {
-        $fileId = $this->configProvider->getViteGeneratedPath() . '/' . $name;
-        $url = (string)preg_replace(
-            '/\s+/',
-            '',
-            $this->assetRepository->getUrlWithParams($fileId, ['_secure' => true])
-        );
-
-        // Strip scheme+host so the @font-face resolves against the serving origin
-        // (avoids mixed content and a hardcoded host in the inlined critical CSS).
-        return (string)preg_replace('#^https?://[^/]+#i', '', $url);
     }
 }

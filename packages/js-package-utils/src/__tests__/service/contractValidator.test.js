@@ -43,9 +43,7 @@ describe("validateContract", () => {
         const result = validateContract(makeValidContract({ schema_version: "0.9.0" }));
         expect(result.ok).toBe(false);
         expect(result.errors).toEqual(
-            expect.arrayContaining([
-                expect.stringContaining(`expects "${EXPECTED_SCHEMA_VERSION}"`),
-            ]),
+            expect.arrayContaining([expect.stringContaining('supports "1.0.0", "1.1.0"')]),
         );
     });
 
@@ -110,5 +108,9 @@ describe("validateContract", () => {
         expect(result.errors).toEqual(
             expect.arrayContaining([expect.stringContaining("Theme inheritance is cyclic")]),
         );
+    });
+
+    test.each(["1.0.0", "1.1.0"])("accepts the supported schema version %s", (version) => {
+        expect(validateContract(makeValidContract({ schema_version: version })).ok).toBe(true);
     });
 });

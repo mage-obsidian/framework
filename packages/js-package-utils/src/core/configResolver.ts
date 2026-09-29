@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { DEPENDENCY_CONFIG_FILE_PATH, OUTPUT_THEME_DIR } from "../config/default.ts";
+import { DEPENDENCY_CONFIG_FILE_PATH, MAGENTO_ROOT, OUTPUT_THEME_DIR } from "../config/default.ts";
+import { withAbsoluteSources } from "./contractPaths.ts";
 import { validateContract } from "./contractValidator.ts";
 
 const REGENERATE_HINT =
@@ -65,6 +66,8 @@ function loadContract() {
             "If the version differs, the PHP module and JS engine are out of sync — align their versions, then regenerate.",
         ]);
     }
+
+    config = withAbsoluteSources(config, MAGENTO_ROOT);
 
     // Hash the parts that change the build graph (which modules/themes exist and
     // their resolution). Caches downstream key on this so a changed module set

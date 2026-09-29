@@ -41,6 +41,7 @@ describe("configResolver contract hash + mtime reload", () => {
 
         vi.doMock("#config/default.ts", () => ({
             __esModule: true,
+            MAGENTO_ROOT: "/srv/app",
             DEPENDENCY_CONFIG_FILE_PATH: tmpFile,
             OUTPUT_THEME_DIR: "web/generated",
         }));
@@ -67,5 +68,38 @@ describe("configResolver contract hash + mtime reload", () => {
 
         expect(configResolver.getContractHash()).not.toBe(firstHash);
         expect(configResolver.getMagentoConfig().allModules).toEqual(["Vendor_A", "Vendor_B"]);
+    });
+
+    test("hands out absolute sources for a relative contract", async () => {
+        tmpFile = path.join(os.tmpdir(), `obsidian-contract-rel-${process.pid}.json`);
+        writeContract(
+            tmpFile,
+            {
+                schema_version: "1.1.0",
+                mode: "default",
+                modules: { Vendor_A: { src: "vendor/vendor/a" } },
+                themes: { "Vendor/t": { src: "app/design/frontend/Vendor/t", parent: null } },
+                allModules: ["Vendor_A"],
+                LIB_PATH: "lib",
+            },
+            20000,
+        );
+        vi.doMock("#config/default.ts", () => ({
+            __esModule: true,
+            MAGENTO_ROOT: "/srv/app",
+            DEPENDENCY_CONFIG_FILE_PATH: tmpFile,
+            OUTPUT_THEME_DIR: "web/generated",
+        }));
+        vi.doMock("#core/contractValidator.ts", () => ({
+            __esModule: true,
+            validateContract: () => ({ ok: true, errors: [] }),
+        }));
+
+        const configResolver = (await import("#core/configResolver.ts")).default;
+
+        expect(configResolver.getModuleDefinition("Vendor_A").src).toBe("/srv/app/vendor/vendor/a");
+        expect(configResolver.getThemeDefinition("Vendor/t").src).toBe(
+            "/srv/app/app/design/frontend/Vendor/t",
+        );
     });
 });

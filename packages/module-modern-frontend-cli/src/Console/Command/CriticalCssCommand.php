@@ -30,7 +30,8 @@ use Throwable;
 
 /**
  * Renders a layout handle from the live store and extracts its above-the-fold
- * critical CSS into `<theme>/web/generated/critical/<handle>.css`, the file
+ * critical CSS into `<theme>/web/critical/<handle>.css`, outside the Vite output
+ * that every build empties, the file
  * {@see \MageObsidian\ModernFrontend\Service\CriticalCssProvider} inlines.
  *
  * The Beasties extraction runs in the node bin shipped with the JS engine
@@ -73,7 +74,7 @@ class CriticalCssCommand extends Command
     protected function configure(): void
     {
         $this->setName('mage-obsidian:frontend:critical-css')
-            ->setDescription('Extract above-the-fold critical CSS for a layout handle into the Vite generated dir.')
+            ->setDescription('Extract above-the-fold critical CSS for a layout handle into the theme\'s web/critical dir.')
             ->addOption(
                 self::OPTION_HANDLE,
                 null,
@@ -255,10 +256,7 @@ class CriticalCssCommand extends Command
             return -1;
         }
 
-        $generatedDir = $this->fileDriver->getParentDirectory(
-            $this->fileDriver->getParentDirectory($styleSource)
-        );
-        $outPath = $generatedDir . '/' . self::CRITICAL_DIR . '/' . $handle . '.css';
+        $outPath = self::criticalPathFor($styleSource, $handle);
         $outDir = $this->fileDriver->getParentDirectory($outPath);
         if (!$this->fileDriver->isExists($outDir)) {
             $this->fileDriver->createDirectory($outDir);
@@ -273,6 +271,11 @@ class CriticalCssCommand extends Command
         }
 
         return strlen($critical);
+    }
+
+    public static function criticalPathFor(string $styleSource, string $handle): string
+    {
+        return dirname($styleSource, 3) . '/' . self::CRITICAL_DIR . '/' . $handle . '.css';
     }
 
     public function servesHandle(string $html, string $handle): bool

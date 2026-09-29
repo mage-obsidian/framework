@@ -52,4 +52,12 @@ class CriticalCssCommandTest extends TestCase
         $this->assertTrue($this->command()->servesHandle('no markup at all', 'cms_index_index'));
         $this->assertTrue($this->command()->servesHandle($this->page(''), 'cms_index_index'));
     }
+
+    public function testWritesTheCriticalCssIntoTheThemeSourcesNotTheViteOutput(): void
+    {
+        $this->assertSame(
+            '/r/app/design/frontend/Acme/shop/web/critical/cms_index_index.css',
+            CriticalCssCommand::criticalPathFor('/r/app/design/frontend/Acme/shop/web/generated/css/style.css', 'cms_index_index')
+        );
+    }
 }

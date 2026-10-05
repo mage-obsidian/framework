@@ -15,6 +15,10 @@ if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
     echo "tag $VERSION already exists" >&2
     exit 1
 fi
+[[ "$(git symbolic-ref --short -q HEAD)" == "master" ]] || { echo "HEAD must be the master branch" >&2; exit 1; }
+
+restore() { git checkout -q -- packages; }
+trap restore ERR
 
 vendor/bin/monorepo-builder bump-interdependency "$CONSTRAINT"
 for manifest in packages/*/package.json; do
@@ -24,14 +28,17 @@ done
 
 bin/release-guard "$VERSION"
 
+git --no-pager diff --stat packages
+read -r -p "Commit, tag and push $VERSION? [y/N] " reply </dev/tty || reply=""
+if [[ ! "$reply" =~ ^[Yy]$ ]]; then
+    restore
+    echo "aborted; nothing committed" >&2
+    exit 1
+fi
+
+trap - ERR
 git add -A packages
 git commit -q --allow-empty -m "chore(release): $VERSION"
 git tag "$VERSION"
-git --no-pager show --stat HEAD
-
-read -r -p "Push master and tag $VERSION? [y/N] " reply </dev/tty
-if [[ ! "$reply" =~ ^[Yy]$ ]]; then
-    echo "not pushed; undo with: git tag -d $VERSION && git reset --hard HEAD~1" >&2
-    exit 1
-fi
-git push origin master "$VERSION"
+git push --atomic origin master "$VERSION"
+echo "Pushed $VERSION. Do not push to master until the Release workflow finishes."

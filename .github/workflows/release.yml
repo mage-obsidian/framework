@@ -19,7 +19,7 @@ jobs:
 
   split:
     name: Tag ${{ matrix.package }}
-    needs: guard
+    needs: [guard, npm]
     runs-on: ubuntu-latest
     concurrency:
       group: split-${{ matrix.package }}

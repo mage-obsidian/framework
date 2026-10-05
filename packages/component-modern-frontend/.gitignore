@@ -1,0 +1,11 @@
+/*.cache
+/vendor
+/node_modules
+/package.xml
+.precompiled/
+**/node_modules
+.phpunit.result.cache
+.idea
+.env
+.env.local
+.pnpm-store

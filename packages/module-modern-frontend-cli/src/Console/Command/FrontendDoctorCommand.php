@@ -1,0 +1,467 @@
+<?php
+/**
+ * This file is part of the MageObsidian - ModernFrontend project.
+ *
+ * SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ * SPDX-License-Identifier: MIT
+ */
+
+declare(strict_types=1);
+
+namespace MageObsidian\ModernFrontendCli\Console\Command;
+
+use Magento\Framework\App\Area;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
+use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\Module\ModuleListInterface;
+use Magento\Framework\ObjectManager\ConfigLoaderInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use MageObsidian\ModernFrontend\Api\Data\ConfigInterface;
+use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
+use MageObsidian\ModernFrontend\Model\Config\ConfigProvider;
+use MageObsidian\ModernFrontend\Service\Cms\DeltaStylesheet;
+use MageObsidian\ModernFrontend\Service\Cms\TailwindCli;
+use MageObsidian\ModernFrontend\Service\Dev\AdobeCommerceInventory;
+use MageObsidian\ModernFrontend\Service\Dev\CheckResult;
+use MageObsidian\ModernFrontend\Service\Dev\DevDiagnostics;
+use MageObsidian\ModernFrontend\Service\Dev\HttpProberInterface;
+use MageObsidian\ModernFrontend\Service\Dev\ProbeResult;
+use MageObsidian\ModernFrontendCli\Utils\CustomSymfonyStyle;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+/**
+ * Diagnoses the MageObsidian dev environment: app mode, contract, HMR flag,
+ * Vite dev server reachability and required env vars. Each check is reported as
+ * ok/warn/error with an actionable hint.
+ *
+ * The dev server is probed at its configured host:port (vite/.env), which is the
+ * address reachable from where bin/magento runs. Full storefront→Vite chain
+ * validation (public URLs, nginx proxy) is the client-side guard's job, since
+ * those URLs resolve from the browser, not necessarily from the CLI host.
+ */
+class FrontendDoctorCommand extends Command
+{
+    private const REQUIRED_ENV_VARS = [
+        'VITE_SERVER_HOST',
+        'VITE_SERVER_PORT',
+        'VITE_SERVER_SECURE',
+        'VITE_HMR_PATH',
+        'MAGENTO_HOST',
+        'VITE_SERVER_ALLOWED_HOSTS',
+    ];
+
+    private const VITE_MANIFEST_PATH = 'vite/package.json';
+
+    private const VITE_INSTALLED_ENGINE_PATH = 'vite/node_modules/mage-obsidian/package.json';
+
+    private const XML_PATH_CACHING_APPLICATION = 'system/full_page_cache/caching_application';
+
+    private const XML_PATH_CURRENCY_ALLOW = 'currency/options/allow';
+
+    /** Value of Magento\PageCache\Model\Config::VARNISH, inlined to avoid the module dependency. */
+    private const CACHING_APPLICATION_VARNISH = 2;
+
+    public function __construct(
+        private readonly State $state,
+        private readonly ConfigProvider $configProvider,
+        private readonly ConfigManagerInterface $configManager,
+        private readonly HttpProberInterface $prober,
+        private readonly DevDiagnostics $diagnostics,
+        private readonly DirectoryList $directoryList,
+        private readonly DriverInterface $fileDriver,
+        private readonly ConfigLoaderInterface $diConfigLoader,
+        private readonly ScopeConfigInterface $scopeConfig,
+        private readonly StoreManagerInterface $storeManager,
+        private readonly TailwindCli $tailwind,
+        private readonly DeltaStylesheet $cmsDelta,
+        private readonly ModuleListInterface $moduleList,
+        private readonly AdobeCommerceInventory $adobeCommerce
+    ) {
+        parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        $this->setName('mage-obsidian:frontend:doctor')
+            ->setDescription('Diagnose the MageObsidian dev environment (HMR, Vite dev server, contract, config).');
+
+        parent::configure();
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $io = new CustomSymfonyStyle($input, $output);
+        $io->title('MageObsidian Frontend Doctor');
+
+        $mode = $this->state->getMode();
+        $hmrEnabled = $this->configProvider->isHmrEnabled();
+        $env = $this->parseEnv();
+
+        $contractExists = $this->configManager->hasConfig();
+        $config = $contractExists ? $this->configManager->get() : [];
+        $schemaVersion = $contractExists ? ($config['schema_version'] ?? null) : null;
+
+        $devProbe = $this->probeDevServer($hmrEnabled, $env);
+        $cmsDeltaState = $this->cmsDelta->state();
+
+        $results = [
+            $this->diagnostics->evaluateMode($mode),
+            $this->diagnostics->evaluateContract($contractExists, $schemaVersion, ConfigInterface::SCHEMA_VERSION),
+            $this->diagnostics->evaluateHmr($mode, $hmrEnabled),
+            $this->diagnostics->evaluateDevServer($hmrEnabled, $devProbe),
+            $this->diagnostics->evaluateEnv($this->findMissingEnvVars($env)),
+            $this->diagnostics->evaluatePageCacheVary(
+                $this->isVarnishEnabled(),
+                $this->diagnostics->resolvePageCacheIdentifier(
+                    $this->diConfigLoader->load(Area::AREA_FRONTEND)
+                ),
+                $this->findVaryingDimensions()
+            ),
+            $this->diagnostics->evaluateTailwindBinary(
+                $this->tailwind->isAvailable(),
+                $this->tailwind->getBinaryPath(),
+                $this->tailwind->getVersion()
+            ),
+            $this->diagnostics->evaluateCmsDelta(
+                $cmsDeltaState['classes'],
+                $cmsDeltaState['unresolved']
+            ),
+            $this->diagnostics->evaluateCmsBaseline($this->cmsDelta->baselineStatuses()),
+            $this->diagnostics->evaluateJsEngine(
+                $this->diagnostics->extractJsEngineRange($this->readRootFile(self::VITE_MANIFEST_PATH)),
+                $this->diagnostics->extractJsEngineVersion($this->readRootFile(self::VITE_INSTALLED_ENGINE_PATH))
+            ),
+        ];
+
+        // Drift only makes sense to evaluate against an existing contract; the
+        // missing-contract case is already reported by evaluateContract above.
+        if ($contractExists) {
+            $results[] = $this->diagnostics->evaluateDrift($this->configManager->detectDrift());
+            $results[] = $this->diagnostics->evaluateShadowedConfigs($this->findShadowedConfigs($config));
+            $results[] = $this->diagnostics->evaluateIslandHydration($this->findUnhydratedIslands($config));
+        }
+
+        $this->renderResults($io, $results);
+        $this->reportAdobeCommerce($io);
+
+        if ($this->diagnostics->hasError($results)) {
+            $io->error('One or more checks failed. See the hints above.');
+            return Command::FAILURE;
+        }
+        $io->success('Dev environment looks healthy.');
+        return Command::SUCCESS;
+    }
+
+    /**
+     * Probe the Vite dev server at the host:port from vite/.env. The dev server's
+     * own listener is plain HTTP (the secure flag only affects the browser HMR
+     * protocol), so the probe uses http regardless.
+     *
+     * @param array<string, string> $env
+     */
+    private function probeDevServer(bool $hmrEnabled, array $env): ProbeResult
+    {
+        if (!$hmrEnabled) {
+            return new ProbeResult(true);
+        }
+        $host = $env['VITE_SERVER_HOST'] ?? '';
+        $port = $env['VITE_SERVER_PORT'] ?? '';
+        if ($host === '' || $port === '') {
+            return new ProbeResult(false, 0, '', 'VITE_SERVER_HOST/VITE_SERVER_PORT not set in vite/.env');
+        }
+
+        return $this->prober->probe(sprintf('http://%s:%s/@vite/client', $host, $port));
+    }
+
+    private function isVarnishEnabled(): bool
+    {
+        return (int)$this->scopeConfig->getValue(self::XML_PATH_CACHING_APPLICATION)
+            === self::CACHING_APPLICATION_VARNISH;
+    }
+
+    /**
+     * Context dimensions that actually differ in this install, i.e. the ones the
+     * page cache would have to tell apart. Store view is deliberately absent:
+     * IdentifierForSave mixes store cache tags into the key, so multistore keeps
+     * working even while the vary cookie is ignored.
+     *
+     * @return string[]
+     */
+    private function findVaryingDimensions(): array
+    {
+        foreach ($this->storeManager->getStores() as $store) {
+            $allowed = (string)$this->scopeConfig->getValue(
+                self::XML_PATH_CURRENCY_ALLOW,
+                ScopeInterface::SCOPE_STORE,
+                $store->getCode()
+            );
+            if (count(array_unique(array_filter(explode(',', $allowed)))) > 1) {
+                return ['currency'];
+            }
+        }
+
+        return [];
+    }
+
+    private function readRootFile(string $relativePath): ?string
+    {
+        $path = $this->directoryList->getRoot() . '/' . $relativePath;
+
+        return $this->fileDriver->isExists($path) ? $this->fileDriver->fileGetContents($path) : null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function parseEnv(): array
+    {
+        $envPath = $this->directoryList->getRoot() . '/vite/.env';
+        if (!$this->fileDriver->isExists($envPath)) {
+            return [];
+        }
+
+        $env = [];
+        foreach (preg_split('/\r\n|\r|\n/', $this->fileDriver->fileGetContents($envPath)) ?: [] as $line) {
+            if (preg_match('/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/', $line, $m)) {
+                $env[$m[1]] = trim($m[2]);
+            }
+        }
+
+        return $env;
+    }
+
+    /**
+     * @param array<string, string> $env
+     * @return string[]
+     */
+    private function findMissingEnvVars(array $env): array
+    {
+        $missing = [];
+        foreach (self::REQUIRED_ENV_VARS as $var) {
+            if (!isset($env[$var]) || $env[$var] === '') {
+                $missing[] = $var;
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Walk the module and theme web directories the engine reads config from and
+     * collect any config file present in a build-ignored extension. Mirrors the
+     * engine's resolution sites: module sources (view/frontend/web), theme-level
+     * module overrides (<theme>/<Vendor_Module>/web) and the theme config
+     * (<theme>/web). The shadowing decision itself lives in DevDiagnostics.
+     *
+     * @param array<string, mixed> $config
+     * @return string[]
+     */
+    private function findShadowedConfigs(array $config): array
+    {
+        $moduleConfigFile = is_string($config['MODULE_CONFIG_FILE'] ?? null)
+            ? $config['MODULE_CONFIG_FILE']
+            : ConfigInterface::MODULE_CONFIG_FILE;
+        $themeConfigFile = is_string($config['THEME_CONFIG_FILE'] ?? null)
+            ? $config['THEME_CONFIG_FILE']
+            : ConfigInterface::THEME_CONFIG_FILE;
+
+        $shadows = [];
+
+        foreach (($config['modules'] ?? []) as $module) {
+            $src = $module['src'] ?? null;
+            if (is_string($src)) {
+                $shadows = array_merge(
+                    $shadows,
+                    $this->shadowPathsIn($src . '/view/frontend/web', $moduleConfigFile)
+                );
+            }
+        }
+
+        foreach (($config['themes'] ?? []) as $theme) {
+            $src = $theme['src'] ?? null;
+            if (!is_string($src)) {
+                continue;
+            }
+            $shadows = array_merge($shadows, $this->shadowPathsIn($src . '/web', $themeConfigFile));
+            foreach ($this->themeModuleOverrideDirs($src) as $overrideWebDir) {
+                $shadows = array_merge($shadows, $this->shadowPathsIn($overrideWebDir, $moduleConfigFile));
+            }
+        }
+
+        return array_values(array_unique($shadows));
+    }
+
+    /**
+     * Eager islands still handing the browser an empty container, by template.
+     *
+     * Scans the same sources as the config check: module templates and the
+     * theme's per-module template overrides. The rule itself lives in
+     * DevDiagnostics; this only supplies file contents.
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return array<string, string[]>
+     */
+    private function findUnhydratedIslands(array $config): array
+    {
+        $roots = [];
+        foreach (($config['modules'] ?? []) as $module) {
+            if (is_string($module['src'] ?? null)) {
+                $roots[] = $module['src'] . '/view/frontend/templates';
+            }
+        }
+        foreach (($config['themes'] ?? []) as $theme) {
+            if (!is_string($theme['src'] ?? null)) {
+                continue;
+            }
+            foreach ($this->themeModuleOverrideDirs($theme['src']) as $overrideWebDir) {
+                $roots[] = dirname($overrideWebDir) . '/templates';
+            }
+        }
+
+        $islands = [];
+        foreach (array_unique($roots) as $root) {
+            foreach ($this->templatesIn($root) as $path) {
+                $source = $this->fileDriver->fileGetContents($path);
+                $found = $this->diagnostics->eagerIslandsWithoutHydration((string)$source);
+                if ($found !== []) {
+                    $islands[$path] = $found;
+                }
+            }
+        }
+
+        return $islands;
+    }
+
+    /**
+     * Every .twig / .phtml under a directory, recursively.
+     *
+     * @return string[]
+     */
+    private function templatesIn(string $dir): array
+    {
+        if (!$this->fileDriver->isExists($dir) || !$this->fileDriver->isDirectory($dir)) {
+            return [];
+        }
+
+        $templates = [];
+        foreach ($this->fileDriver->readDirectory($dir) as $path) {
+            if ($this->fileDriver->isDirectory($path)) {
+                $templates = array_merge($templates, $this->templatesIn($path));
+                continue;
+            }
+            if (in_array(pathinfo($path, PATHINFO_EXTENSION), ['twig', 'phtml'], true)) {
+                $templates[] = $path;
+            }
+        }
+
+        return $templates;
+    }
+
+    /**
+     * Resolve the ignored config files (full paths) in a single directory.
+     *
+     * @return string[]
+     */
+    private function shadowPathsIn(string $dir, string $expectedFile): array
+    {
+        if (!$this->fileDriver->isExists($dir) || !$this->fileDriver->isDirectory($dir)) {
+            return [];
+        }
+
+        $names = array_map('basename', $this->fileDriver->readDirectory($dir));
+        $shadows = $this->diagnostics->shadowsInDirectory($expectedFile, $names);
+
+        return array_map(static fn (string $name): string => $dir . '/' . $name, $shadows);
+    }
+
+    /**
+     * The <theme>/<Vendor_Module>/web directories that can hold a theme-level
+     * module config override. Module folders follow the Vendor_Module convention
+     * (an underscore), which separates them from the theme's own web/media dirs.
+     *
+     * @return string[]
+     */
+    private function themeModuleOverrideDirs(string $themeSrc): array
+    {
+        if (!$this->fileDriver->isExists($themeSrc) || !$this->fileDriver->isDirectory($themeSrc)) {
+            return [];
+        }
+
+        $dirs = [];
+        foreach ($this->fileDriver->readDirectory($themeSrc) as $entry) {
+            if (!$this->fileDriver->isDirectory($entry) || !str_contains(basename($entry), '_')) {
+                continue;
+            }
+            $webDir = $entry . '/web';
+            if ($this->fileDriver->isExists($webDir) && $this->fileDriver->isDirectory($webDir)) {
+                $dirs[] = $webDir;
+            }
+        }
+
+        return $dirs;
+    }
+
+    private function reportAdobeCommerce(CustomSymfonyStyle $io): void
+    {
+        $modules = $this->moduleList->getNames();
+        if (!$this->adobeCommerce->isAdobeCommerce($modules)) {
+            return;
+        }
+
+        $io->section('Adobe Commerce');
+
+        $inventory = $this->adobeCommerce->inventory($modules);
+        if ($inventory === []) {
+            $io->text('Adobe Commerce detected; no Commerce-only storefront module is enabled.');
+            return;
+        }
+
+        $rows = [];
+        $uncovered = 0;
+        foreach ($inventory as $entry) {
+            $covered = $entry['covered'];
+            $uncovered += $covered ? 0 : 1;
+            $rows[] = [
+                $entry['family'],
+                implode(', ', $entry['modules']),
+                $covered ? 'installed' : 'not installed',
+            ];
+        }
+
+        $io->table(['Family', 'Commerce modules', 'MageObsidian'], $rows);
+        $io->text(sprintf(
+            '%d of %d Commerce storefront families have no MageObsidian module installed.',
+            $uncovered,
+            count($inventory)
+        ));
+    }
+
+    /**
+     * @param CheckResult[] $results
+     */
+    private function renderResults(CustomSymfonyStyle $io, array $results): void
+    {
+        $icons = [
+            CheckResult::STATUS_OK => '<fg=green>✔ OK</>',
+            CheckResult::STATUS_WARN => '<fg=yellow>! WARN</>',
+            CheckResult::STATUS_ERROR => '<fg=red>✖ ERROR</>',
+        ];
+
+        $rows = [];
+        foreach ($results as $result) {
+            $detail = $result->message;
+            if ($result->hint !== '') {
+                $detail .= "\n→ " . $result->hint;
+            }
+            $rows[] = [$icons[$result->status] ?? $result->status, $result->name, $detail];
+        }
+
+        $io->table(['Status', 'Check', 'Detail'], $rows);
+    }
+}

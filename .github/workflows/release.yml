@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags: ['*']
+
+jobs:
+  guard:
+    name: Release guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: bin/release-guard "${{ github.ref_name }}"
+
+  split:
+    name: Tag ${{ matrix.package }}
+    needs: guard
+    runs-on: ubuntu-latest
+    concurrency:
+      group: split-${{ matrix.package }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - module-modern-frontend
+          - module-modern-frontend-cli
+          - module-modern-frontend-twig
+          - component-modern-frontend
+          - js-package-utils
+    steps:
+      - uses: actions/checkout@v4
+      - uses: danharrin/monorepo-split-github-action@v2.4.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+        with:
+          tag: ${{ github.ref_name }}
+          package_directory: packages/${{ matrix.package }}
+          repository_organization: mage-obsidian
+          repository_name: ${{ matrix.package }}
+          branch: master
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+
+  npm:
+    name: Publish mage-obsidian to npm
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: packages/js-package-utils
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: packages/js-package-utils/pnpm-lock.yaml
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm publish --no-git-checks
+
+  github-release:
+    name: GitHub Release
+    needs: [split, npm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+VERSION="${1:-}"
+[[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+$ ]] || { echo "usage: bin/release X.Y.Z" >&2; exit 2; }
+CONSTRAINT="^${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+
+git fetch -q origin master --tags
+[[ -z "$(git status --porcelain)" ]] || { echo "working tree is dirty" >&2; exit 1; }
+[[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/master)" ]] || { echo "HEAD is not origin/master" >&2; exit 1; }
+if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+    echo "tag $VERSION already exists" >&2
+    exit 1
+fi
+
+vendor/bin/monorepo-builder bump-interdependency "$CONSTRAINT"
+for manifest in packages/*/package.json; do
+    [[ "$(jq -r '.private // false' "$manifest")" == "true" ]] && continue
+    (cd "$(dirname "$manifest")" && npm version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null)
+done
+
+bin/release-guard "$VERSION"
+
+git add -A packages
+git commit -q --allow-empty -m "chore(release): $VERSION"
+git tag "$VERSION"
+git --no-pager show --stat HEAD
+
+read -r -p "Push master and tag $VERSION? [y/N] " reply </dev/tty
+if [[ ! "$reply" =~ ^[Yy]$ ]]; then
+    echo "not pushed; undo with: git tag -d $VERSION && git reset --hard HEAD~1" >&2
+    exit 1
+fi
+git push origin master "$VERSION"

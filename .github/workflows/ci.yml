@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  monorepo:
+    name: Monorepo consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: vendor/bin/monorepo-builder validate
+      - run: vendor/bin/phpunit
+      - run: bin/precommit-config --check
+      - name: Package manifests are valid
+        run: for manifest in packages/*/composer.json; do composer validate --no-check-publish --no-check-lock "$manifest"; done
+
+  php:
+    name: PHP packages (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: phpunit:10.5
+          extensions: ctype, dom, json, libxml, mbstring, tokenizer, xml, xmlwriter
+          coverage: none
+      - name: Lint PHP sources
+        run: find packages/*/src -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+      - name: Contract JSON schema parses
+        run: php -r '$s = json_decode(file_get_contents("packages/module-modern-frontend/src/etc/mage_obsidian_frontend_contract.schema.json")); if ($s === null) { fwrite(STDERR, "schema is not valid JSON\n"); exit(1); }'
+      - name: Standalone unit suites
+        run: |
+          for config in packages/*/phpunit.ci.xml; do
+            (cd "$(dirname "$config")" && phpunit -c phpunit.ci.xml)
+          done
+
+  engine:
+    name: Engine (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['20', '22']
+    defaults:
+      run:
+        working-directory: packages/js-package-utils
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npm test
+
+  engine-lint:
+    name: Engine lint and format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/js-package-utils
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint:fast
+      - run: npm run lint
+      - run: npm run format:check
+
+  islands:
+    name: Core island harness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+        working-directory: packages/js-package-utils
+      - run: pnpm install --frozen-lockfile && pnpm exec vitest run
+        working-directory: packages/module-modern-frontend
+
+  vite-harness:
+    name: Vite harness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check packages/component-modern-frontend/vite/vite.config.js
+      - name: Published pnpm workspace pins no machine paths
+        run: |
+          if grep -nE '^\s*storeDir:|^\s*minimumReleaseAge:|:\s*/' packages/component-modern-frontend/vite/pnpm-workspace.yaml; then
+            echo "vite/pnpm-workspace.yaml must not carry machine-specific settings" >&2
+            exit 1
+          fi

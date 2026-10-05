@@ -1,0 +1,34 @@
+name: Split packages
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  split:
+    name: Split ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: split-${{ matrix.package }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - module-modern-frontend
+          - module-modern-frontend-cli
+          - module-modern-frontend-twig
+          - component-modern-frontend
+          - js-package-utils
+    steps:
+      - uses: actions/checkout@v4
+      - uses: danharrin/monorepo-split-github-action@v2.4.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+        with:
+          package_directory: packages/${{ matrix.package }}
+          repository_organization: mage-obsidian
+          repository_name: ${{ matrix.package }}
+          branch: master
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com

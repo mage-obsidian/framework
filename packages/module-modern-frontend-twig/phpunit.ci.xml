@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ This file is part of the MageObsidian - ModernFrontend project.
+
+ SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ SPDX-License-Identifier: MIT
+-->
+<!--
+    CI unit suite: pure-logic tests that run on a vanilla PHP runner without a
+    Magento install or the Twig library. TwigRenderTest needs both (Twig + the
+    Magento Escaper type) and is excluded here; it runs in a real Magento root
+    (see phpunit.xml).
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="src/Test/Unit/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnRisky="true">
+    <testsuites>
+        <testsuite name="MageObsidian ModernFrontendTwig Standalone Unit">
+            <directory>src/Test/Unit</directory>
+            <exclude>src/Test/Unit/Model/Template/TwigRenderTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/TemplateNamespacesTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/TemplateHierarchyTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/FilesystemLoaderTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/EnvironmentFactoryTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/FormatExtensionTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/ScriptTagTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Template/StyleTagTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Cache/CacheTypeStateTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Cache/CompiledTemplateCacheTest.php</exclude>
+            <exclude>src/Test/Unit/Setup/Patch/Data/EnableCompiledTemplatesCacheTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Cache/Type/CompiledTemplatesTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/App/Cache/FlushCompiledTemplatesTest.php</exclude>
+            <exclude>src/Test/Unit/Observer/FlushCompiledTemplatesTest.php</exclude>
+        </testsuite>
+    </testsuites>
+</phpunit>

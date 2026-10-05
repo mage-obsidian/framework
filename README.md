@@ -1,6 +1,6 @@
 # MageObsidian framework
 
-Development monorepo of the MageObsidian framework. Each directory under `packages/` is split on every push to its own read-only repository, which is what Packagist and npm publish:
+Development monorepo of the MageObsidian framework. Each directory under `packages/` is split on every push to its own read-only repository. Packagist reads those split repositories; `mage-obsidian` is published to npm directly from this monorepo:
 
 | Package | Split repository | Registry |
 |---|---|---|

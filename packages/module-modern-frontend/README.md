@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://packagist.org/packages/mage-obsidian/module-modern-frontend"><img src="https://img.shields.io/packagist/v/mage-obsidian/module-modern-frontend.svg?style=flat-square" alt="Latest Version"></a>
-  <a href="https://github.com/mage-obsidian/module-modern-frontend/actions/workflows/ci.yml"><img src="https://github.com/mage-obsidian/module-modern-frontend/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/mage-obsidian/framework/actions/workflows/ci.yml"><img src="https://github.com/mage-obsidian/framework/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://packagist.org/packages/mage-obsidian/module-modern-frontend"><img src="https://img.shields.io/packagist/l/mage-obsidian/module-modern-frontend.svg?style=flat-square" alt="License"></a>
 </p>
 

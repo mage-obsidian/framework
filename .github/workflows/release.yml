@@ -69,6 +69,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: packages/js-package-utils/pnpm-lock.yaml
           registry-url: https://registry.npmjs.org
+      - name: Repository matches the publishing repo
+        env:
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: test "$(node -p "require('./package.json').repository.url")" = "git+https://github.com/${EXPECTED_REPOSITORY}.git"
       - run: pnpm install
       - run: pnpm build
       - run: pnpm publish --no-git-checks

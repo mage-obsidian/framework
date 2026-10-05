@@ -4,11 +4,12 @@
     "description": "The MageObsidian JS build engine for Magento 2 frontends: theme inheritance resolution, precompilation and JS interceptors for Vite builds.",
     "homepage": "https://mage-obsidian.jeanmarcos.dev/",
     "bugs": {
-        "url": "https://github.com/mage-obsidian/js-package-utils/issues"
+        "url": "https://github.com/mage-obsidian/framework/issues"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/mage-obsidian/js-package-utils.git"
+        "url": "git+https://github.com/mage-obsidian/framework.git",
+        "directory": "packages/js-package-utils"
     },
     "main": "./dist/cli/buildThemes.js",
     "types": "./dist/cli/buildThemes.d.ts",

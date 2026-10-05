@@ -1,9 +1,9 @@
-> **Read-only mirror.** This package is developed in [mage-obsidian/framework](https://github.com/mage-obsidian/framework) and copied here automatically. Open issues and pull requests there.
+> **Development happens in [mage-obsidian/framework](https://github.com/mage-obsidian/framework).** This package is published to npm from there; this repository is a read-only copy. Open issues and pull requests there.
 
 # mage-obsidian — JS Build Engine
 
 [![npm version](https://img.shields.io/npm/v/mage-obsidian.svg?style=flat-square)](https://www.npmjs.com/package/mage-obsidian)
-[![CI](https://github.com/mage-obsidian/js-package-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/mage-obsidian/js-package-utils/actions/workflows/ci.yml)
+[![CI](https://github.com/mage-obsidian/framework/actions/workflows/ci.yml/badge.svg)](https://github.com/mage-obsidian/framework/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 [![Star MageObsidian](https://img.shields.io/github/stars/mage-obsidian/module-modern-frontend?style=flat-square&label=Star%20the%20core%20repo&logo=github)](https://github.com/mage-obsidian/module-modern-frontend)

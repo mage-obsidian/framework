@@ -3,7 +3,7 @@
 # MageObsidian — CLI
 
 [![Latest Version](https://img.shields.io/packagist/v/mage-obsidian/module-modern-frontend-cli.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/module-modern-frontend-cli)
-[![CI](https://github.com/mage-obsidian/module-modern-frontend-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mage-obsidian/module-modern-frontend-cli/actions/workflows/ci.yml)
+[![CI](https://github.com/mage-obsidian/framework/actions/workflows/ci.yml/badge.svg)](https://github.com/mage-obsidian/framework/actions/workflows/ci.yml)
 [![License](https://img.shields.io/packagist/l/mage-obsidian/module-modern-frontend-cli.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/module-modern-frontend-cli)
 
 [![Star MageObsidian](https://img.shields.io/github/stars/mage-obsidian/module-modern-frontend?style=flat-square&label=Star%20the%20core%20repo&logo=github)](https://github.com/mage-obsidian/module-modern-frontend)

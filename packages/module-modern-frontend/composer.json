@@ -52,5 +52,10 @@
     },
     "conflict": {
         "mage-obsidian/component-modern-frontend": "<2.7.0"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "4.x-dev"
+        }
     }
 }

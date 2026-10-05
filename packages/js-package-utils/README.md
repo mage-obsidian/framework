@@ -1,3 +1,5 @@
+> **Read-only mirror.** This package is developed in [mage-obsidian/framework](https://github.com/mage-obsidian/framework) and copied here automatically. Open issues and pull requests there.
+
 # mage-obsidian — JS Build Engine
 
 [![npm version](https://img.shields.io/npm/v/mage-obsidian.svg?style=flat-square)](https://www.npmjs.com/package/mage-obsidian)

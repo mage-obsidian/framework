@@ -1,3 +1,5 @@
+> **Read-only mirror.** This package is developed in [mage-obsidian/framework](https://github.com/mage-obsidian/framework) and copied here automatically. Open issues and pull requests there.
+
 # MageObsidian — CLI
 
 [![Latest Version](https://img.shields.io/packagist/v/mage-obsidian/module-modern-frontend-cli.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/module-modern-frontend-cli)

@@ -1,3 +1,5 @@
+> **Read-only mirror.** This package is developed in [mage-obsidian/framework](https://github.com/mage-obsidian/framework) and copied here automatically. Open issues and pull requests there.
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/mage-obsidian/.github/main/profile/assets/storefront-home.png" alt="MageObsidian storefront — a modern frontend for Magento" width="840">
 </p>

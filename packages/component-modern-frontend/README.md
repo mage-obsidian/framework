@@ -1,3 +1,5 @@
+> **Read-only mirror.** This package is developed in [mage-obsidian/framework](https://github.com/mage-obsidian/framework) and copied here automatically. Open issues and pull requests there.
+
 # MageObsidian — Vite Build Harness
 
 [![Latest Version](https://img.shields.io/packagist/v/mage-obsidian/component-modern-frontend.svg?style=flat-square)](https://packagist.org/packages/mage-obsidian/component-modern-frontend)

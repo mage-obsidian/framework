@@ -1,0 +1,108 @@
+<?php
+/**
+ * This file is part of the MageObsidian - ModernFrontend project.
+ *
+ * SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ * SPDX-License-Identifier: MIT
+ */
+
+namespace MageObsidian\ModernFrontend\Framework\Module;
+
+use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Module\Manager as MagentoManager;
+use Magento\Framework\Module\ModuleListInterface;
+use Magento\Framework\Module\Output;
+use Magento\Framework\View\DesignInterface;
+
+class Manager extends MagentoManager
+{
+    /**
+     * @var bool|null
+     */
+    private ?bool $isEnabled = null;
+
+    /**
+     * Manager constructor.
+     *
+     * @param Output\ConfigInterface $outputConfig
+     * @param ModuleListInterface $moduleList
+     * @param DesignInterface $design
+     * @param ConfigManagerInterface $configManager
+     * @param array $outputConfigPaths
+     *
+     * @return void
+     *
+     * @throws FileSystemException
+     * @throws LocalizedException
+     */
+    public function __construct(
+        Output\ConfigInterface $outputConfig,
+        ModuleListInterface $moduleList,
+        private readonly DesignInterface $design,
+        private readonly ConfigManagerInterface $configManager,
+        array $outputConfigPaths = []
+    ) {
+        parent::__construct($outputConfig, $moduleList, $outputConfigPaths);
+        $this->load();
+    }
+
+    /**
+     * Load the configuration of the current theme.
+     *
+     * @return void
+     *
+     * @throws FileSystemException
+     * @throws LocalizedException
+     */
+    private function load(): void
+    {
+        $themeCode = $this->design->getDesignTheme()
+                                  ->getCode();
+        if (!empty($themeCode)) {
+            $this->isEnabled = $this->configManager->isThemeEnabled($themeCode);
+        }
+    }
+
+    /**
+     * Check if the current theme is enabled.
+     *
+     * @throws LocalizedException
+     * @throws FileSystemException
+     */
+    private function isThemeEnabled(): ?bool
+    {
+        if ($this->isEnabled !== null) {
+            return $this->isEnabled;
+        }
+        $this->load();
+        return $this->isEnabled;
+    }
+
+    /**
+     * Check if the output is enabled for a module.
+     *
+     * @param string $moduleName
+     *
+     * @return bool
+     * @throws LocalizedException
+     * @throws FileSystemException
+     */
+    public function isOutputEnabled(
+        $moduleName
+    ): bool {
+        $result = parent::isOutputEnabled($moduleName);
+        if (!$result) {
+            return false;
+        }
+        $isObsidianModule = $this->configManager->isModuleEnabled($moduleName);
+        if ($this->isThemeEnabled()) {
+            return $isObsidianModule;
+        }
+        // Legacy theme: keep native modules and exclude Obsidian modules so
+        // their islands (and neutralization) never reach a non-Obsidian theme,
+        // unless the module opts into every theme via <universal>.
+        return !$isObsidianModule || $this->configManager->isModuleUniversal($moduleName);
+    }
+}

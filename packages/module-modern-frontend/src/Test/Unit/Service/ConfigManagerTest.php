@@ -1,0 +1,334 @@
+<?php
+/**
+ * This file is part of the MageObsidian - ModernFrontend project.
+ *
+ * SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ * SPDX-License-Identifier: MIT
+ */
+declare(strict_types=1);
+
+namespace MageObsidian\ModernFrontend\Test\Unit\Service;
+
+use MageObsidian\ModernFrontend\Api\ModuleListInterface;
+use MageObsidian\ModernFrontend\Api\ThemeListInterface;
+use MageObsidian\ModernFrontend\Service\ConfigManager;
+use Magento\Framework\App\DeploymentConfig\Writer\FormatterInterface;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\Module\Dir\Reader as ModuleDirReader;
+use Magento\Framework\Module\ModuleList as MagentoModuleList;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Mock-based unit test for the IO-heavy ConfigManager. Requires the Magento
+ * autoloader (the mocked types are framework interfaces) and the bundled JSON
+ * schema, so it runs inside a Magento root — not the bare standalone bootstrap.
+ */
+class ConfigManagerTest extends TestCase
+{
+    private const ROOT = '/tmp/mage-obsidian-cfgtest';
+    private const JSON_TMP = self::ROOT . '/app/etc/mage_obsidian_frontend_modules.json.tmp';
+
+    private string $schemaJson;
+    /** @var array<string, string> path => written content */
+    private array $writes = [];
+
+    protected function setUp(): void
+    {
+        $schemaPath = __DIR__ . '/../../../etc/mage_obsidian_frontend_contract.schema.json';
+        $this->schemaJson = (string)file_get_contents($schemaPath);
+        $this->writes = [];
+    }
+
+    public function testGenerateProducesSchemaValidContract(): void
+    {
+        $manager = $this->buildManager(
+            modules: ['Vendor_Mod' => ['path' => '/src/Vendor/Mod']],
+            themes: ['Vendor/theme' => ['path' => '/src/theme', 'parent_code' => null]],
+            allModules: ['Vendor_Mod', 'Magento_Store'],
+            mode: 'developer'
+        );
+
+        // No throw means the generated payload validated against the real schema.
+        $manager->generate();
+
+        $json = json_decode($this->writes[self::JSON_TMP], true);
+        $this->assertSame('1.1.0', $json['schema_version']);
+        $this->assertSame('developer', $json['mode']);
+        $this->assertSame(['src' => '/src/Vendor/Mod'], $json['modules']['Vendor_Mod']);
+        $this->assertSame(['src' => '/src/theme', 'parent' => null], $json['themes']['Vendor/theme']);
+        $this->assertSame(['Vendor_Mod', 'Magento_Store'], $json['allModules']);
+    }
+
+    public function testGenerateSerializesEmptyThemesAsJsonObject(): void
+    {
+        $manager = $this->buildManager(
+            modules: ['Vendor_Mod' => ['path' => '/src/Vendor/Mod']],
+            themes: [],
+            allModules: ['Vendor_Mod'],
+            mode: 'production'
+        );
+
+        $manager->generate();
+
+        // Empty section must be {} (object), not [] (array), or the schema and
+        // the JS object access break.
+        $this->assertStringContainsString('"themes": {}', $this->writes[self::JSON_TMP]);
+        $this->assertStringNotContainsString('"themes": []', $this->writes[self::JSON_TMP]);
+    }
+
+    public function testIsModuleAndThemeEnabledReflectGeneratedContract(): void
+    {
+        $manager = $this->buildManager(
+            modules: ['Vendor_Mod' => ['path' => '/src/Vendor/Mod']],
+            themes: ['Vendor/theme' => ['path' => '/src/theme', 'parent_code' => 'Magento/blank']],
+            allModules: ['Vendor_Mod'],
+            mode: 'developer'
+        );
+        $manager->generate(); // populates in-memory configData
+
+        $this->assertTrue($manager->isModuleEnabled('Vendor_Mod'));
+        $this->assertFalse($manager->isModuleEnabled('Other_Mod'));
+        $this->assertTrue($manager->isThemeEnabled('Vendor/theme'));
+        $this->assertFalse($manager->isThemeEnabled('Vendor/missing'));
+    }
+
+    public function testGenerateEmitsUniversalFlagForOptedInModules(): void
+    {
+        $manager = $this->buildManager(
+            modules: [
+                'Vendor_Plain' => ['path' => '/src/Vendor/Plain'],
+                'Vendor_Universal' => [
+                    'path' => '/src/Vendor/Universal',
+                    'data' => ['features' => ['universal' => 'true']],
+                ],
+                // The XML leaf is a string; 'false' must NOT flip the flag
+                // (guards the (bool)'false' === true trap).
+                'Vendor_ExplicitFalse' => [
+                    'path' => '/src/Vendor/ExplicitFalse',
+                    'data' => ['features' => ['universal' => 'false']],
+                ],
+            ],
+            themes: [],
+            allModules: ['Vendor_Plain', 'Vendor_Universal', 'Vendor_ExplicitFalse'],
+            mode: 'developer'
+        );
+
+        // No throw means the payload (with the optional universal field) still
+        // validated against the real schema.
+        $manager->generate();
+
+        $json = json_decode($this->writes[self::JSON_TMP], true);
+        $this->assertSame(['src' => '/src/Vendor/Plain'], $json['modules']['Vendor_Plain']);
+        $this->assertSame(
+            ['src' => '/src/Vendor/Universal', 'universal' => true],
+            $json['modules']['Vendor_Universal']
+        );
+        $this->assertSame(['src' => '/src/Vendor/ExplicitFalse'], $json['modules']['Vendor_ExplicitFalse']);
+
+        $this->assertTrue($manager->isModuleUniversal('Vendor_Universal'));
+        $this->assertFalse($manager->isModuleUniversal('Vendor_Plain'));
+        $this->assertFalse($manager->isModuleUniversal('Vendor_ExplicitFalse'));
+        $this->assertFalse($manager->isModuleUniversal('Nonexistent_Mod'));
+    }
+
+    public function testDetectDriftIgnoresUniversalOnlyMatch(): void
+    {
+        // generate() and detectDrift() must build module entries identically;
+        // a universal module present in both must not surface as "changed".
+        $modules = [
+            'Vendor_Universal' => [
+                'path' => '/src/Vendor/Universal',
+                'data' => ['features' => ['universal' => 'true']],
+            ],
+        ];
+        $moduleList = $this->createStub(ModuleListInterface::class);
+        $moduleList->method('getAllEnabled')->willReturn($modules);
+        $themeList = $this->createStub(ThemeListInterface::class);
+        $themeList->method('getAllEnabled')->willReturn([]);
+
+        $manager = $this->buildManagerWith($moduleList, $themeList, ['Vendor_Universal'], 'developer');
+        $manager->generate();
+
+        $drift = $manager->detectDrift();
+
+        $this->assertSame([], $drift['modules']['added']);
+        $this->assertSame([], $drift['modules']['removed']);
+        $this->assertSame([], $drift['modules']['changed']);
+    }
+
+    public function testDetectDriftReportsModulesAddedSinceGeneration(): void
+    {
+        // getAllEnabled is called once by generate() and again by detectDrift();
+        // returning a larger set the second time simulates a module enabled
+        // after the contract was written.
+        $moduleList = $this->createStub(ModuleListInterface::class);
+        $moduleList->method('getAllEnabled')->willReturnOnConsecutiveCalls(
+            ['Vendor_Mod' => ['path' => '/src/Vendor/Mod']],
+            ['Vendor_Mod' => ['path' => '/src/Vendor/Mod'], 'Vendor_New' => ['path' => '/src/Vendor/New']]
+        );
+        $themeList = $this->createStub(ThemeListInterface::class);
+        $themeList->method('getAllEnabled')->willReturn([]);
+
+        $manager = $this->buildManagerWith($moduleList, $themeList, ['Vendor_Mod'], 'developer');
+        $manager->generate();
+
+        $drift = $manager->detectDrift();
+
+        $this->assertSame(['Vendor_New'], $drift['modules']['added']);
+        $this->assertSame([], $drift['modules']['removed']);
+        $this->assertSame([], $drift['themes']['added']);
+    }
+
+    public function testAnInvalidContractWritesNeitherFile(): void
+    {
+        $manager = $this->buildManager(
+            modules: ['Vendor_Mod' => ['path' => 123]],
+            themes: [],
+            allModules: ['Vendor_Mod'],
+            mode: 'production'
+        );
+
+        try {
+            $manager->generate();
+            $this->fail('An invalid contract must not be generated.');
+        } catch (LocalizedException $e) {
+            $this->assertStringContainsString('failed schema validation', $e->getMessage());
+        }
+
+        $this->assertSame([], $this->writes);
+    }
+
+    public function testGenerateWritesPathsInsideTheRootAsRelative(): void
+    {
+        $manager = $this->buildManager(
+            modules: [
+                'Vendor_In' => ['path' => self::ROOT . '/vendor/vendor/in'],
+                'Vendor_Out' => ['path' => '/elsewhere/out'],
+            ],
+            themes: ['Vendor/theme' => ['path' => self::ROOT . '/app/design/frontend/Vendor/theme', 'parent_code' => null]],
+            allModules: ['Vendor_In', 'Vendor_Out'],
+            mode: 'default'
+        );
+
+        $manager->generate();
+
+        $json = json_decode($this->writes[self::JSON_TMP], true);
+        $this->assertSame('vendor/vendor/in', $json['modules']['Vendor_In']['src']);
+        $this->assertSame('/elsewhere/out', $json['modules']['Vendor_Out']['src']);
+        $this->assertSame('app/design/frontend/Vendor/theme', $json['themes']['Vendor/theme']['src']);
+    }
+
+    public function testGenerateReturnsAndKeepsAbsolutePaths(): void
+    {
+        $manager = $this->buildManager(
+            modules: ['Vendor_In' => ['path' => self::ROOT . '/vendor/vendor/in']],
+            themes: [],
+            allModules: ['Vendor_In'],
+            mode: 'default'
+        );
+
+        $this->assertSame(self::ROOT . '/vendor/vendor/in', $manager->generate()['modules']['Vendor_In']['src']);
+        $this->assertSame(self::ROOT . '/vendor/vendor/in', $manager->get()['modules']['Vendor_In']['src']);
+    }
+
+    public function testGetResolvesARelativeContractFileAgainstTheRoot(): void
+    {
+        $dir = self::ROOT . '/app/etc';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        file_put_contents(
+            $dir . '/mage_obsidian_frontend_modules.php',
+            "<?php return ['schema_version' => '1.1.0', 'modules' => ['Vendor_In' => ['src' => 'vendor/vendor/in']], 'themes' => []];"
+        );
+        file_put_contents($dir . '/mage_obsidian_frontend_modules.json', '{}');
+
+        $manager = $this->buildManager(modules: [], themes: [], allModules: [], mode: 'default', existing: true);
+
+        $this->assertSame(self::ROOT . '/vendor/vendor/in', $manager->get()['modules']['Vendor_In']['src']);
+    }
+
+    public function testDetectDriftFindsNothingRightAfterGenerating(): void
+    {
+        $manager = $this->buildManager(
+            modules: ['Vendor_In' => ['path' => self::ROOT . '/vendor/vendor/in']],
+            themes: ['Vendor/theme' => ['path' => self::ROOT . '/app/design/frontend/Vendor/theme', 'parent_code' => null]],
+            allModules: ['Vendor_In'],
+            mode: 'default'
+        );
+        $manager->generate();
+
+        $drift = $manager->detectDrift();
+
+        $this->assertSame([], array_merge(...array_values($drift['modules'])));
+        $this->assertSame([], array_merge(...array_values($drift['themes'])));
+    }
+
+    /**
+     * @param array<string, array> $modules
+     * @param array<string, array> $themes
+     * @param string[] $allModules
+     */
+    private function buildManager(array $modules, array $themes, array $allModules, string $mode, bool $existing = false): ConfigManager
+    {
+        $moduleList = $this->createStub(ModuleListInterface::class);
+        $moduleList->method('getAllEnabled')->willReturn($modules);
+        $themeList = $this->createStub(ThemeListInterface::class);
+        $themeList->method('getAllEnabled')->willReturn($themes);
+
+        return $this->buildManagerWith($moduleList, $themeList, $allModules, $mode, $existing);
+    }
+
+    /**
+     * @param string[] $allModules
+     */
+    private function buildManagerWith(
+        ModuleListInterface $moduleList,
+        ThemeListInterface $themeList,
+        array $allModules,
+        string $mode,
+        bool $existing = false
+    ): ConfigManager {
+        $magentoModuleList = $this->createStub(MagentoModuleList::class);
+        $magentoModuleList->method('getNames')->willReturn($allModules);
+
+        $directoryList = $this->createStub(DirectoryList::class);
+        $directoryList->method('getPath')->willReturn(self::ROOT);
+
+        $driver = $this->createStub(DriverInterface::class);
+        $driver->method('filePutContents')->willReturnCallback(function (string $path, string $data): int {
+            $this->writes[$path] = $data;
+            return strlen($data);
+        });
+        $driver->method('rename')->willReturn(true);
+        $driver->method('isExists')->willReturn($existing);
+        $driver->method('fileGetContents')->willReturnCallback(
+            fn(string $path): string => str_contains($path, 'schema') ? $this->schemaJson : ''
+        );
+
+        $formatter = $this->createStub(FormatterInterface::class);
+        $formatter->method('format')->willReturn('<?php return [];');
+
+        $state = $this->createStub(State::class);
+        $state->method('getMode')->willReturn($mode);
+
+        $moduleDirReader = $this->createStub(ModuleDirReader::class);
+        $moduleDirReader->method('getModuleDir')->willReturn('/module/etc');
+
+        return new ConfigManager(
+            $moduleList,
+            $themeList,
+            $magentoModuleList,
+            $directoryList,
+            $driver,
+            $formatter,
+            $state,
+            $moduleDirReader,
+            $this->createStub(LoggerInterface::class)
+        );
+    }
+}

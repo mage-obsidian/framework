@@ -1,0 +1,435 @@
+<?php
+/**
+ * This file is part of the MageObsidian - ModernFrontend project.
+ *
+ * SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ * SPDX-License-Identifier: MIT
+ */
+declare(strict_types=1);
+
+namespace MageObsidian\ModernFrontend\Test\Unit\Model\Deploy;
+
+use Magento\Deploy\Console\DeployStaticOptions;
+use Magento\Deploy\Package\LocaleResolver;
+use Magento\Deploy\Package\Package;
+use Magento\Deploy\Package\PackageFactory;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem\DriverInterface;
+use MageObsidian\ModernFrontend\Api\ConfigManagerInterface;
+use MageObsidian\ModernFrontend\Model\Deploy\DeployTargets;
+use MageObsidian\ModernFrontend\Model\Deploy\ViteOutputTarget;
+use MageObsidian\ModernFrontend\Model\Deploy\ViteOutputVerifier;
+use PHPUnit\Framework\TestCase;
+
+class ViteOutputVerifierTest extends TestCase
+{
+    private const ROOT = '/var/www/html';
+    private const THEME = 'MageObsidian/default';
+    private const SRC = '/var/www/html/vendor/mage-obsidian/theme-default';
+    private const PARENT_THEME = 'MageObsidian/theme-base';
+    private const PARENT_SRC = '/var/www/html/vendor/mage-obsidian/theme-base';
+
+    public function testReportsNothingWhenEveryBuiltFileWasPublished(): void
+    {
+        $verifier = $this->verifier(
+            built: ['lib/vue.js', 'MageObsidian_Storefront/js/nav.js'],
+            published: ['lib/vue.js', 'MageObsidian_Storefront/js/nav.js']
+        );
+
+        $this->assertSame([], $verifier->findOutdated($this->options(['en_US'])));
+    }
+
+    public function testReportsTheFilesThatNeverReachedPubStatic(): void
+    {
+        $verifier = $this->verifier(
+            built: ['lib/vue.js', 'MageObsidian_Storefront/js/nav.js'],
+            published: ['lib/vue.js']
+        );
+
+        $outdated = $verifier->findOutdated($this->options(['en_US']));
+
+        $this->assertSame(
+            ['MageObsidian/default@en_US' => ['MageObsidian_Storefront/js/nav.js']],
+            self::flatten($outdated)
+        );
+    }
+
+    /**
+     * The failure that started this: the deploy died early and the theme's whole
+     * root — generated/ included — never got published.
+     */
+    public function testReportsAThemeWhoseOutputIsEntirelyAbsent(): void
+    {
+        $verifier = $this->verifier(built: ['lib/vue.js'], published: []);
+
+        $this->assertSame(
+            ['MageObsidian/default@en_US' => ['lib/vue.js']],
+            self::flatten($verifier->findOutdated($this->options(['en_US'])))
+        );
+    }
+
+    // Every locale gets its own copy under pub/static, so one good locale says
+    // nothing about the next.
+    public function testChecksEveryLocaleSeparately(): void
+    {
+        $verifier = $this->verifier(
+            built: ['lib/vue.js'],
+            published: ['lib/vue.js'],
+            publishedPerLocale: ['en_US' => ['lib/vue.js'], 'es_ES' => []]
+        );
+
+        $this->assertSame(
+            ['MageObsidian/default@es_ES' => ['lib/vue.js']],
+            self::flatten($verifier->findOutdated($this->options(['en_US', 'es_ES'])))
+        );
+    }
+
+    // A theme that was never built has nothing to publish; complaining about it
+    // would fail deploys that legitimately skip the Vite build.
+    public function testStaysQuietWhenTheThemeHasNoBuildOutput(): void
+    {
+        $verifier = $this->verifier(built: null, published: []);
+
+        $this->assertSame([], $verifier->findOutdated($this->options(['en_US'])));
+    }
+
+    /**
+     * `readDirectoryRecursively` returns the directories along with the files.
+     * Counting those as missing assets inflates the count and fills the failure
+     * message with entries nobody can look up.
+     */
+    public function testIgnoresDirectoriesWhenComparing(): void
+    {
+        $verifier = $this->verifier(
+            built: ['lib', 'lib/vue.js'],
+            published: ['lib/vue.js'],
+            directories: ['lib']
+        );
+
+        $this->assertSame([], $verifier->findOutdated($this->options(['en_US'])));
+    }
+
+    /**
+     * Magento never publishes dot-files, and Vite writes its own manifest to
+     * `.vite/`. Demanding it would fail every single healthy deploy.
+     */
+    public function testIgnoresHiddenBuildArtifacts(): void
+    {
+        $verifier = $this->verifier(
+            built: ['.vite/manifest.json', 'lib/vue.js'],
+            published: ['lib/vue.js']
+        );
+
+        $this->assertSame([], $verifier->findOutdated($this->options(['en_US'])));
+    }
+
+    /**
+     * The regression this was written for. `--language` defaults to the
+     * sentinel `all`; taking it for a locale looks under a
+     * `pub/static/frontend/<theme>/all/` that Magento never writes, so a
+     * flawless deploy came back with its entire output reported missing.
+     */
+    public function testResolvesTheAllSentinelInsteadOfLookingUpALocaleNamedAll(): void
+    {
+        $verifier = $this->verifier(
+            built: ['lib/vue.js'],
+            published: ['lib/vue.js'],
+            targets: $this->realTargets(['en_US'])
+        );
+
+        $this->assertSame(
+            [],
+            $verifier->findOutdated([DeployStaticOptions::LANGUAGE => ['all']])
+        );
+    }
+
+    public function testResolvesAnAbsentLanguageOptionTheSameWay(): void
+    {
+        $verifier = $this->verifier(
+            built: ['lib/vue.js'],
+            published: ['lib/vue.js'],
+            targets: $this->realTargets(['en_US'])
+        );
+
+        $this->assertSame([], $verifier->findOutdated([]));
+    }
+
+    /**
+     * Not knowing which locales were deployed means there is nothing to compare
+     * against; reporting every file as missing would be worse than silence.
+     */
+    public function testStaysQuietWhenNoLocaleCouldBeResolved(): void
+    {
+        $verifier = $this->verifier(built: ['lib/vue.js'], published: [], targets: $this->realTargets([]));
+
+        $this->assertSame([], $verifier->findOutdated([]));
+    }
+
+    // Deploying one theme says nothing about the others, so demanding output
+    // from a theme the run skipped invents a failure.
+    public function testOnlyChecksTheThemesTheRunCovered(): void
+    {
+        $verifier = $this->verifier(
+            built: ['lib/vue.js'],
+            published: [],
+            withParentTheme: true,
+            targets: $this->realTargets(['en_US'])
+        );
+
+        $outdated = $verifier->findOutdated([
+            DeployStaticOptions::LANGUAGE => ['en_US'],
+            DeployStaticOptions::THEME => [self::THEME],
+        ]);
+
+        $this->assertSame(['MageObsidian/default@en_US' => ['lib/vue.js']], self::flatten($outdated));
+    }
+
+    public function testHandsTheDeployOptionsStraightToTheTargets(): void
+    {
+        $options = [DeployStaticOptions::LANGUAGE => ['all'], DeployStaticOptions::EXCLUDE_THEME => ['none']];
+
+        $targets = $this->createMock(DeployTargets::class);
+        $targets->expects($this->once())->method('locales')->with($options)->willReturn(['en_US']);
+        $targets->expects($this->once())
+            ->method('includesTheme')
+            ->with(self::THEME, $options)
+            ->willReturn(true);
+
+        $verifier = $this->verifier(built: ['lib/vue.js'], published: ['lib/vue.js'], targets: $targets);
+
+        $this->assertSame([], $verifier->findOutdated($options));
+    }
+
+
+    /**
+     * The failure that hid a whole theme rewrite: `Publisher::publish()` returns
+     * the moment the destination exists, so a rebuilt file under a name that
+     * never changes stays on the copy published the first time. The storefront
+     * keeps answering 200 and keeps serving the previous bundle.
+     */
+    public function testReportsAPublishedFileTheBuildHasSinceRewritten(): void
+    {
+        $verifier = $this->verifier(
+            built: ['css/style.css'],
+            published: ['css/style.css'],
+            sizes: ['css/style.css' => [106919, 98313]]
+        );
+
+        $this->assertSame(
+            ['MageObsidian/default@en_US' => ['css/style.css']],
+            self::flatten($verifier->findOutdated($this->options(['en_US'])))
+        );
+    }
+
+    // Same size, but the build wrote it after the deploy published it.
+    public function testReportsAPublishedFileOlderThanItsSource(): void
+    {
+        $verifier = $this->verifier(
+            built: ['css/style.css'],
+            published: ['css/style.css'],
+            sizes: ['css/style.css' => [1024, 1024]],
+            times: ['css/style.css' => [200, 100]]
+        );
+
+        $this->assertSame(
+            ['MageObsidian/default@en_US' => ['css/style.css']],
+            self::flatten($verifier->findOutdated($this->options(['en_US'])))
+        );
+    }
+
+    // A file published from the build that produced it is not outdated, however
+    // long ago that was.
+    public function testLeavesAPublishedFileThatStillMatchesAlone(): void
+    {
+        $verifier = $this->verifier(
+            built: ['css/style.css'],
+            published: ['css/style.css'],
+            sizes: ['css/style.css' => [1024, 1024]],
+            times: ['css/style.css' => [100, 200]]
+        );
+
+        $this->assertSame([], $verifier->findOutdated($this->options(['en_US'])));
+    }
+
+    public function testCarriesThePathsNeededToRepublish(): void
+    {
+        $verifier = $this->verifier(built: ['lib/vue.js'], published: []);
+
+        $target = $verifier->findOutdated($this->options(['en_US']))['MageObsidian/default@en_US'];
+
+        $this->assertSame(self::SRC . '/web/generated', $target->sourceDirectory);
+        $this->assertSame(
+            self::ROOT . '/pub/static/frontend/' . self::THEME . '/en_US/generated',
+            $target->targetDirectory
+        );
+        $this->assertSame('en_US', $target->locale);
+        $this->assertSame(self::THEME, $target->theme);
+    }
+
+    public function testNamesAThemeWhoseBuildDirectoryDoesNotExist(): void
+    {
+        $verifier = $this->verifier(built: null, published: []);
+
+        $this->assertSame([self::THEME], $verifier->findUnbuilt($this->options(['en_US'])));
+    }
+
+    public function testNamesAThemeWhoseBuildDirectoryIsEmpty(): void
+    {
+        $verifier = $this->verifier(built: [], published: []);
+
+        $this->assertSame([self::THEME], $verifier->findUnbuilt($this->options(['en_US'])));
+    }
+
+    public function testHiddenFilesAloneAreNotABuild(): void
+    {
+        $verifier = $this->verifier(built: ['.vite/manifest.json'], published: []);
+
+        $this->assertSame([self::THEME], $verifier->findUnbuilt($this->options(['en_US'])));
+    }
+
+    public function testABuildWithAManifestBesideItsFilesIsABuild(): void
+    {
+        $verifier = $this->verifier(built: ['lib/vue.js', '.vite/manifest.json'], published: []);
+
+        $this->assertSame([], $verifier->findUnbuilt($this->options(['en_US'])));
+    }
+
+    public function testAnExcludedThemeIsNeverReportedUnbuilt(): void
+    {
+        $verifier = $this->verifier(built: null, published: [], targets: $this->realTargets(['en_US']));
+
+        $this->assertSame(
+            [],
+            $verifier->findUnbuilt([
+                DeployStaticOptions::LANGUAGE => ['en_US'],
+                DeployStaticOptions::EXCLUDE_THEME => [self::THEME],
+            ])
+        );
+    }
+
+    /**
+     * @param array<string, ViteOutputTarget> $outdated
+     * @return array<string, string[]>
+     */
+    private static function flatten(array $outdated): array
+    {
+        return array_map(static fn (ViteOutputTarget $target): array => $target->files, $outdated);
+    }
+
+    /**
+     * @param string[] $locales
+     * @return array<string, mixed>
+     */
+    private function options(array $locales): array
+    {
+        return [DeployStaticOptions::LANGUAGE => $locales];
+    }
+
+    /**
+     * A real DeployTargets over a stubbed locale resolver, so the sentinel
+     * handling under test is the one that runs in production.
+     *
+     * @param string[] $usedLocales
+     */
+    private function realTargets(array $usedLocales): DeployTargets
+    {
+        $localeResolver = $this->createStub(LocaleResolver::class);
+        $localeResolver->method('getUsedPackageLocales')->willReturn($usedLocales);
+
+        $packageFactory = $this->createStub(PackageFactory::class);
+        $packageFactory->method('create')->willReturn($this->createStub(Package::class));
+
+        return new DeployTargets($localeResolver, $packageFactory);
+    }
+
+    /**
+     * @param string[]|null $built null means the source directory does not exist
+     * @param string[] $published
+     * @param array<string, string[]>|null $publishedPerLocale
+     * @param string[] $directories entries of $built that are directories
+     * @param bool $withParentTheme register a second, entirely unpublished theme
+     */
+    private function verifier(
+        ?array $built,
+        array $published,
+        ?array $publishedPerLocale = null,
+        array $directories = [],
+        ?DeployTargets $targets = null,
+        bool $withParentTheme = false,
+        array $sizes = [],
+        array $times = []
+    ): ViteOutputVerifier {
+        $themes = [self::THEME => ['src' => self::SRC, 'parent' => null]];
+        if ($withParentTheme) {
+            $themes[self::PARENT_THEME] = ['src' => self::PARENT_SRC, 'parent' => null];
+        }
+
+        $configManager = $this->createStub(ConfigManagerInterface::class);
+        $configManager->method('get')->willReturn(['themes' => $themes]);
+
+        $directoryList = $this->createStub(DirectoryList::class);
+        $directoryList->method('getPath')->willReturn(self::ROOT . '/pub/static');
+
+        $sourceDir = self::SRC . '/web/generated';
+        $driver = $this->createStub(DriverInterface::class);
+
+        $driver->method('isDirectory')->willReturnCallback(
+            static function (string $path) use ($sourceDir, $built, $directories): bool {
+                if ($path === $sourceDir) {
+                    return $built !== null;
+                }
+                if ($path === self::PARENT_SRC . '/web/generated') {
+                    return true;
+                }
+                foreach ($directories as $directory) {
+                    if ($path === $sourceDir . '/' . $directory) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        );
+
+        $driver->method('readDirectoryRecursively')->willReturnCallback(
+            static fn (string $path): array => array_map(
+                static fn (string $relative): string => $path . '/' . $relative,
+                $built ?? []
+            )
+        );
+
+        $driver->method('isExists')->willReturnCallback(
+            static function (string $path) use ($published, $publishedPerLocale): bool {
+                foreach ($publishedPerLocale ?? ['en_US' => $published] as $locale => $files) {
+                    $base = self::ROOT . '/pub/static/frontend/' . self::THEME . '/' . $locale . '/generated/';
+                    foreach ($files as $file) {
+                        if ($path === $base . $file) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        );
+
+        $driver->method('stat')->willReturnCallback(
+            static function (string $path) use ($sourceDir, $sizes, $times): array {
+                foreach ($sizes as $file => [$source, $target]) {
+                    if ($path === $sourceDir . '/' . $file) {
+                        return ['size' => $source, 'mtime' => $times[$file][0] ?? 0];
+                    }
+                    if (str_ends_with($path, '/generated/' . $file)) {
+                        return ['size' => $target, 'mtime' => $times[$file][1] ?? 0];
+                    }
+                }
+                return ['size' => 0, 'mtime' => 0];
+            }
+        );
+
+        return new ViteOutputVerifier(
+            $configManager,
+            $directoryList,
+            $driver,
+            $targets ?? $this->realTargets(['en_US'])
+        );
+    }
+}

@@ -1,0 +1,625 @@
+<?php
+/**
+ * This file is part of the MageObsidian - ModernFrontend project.
+ *
+ * SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ * SPDX-License-Identifier: MIT
+ */
+declare(strict_types=1);
+
+namespace MageObsidian\ModernFrontend\Service\Dev;
+
+use MageObsidian\ModernFrontend\Service\Contract\ContractDiff;
+
+/**
+ * Pure interpretation of dev-environment signals into actionable check results.
+ *
+ * All inputs are primitives or {@see ProbeResult}, so every rule is unit-testable
+ * without Magento. The CLI command gathers the inputs (app mode, HMR flag,
+ * contract state, env vars, HTTP probes) and feeds them here.
+ */
+class DevDiagnostics
+{
+    public const DEV_SERVER_HINT = 'Start it: bin/magento mage-obsidian:frontend:dev --up';
+
+    public const JS_ENGINE_PACKAGE = 'mage-obsidian';
+
+    public const JS_ENGINE_HINT = 'Composer never touches the npm side. Install it: cd vite && pnpm install';
+
+    /**
+     * Extensions a config file may carry. The engine loads exactly one filename
+     * (MODULE_CONFIG_FILE / THEME_CONFIG_FILE); a sibling sharing the base name
+     * but any of these other extensions is silently ignored at build time.
+     */
+    public const CONFIG_SHADOW_EXTENSIONS = ['js', 'cjs', 'mjs', 'ts'];
+
+    /**
+     * The page-cache identifier that builds the lookup key from the
+     * X-Magento-Vary cookie. Kept as a literal so this class stays free of
+     * Magento imports.
+     */
+    public const VARY_AWARE_IDENTIFIER = 'Magento\Framework\App\PageCache\Identifier';
+
+    public const PAGE_CACHE_KERNEL = 'Magento\Framework\App\PageCache\Kernel';
+
+    public const PAGE_CACHE_IDENTIFIER_INTERFACE = 'Magento\Framework\App\PageCache\IdentifierInterface';
+
+    public const PAGE_CACHE_VARY_ISSUE_URL = 'https://github.com/magento/magento2/issues/40474';
+
+    /**
+     * The two spellings of the island helper, phtml and Twig.
+     */
+    public const ISLAND_HELPERS = ['renderVueComponent', 'render_vue'];
+
+    /**
+     * Find eager islands that still replace their container on mount.
+     *
+     * An eager island is above the fold, so replacing its container on mount
+     * always moves the page. Only `$hydrate` makes Vue adopt the server markup.
+     *
+     * Pure so the rule is unit-testable; the caller supplies the template source.
+     *
+     * @param string $source Contents of one .twig or .phtml template.
+     *
+     * @return string[] Component names, in the order they appear.
+     */
+    public function eagerIslandsWithoutHydration(string $source): array
+    {
+        $found = [];
+        foreach (self::ISLAND_HELPERS as $helper) {
+            $offset = 0;
+            while (($position = strpos($source, $helper . '(', $offset)) !== false) {
+                $open = $position + strlen($helper);
+                $arguments = $this->splitCallArguments($source, $open);
+                $offset = $position + 1;
+
+                if (($arguments[2] ?? '') !== 'true') {
+                    continue;
+                }
+                if (($arguments[4] ?? '') === 'true') {
+                    continue;
+                }
+
+                $found[] = trim($arguments[0] ?? '', " \t\n'\"");
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Split a call's top-level arguments, ignoring commas nested in strings,
+     * parentheses, arrays or object literals.
+     *
+     * @param string $source
+     * @param int $openParen Offset of the opening parenthesis.
+     *
+     * @return string[]
+     */
+    private function splitCallArguments(string $source, int $openParen): array
+    {
+        $arguments = [];
+        $current = '';
+        $depth = 0;
+        $quote = null;
+        $length = strlen($source);
+
+        for ($i = $openParen; $i < $length; $i++) {
+            $char = $source[$i];
+
+            if ($quote !== null) {
+                $current .= $char;
+                if ($char === $quote && $source[$i - 1] !== '\\') {
+                    $quote = null;
+                }
+                continue;
+            }
+
+            if ($char === '"' || $char === "'") {
+                $quote = $char;
+                $current .= $char;
+                continue;
+            }
+
+            if (str_contains('([{', $char)) {
+                $depth++;
+                if ($depth === 1) {
+                    continue;
+                }
+            } elseif (str_contains(')]}', $char)) {
+                $depth--;
+                if ($depth === 0) {
+                    $arguments[] = trim($current);
+                    return $arguments;
+                }
+            } elseif ($char === ',' && $depth === 1) {
+                $arguments[] = trim($current);
+                $current = '';
+                continue;
+            }
+
+            $current .= $char;
+        }
+
+        return $arguments;
+    }
+
+    /**
+     * Report eager islands still mounting into an empty container.
+     *
+     * A warning, not an error: the page works, it just shifts.
+     *
+     * @param array<string, string[]> $islandsByTemplate Template path => component names.
+     */
+    public function evaluateIslandHydration(array $islandsByTemplate): CheckResult
+    {
+        $islandsByTemplate = array_filter($islandsByTemplate);
+        if ($islandsByTemplate === []) {
+            return CheckResult::ok('Island hydration', 'Every eager island hydrates its server-rendered state.');
+        }
+
+        $lines = [];
+        $total = 0;
+        foreach ($islandsByTemplate as $template => $components) {
+            $total += count($components);
+            $lines[] = sprintf('%s (%s)', $template, implode(', ', $components));
+        }
+
+        return CheckResult::warn(
+            'Island hydration',
+            sprintf(
+                '%d eager island(s) replace their container on mount and shift the page: %s.',
+                $total,
+                implode('; ', $lines)
+            ),
+            'Render the component\'s initial state server-side and pass it as the fourth argument with '
+                . '$hydrate = true, so Vue adopts it instead of replacing it. Generate the markup with '
+                . 'mage-obsidian:island-ssr.'
+        );
+    }
+
+    /**
+     * Without the binary the store still works — it just cannot generate a class
+     * an author writes after the build, which fails invisibly: the class is in
+     * the markup and no rule ever arrives.
+     */
+    public function evaluateTailwindBinary(bool $available, string $path, string $version): CheckResult
+    {
+        if (!$available) {
+            return CheckResult::warn(
+                'Tailwind CLI',
+                sprintf('Not found or not executable at %s.', $path),
+                'Install the standalone build there so classes written in CMS content after the last '
+                    . 'theme build are generated. See the CMS docs for the one-line install.'
+            );
+        }
+
+        return CheckResult::ok(
+            'Tailwind CLI',
+            sprintf('%s%s.', $path, $version !== '' ? ' (v' . $version . ')' : '')
+        );
+    }
+
+    /**
+     * @param int $classes
+     * @param string[] $unresolved
+     * @param bool $hasBaseline
+     */
+    public function evaluateCmsDelta(int $classes, array $unresolved, bool $hasBaseline = true): CheckResult
+    {
+        if (!$hasBaseline) {
+            return CheckResult::warn(
+                'CMS delta',
+                'The theme was built without a class baseline, so every class in CMS content is treated '
+                    . 'as new.',
+                'Run mage-obsidian:cms:export and rebuild the theme; the build writes the baseline next '
+                    . 'to its own output.'
+            );
+        }
+
+        if ($unresolved !== []) {
+            return CheckResult::warn(
+                'CMS delta',
+                sprintf(
+                    'Tailwind generated no rule for %d class(es) written in CMS content: %s.',
+                    count($unresolved),
+                    implode(', ', $unresolved)
+                ),
+                'These are not Tailwind utilities — a typo, or a class from another framework. Fix them '
+                    . 'in the content, or ship the CSS they need with it.'
+            );
+        }
+
+        return $classes === 0
+            ? CheckResult::ok('CMS delta', 'The build covers every class written in CMS content.')
+            : CheckResult::ok('CMS delta', sprintf('%d class(es) generated on the fly.', $classes));
+    }
+
+    public function evaluateCmsBaseline(array $statuses): CheckResult
+    {
+        $absent = array_keys($statuses, 'absent', true);
+        if ($absent !== []) {
+            return CheckResult::warn(
+                'CMS baseline',
+                sprintf('Built before the class baseline existed: %s.', implode(', ', $absent)),
+                'Rebuild those themes; every class in CMS content is treated as new until then.'
+            );
+        }
+
+        $empty = array_keys($statuses, 'empty', true);
+        if ($empty !== []) {
+            return CheckResult::ok(
+                'CMS baseline',
+                sprintf(
+                    'Built without CMS content: %s. Classes written in CMS come from the on-the-fly delta; '
+                    . 'keep the Tailwind CLI installed and run mage-obsidian:cms:jit after each deploy.',
+                    implode(', ', $empty)
+                )
+            );
+        }
+
+        return CheckResult::ok(
+            'CMS baseline',
+            $statuses === [] ? 'No storefront theme is configured.' : 'Every theme was built with its CMS classes.'
+        );
+    }
+
+    public function evaluateMode(string $mode): CheckResult
+    {
+        return CheckResult::ok('App mode', sprintf('Current mode: %s.', $mode));
+    }
+
+    public function evaluateContract(bool $exists, ?string $schemaVersion, string $expectedVersion): CheckResult
+    {
+        if (!$exists) {
+            return CheckResult::error(
+                'Contract',
+                'Frontend contract file is missing.',
+                'Generate it: bin/magento mage-obsidian:frontend:config --generate'
+            );
+        }
+        if ($schemaVersion === null || $schemaVersion === '') {
+            return CheckResult::error(
+                'Contract',
+                'Contract has no schema_version.',
+                'Regenerate it: bin/magento mage-obsidian:frontend:config --generate'
+            );
+        }
+        if ($schemaVersion !== $expectedVersion) {
+            return CheckResult::warn(
+                'Contract',
+                sprintf('schema_version %s differs from expected %s.', $schemaVersion, $expectedVersion),
+                'Regenerate the contract after updating the module.'
+            );
+        }
+
+        return CheckResult::ok('Contract', sprintf('Valid (schema_version %s).', $schemaVersion));
+    }
+
+    /**
+     * Interpret a contract drift (from ConfigManager::detectDrift). A non-empty
+     * drift means the on-disk contract no longer matches the enabled
+     * modules/themes — e.g. a compatibility flag was edited without re-toggling.
+     *
+     * @param array<string, array{added: string[], removed: string[], changed: string[]}> $drift
+     */
+    public function evaluateDrift(array $drift): CheckResult
+    {
+        if (ContractDiff::isEmpty($drift)) {
+            return CheckResult::ok('Contract drift', 'Contract matches the enabled modules/themes.');
+        }
+
+        return CheckResult::warn(
+            'Contract drift',
+            sprintf('Contract is stale (%s).', ContractDiff::summarize($drift)),
+            'Regenerate it: bin/magento mage-obsidian:frontend:config --generate'
+        );
+    }
+
+    public function evaluateHmr(string $mode, bool $hmrEnabled): CheckResult
+    {
+        if ($mode === 'production') {
+            return CheckResult::ok('HMR', 'Disabled in production (forced).');
+        }
+        if (!$hmrEnabled) {
+            return CheckResult::warn(
+                'HMR',
+                'HMR is disabled; the storefront serves the built static output.',
+                'Enable it: bin/magento mage-obsidian:frontend:hmr --enable'
+            );
+        }
+
+        return CheckResult::ok('HMR', 'Enabled.');
+    }
+
+    public function evaluateDevServer(bool $hmrEnabled, ProbeResult $probe): CheckResult
+    {
+        if (!$hmrEnabled) {
+            return CheckResult::ok('Dev server', 'Not required (HMR disabled).');
+        }
+        if (!$probe->ok) {
+            return CheckResult::error(
+                'Dev server',
+                sprintf('Vite client unreachable (%s).', $probe->describeFailure()),
+                self::DEV_SERVER_HINT
+            );
+        }
+        if (!$probe->isJavaScript()) {
+            return CheckResult::error(
+                'Dev server',
+                sprintf('/@vite/client responded but not as JavaScript (content-type: %s).', $probe->contentType ?: 'unknown'),
+                'Check the nginx proxy that forwards /@vite to the dev server.'
+            );
+        }
+
+        return CheckResult::ok('Dev server', 'Reachable (/@vite/client is served).');
+    }
+
+    /**
+     * @param string[] $missingVars
+     */
+    public function evaluateEnv(array $missingVars): CheckResult
+    {
+        if ($missingVars !== []) {
+            return CheckResult::warn(
+                'Vite .env',
+                'Missing variables: ' . implode(', ', $missingVars) . '.',
+                'Add them to vite/.env (see vite/.env.sample).'
+            );
+        }
+
+        return CheckResult::ok('Vite .env', 'All required variables present.');
+    }
+
+    /**
+     * Given the config filename the engine actually loads (e.g. "module.config.ts")
+     * and the filenames present in a directory, return those that share the config
+     * base name but carry a different, build-ignored extension. Pure so the
+     * shadowing rule is unit-testable; the caller supplies the directory listing.
+     *
+     * @param string[] $filenamesPresent
+     * @return string[]
+     */
+    public function shadowsInDirectory(string $expectedFile, array $filenamesPresent): array
+    {
+        $base = pathinfo($expectedFile, PATHINFO_FILENAME);
+        $expectedExt = pathinfo($expectedFile, PATHINFO_EXTENSION);
+
+        $shadows = [];
+        foreach ($filenamesPresent as $name) {
+            if (pathinfo($name, PATHINFO_FILENAME) !== $base) {
+                continue;
+            }
+            $ext = pathinfo($name, PATHINFO_EXTENSION);
+            if ($ext === $expectedExt) {
+                continue;
+            }
+            if (in_array($ext, self::CONFIG_SHADOW_EXTENSIONS, true)) {
+                $shadows[] = $name;
+            }
+        }
+
+        return $shadows;
+    }
+
+    /**
+     * Report config files the engine ignores because their extension differs
+     * from the one the contract resolves. A warning (not an error): the build
+     * still runs, but the author's config silently never loads.
+     *
+     * @param string[] $shadowed Paths of ignored config files.
+     */
+    public function evaluateShadowedConfigs(array $shadowed): CheckResult
+    {
+        if ($shadowed === []) {
+            return CheckResult::ok('Config files', 'No ignored config files detected.');
+        }
+
+        return CheckResult::warn(
+            'Config files',
+            sprintf(
+                '%d config file(s) ignored (extension differs from the one the engine loads): %s.',
+                count($shadowed),
+                implode(', ', $shadowed)
+            ),
+            'Rename each to module.config.ts / theme.config.js (or delete it) so the engine stops skipping it.'
+        );
+    }
+
+    /**
+     * Class the built-in page cache uses to build the *lookup* key. A
+     * Kernel-level `identifier` argument wins over the interface preference,
+     * so an install that already applied the workaround reads as healthy.
+     *
+     * @param array<string, mixed> $frontendDiConfig Merged DI config of the frontend area.
+     */
+    public function resolvePageCacheIdentifier(array $frontendDiConfig): string
+    {
+        // Compiled DI packs an object argument as `_i_`; the uncompiled reader
+        // emits `instance`. Either form resolves to an Interceptor subclass when
+        // the target carries plugins, which the caller does not care about.
+        $argument = $frontendDiConfig['arguments'][self::PAGE_CACHE_KERNEL]['identifier'] ?? null;
+        $instance = is_array($argument) ? ($argument['_i_'] ?? $argument['instance'] ?? null) : null;
+
+        if (!is_string($instance) || $instance === '') {
+            $instance = $frontendDiConfig['preferences'][self::PAGE_CACHE_IDENTIFIER_INTERFACE] ?? null;
+        }
+        if (!is_string($instance)) {
+            return '';
+        }
+
+        return preg_replace('/\\\\Interceptor$/', '', ltrim($instance, '\\')) ?? '';
+    }
+
+    /**
+     * Magento 2.4.7 decoupled the page-cache identifiers and left the lookup one
+     * resolving to IdentifierForSave, which derives the key from an HTTP context
+     * that is still empty when the cache is read. The X-Magento-Vary cookie is
+     * therefore ignored and every visitor is served the first cached variant.
+     * Varnish is unaffected: its VCL hashes the cookie itself.
+     *
+     * @param string[] $varyingDimensions Context dimensions that actually differ in this install.
+     */
+    public function evaluatePageCacheVary(
+        bool $varnishEnabled,
+        string $identifierClass,
+        array $varyingDimensions
+    ): CheckResult {
+        if ($varnishEnabled) {
+            return CheckResult::ok('Page cache vary', 'Varnish hashes X-Magento-Vary in its own VCL.');
+        }
+        if ($identifierClass === self::VARY_AWARE_IDENTIFIER) {
+            return CheckResult::ok('Page cache vary', 'Built-in cache key honours X-Magento-Vary.');
+        }
+
+        $hint = sprintf(
+            'Switch to Varnish, or give %s an "identifier" argument of %s. See %s.',
+            self::PAGE_CACHE_KERNEL,
+            self::VARY_AWARE_IDENTIFIER,
+            self::PAGE_CACHE_VARY_ISSUE_URL
+        );
+
+        if ($varyingDimensions === []) {
+            return CheckResult::warn(
+                'Page cache vary',
+                'Built-in cache key ignores the X-Magento-Vary cookie, but no context dimension varies yet.',
+                $hint
+            );
+        }
+
+        return CheckResult::error(
+            'Page cache vary',
+            sprintf(
+                'Built-in cache key ignores the X-Magento-Vary cookie, so every visitor gets the first cached '
+                . 'variant (varying: %s).',
+                implode(', ', $varyingDimensions)
+            ),
+            $hint
+        );
+    }
+
+    public function extractJsEngineRange(?string $manifestJson): ?string
+    {
+        $manifest = $this->decodeManifest($manifestJson);
+
+        foreach (['dependencies', 'devDependencies'] as $section) {
+            $range = $manifest[$section][self::JS_ENGINE_PACKAGE] ?? null;
+            if (is_string($range) && $range !== '') {
+                return $range;
+            }
+        }
+
+        return null;
+    }
+
+    public function extractJsEngineVersion(?string $manifestJson): ?string
+    {
+        $version = $this->decodeManifest($manifestJson)['version'] ?? null;
+
+        return is_string($version) && $version !== '' ? $version : null;
+    }
+
+    private function decodeManifest(?string $manifestJson): array
+    {
+        if ($manifestJson === null || $manifestJson === '') {
+            return [];
+        }
+
+        $decoded = json_decode($manifestJson, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    public function evaluateJsEngine(?string $requiredRange, ?string $installedVersion): CheckResult
+    {
+        if ($requiredRange === null) {
+            return CheckResult::warn(
+                'JS engine',
+                'vite/package.json was not found, so the required ' . self::JS_ENGINE_PACKAGE
+                    . ' version is unknown.',
+                'The vite/ harness ships with mage-obsidian/component-modern-frontend; reinstall it.'
+            );
+        }
+
+        if ($installedVersion === null) {
+            return CheckResult::error(
+                'JS engine',
+                sprintf(
+                    'vite/package.json requires %s %s, but nothing is installed under vite/node_modules.',
+                    self::JS_ENGINE_PACKAGE,
+                    $requiredRange
+                ),
+                self::JS_ENGINE_HINT
+            );
+        }
+
+        $satisfied = $this->satisfiesVersionRange($requiredRange, $installedVersion);
+
+        if ($satisfied === null) {
+            return CheckResult::warn(
+                'JS engine',
+                sprintf(
+                    'Installed %s %s was not checked: %s is neither a caret nor an exact version.',
+                    self::JS_ENGINE_PACKAGE,
+                    $installedVersion,
+                    $requiredRange
+                ),
+                self::JS_ENGINE_HINT
+            );
+        }
+
+        if (!$satisfied) {
+            return CheckResult::error(
+                'JS engine',
+                sprintf(
+                    'Installed %s %s does not satisfy %s from vite/package.json.',
+                    self::JS_ENGINE_PACKAGE,
+                    $installedVersion,
+                    $requiredRange
+                ),
+                self::JS_ENGINE_HINT
+            );
+        }
+
+        return CheckResult::ok(
+            'JS engine',
+            sprintf('%s %s satisfies %s.', self::JS_ENGINE_PACKAGE, $installedVersion, $requiredRange)
+        );
+    }
+
+    private function satisfiesVersionRange(string $range, string $version): ?bool
+    {
+        if (!preg_match('/^(\^?)(\d+)\.(\d+)\.(\d+)$/', trim($range), $matches)) {
+            return null;
+        }
+
+        [, $caret, $major, $minor, $patch] = $matches;
+
+        if ($caret === '') {
+            return version_compare($version, sprintf('%d.%d.%d', $major, $minor, $patch), '==');
+        }
+
+        $ceiling = match (true) {
+            (int)$major > 0 => sprintf('%d.0.0', (int)$major + 1),
+            (int)$minor > 0 => sprintf('0.%d.0', (int)$minor + 1),
+            default => sprintf('0.0.%d', (int)$patch + 1),
+        };
+
+        return version_compare($version, sprintf('%d.%d.%d', $major, $minor, $patch), '>=')
+            && version_compare($version, $ceiling, '<');
+    }
+
+    /**
+     * @param CheckResult[] $results
+     */
+    public function hasError(array $results): bool
+    {
+        foreach ($results as $result) {
+            if ($result->isError()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

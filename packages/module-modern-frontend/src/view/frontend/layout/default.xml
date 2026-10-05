@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<!--
+ This file is part of the MageObsidian - ModernFrontend project.
+
+ SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ SPDX-License-Identifier: MIT
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- The native critical-path flag also switches on Luma's loading mask and
+             the loadCSS polyfill, both inline scripts this stack has no use for and
+             an enforced CSP drops. Removing them here, next to AsyncCssThemePlugin,
+             keeps the flag from dragging Luma in behind our own critical CSS. -->
+        <referenceBlock name="main_css_preloader" remove="true"/>
+        <referenceBlock name="css_rel_preload_script" remove="true"/>
+        <referenceBlock name="head.additional">
+            <block class="MageObsidian\ModernFrontend\Block\Cms\DeltaStylesheet"
+                   name="mage_obsidian.cms_delta_stylesheet"/>
+            <block class="MageObsidian\ModernFrontend\Block\PrePaintRuntime"
+                   name="mage_obsidian.prepaint_runtime"/>
+        </referenceBlock>
+        <referenceContainer name="before.body.end">
+            <block class="MageObsidian\ModernFrontend\Block\I18nRuntime"
+                   name="mage_obsidian.i18n_runtime"/>
+            <block class="MageObsidian\ModernFrontend\Block\SectionDataRuntime"
+                   name="mage_obsidian.section_data_runtime"/>
+            <block class="MageObsidian\ModernFrontend\Block\UxRuntime"
+                   name="mage_obsidian.ux_runtime"/>
+            <block class="MageObsidian\ModernFrontend\Block\IconRuntime"
+                   name="mage_obsidian.icon_runtime"/>
+            <block class="MageObsidian\ModernFrontend\Block\IslandsRuntime"
+                   name="mage_obsidian.islands_runtime"/>
+            <block class="MageObsidian\ModernFrontend\Block\DevServerGuard"
+                   name="mage_obsidian.dev_server_guard"/>
+            <block class="MageObsidian\ModernFrontend\Block\SchemaOrgRuntime"
+                   name="mage_obsidian.schema_org_runtime"/>
+        </referenceContainer>
+    </body>
+</page>

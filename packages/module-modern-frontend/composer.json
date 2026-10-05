@@ -1,0 +1,56 @@
+{
+    "name": "mage-obsidian/module-modern-frontend",
+    "description": "Modern frontend core for Magento 2 — replaces Luma/LESS/RequireJS with Vite, Tailwind CSS 4, Vue and native ESM while keeping Magento layouts, blocks and templates.",
+    "keywords": [
+        "magento",
+        "magento2",
+        "frontend",
+        "vite",
+        "vue",
+        "tailwindcss",
+        "theme"
+    ],
+    "homepage": "https://mage-obsidian.jeanmarcos.dev/",
+    "support": {
+        "issues": "https://github.com/mage-obsidian/module-modern-frontend/issues",
+        "docs": "https://mage-obsidian.jeanmarcos.dev/",
+        "source": "https://github.com/mage-obsidian/module-modern-frontend"
+    },
+    "authors": [
+        {
+            "name": "Jeanmarcos Juarez",
+            "homepage": "https://github.com/jeanmarcos-dev"
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "magento/framework": ">=103.0.7",
+        "magento/module-store": ">=101.1.6",
+        "magento/module-theme": ">=101.1.6",
+        "magento/module-catalog": ">=104.0.6",
+        "magento/module-deploy": ">=100.4.6",
+        "magento/module-config": ">=101.2.6",
+        "magento/module-backend": ">=102.0.6",
+        "magento/module-translation": ">=100.4.6",
+        "magento/module-cms": ">=104.0.6",
+        "magento/module-directory": ">=100.4.6",
+        "magento/module-widget": ">=101.2.6",
+        "symfony/process": "^6.4 || ^7.0",
+        "justinrainbow/json-schema": "^5.2 || ^6.0"
+    },
+    "type": "magento2-module",
+    "license": [
+        "MIT"
+    ],
+    "autoload": {
+        "files": [
+            "src/registration.php"
+        ],
+        "psr-4": {
+            "MageObsidian\\ModernFrontend\\": "src/"
+        }
+    },
+    "conflict": {
+        "mage-obsidian/component-modern-frontend": "<2.7.0"
+    }
+}

@@ -1,0 +1,227 @@
+<?xml version="1.0"?>
+<!--
+ This file is part of the MageObsidian - ModernFrontend project.
+
+ SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ SPDX-License-Identifier: MIT
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="MageObsidian\ModernFrontend\Api\ConfigManagerInterface"
+                type="MageObsidian\ModernFrontend\Service\ConfigManager"/>
+    <preference for="MageObsidian\ModernFrontend\Api\ModuleListInterface"
+                type="MageObsidian\ModernFrontend\Service\ModuleList"/>
+    <preference for="MageObsidian\ModernFrontend\Api\ThemeListInterface"
+                type="MageObsidian\ModernFrontend\Service\ThemeList"/>
+    <type name="MageObsidian\ModernFrontend\Service\ModuleList\Loader">
+        <arguments>
+            <argument name="filesystemDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontend\Service\ThemeList\Loader">
+        <arguments>
+            <argument name="filesystemDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontend\Model\SchemaOrg\PageTypeResolver">
+        <arguments>
+            <argument name="map" xsi:type="array">
+                <item name="catalog_product_view" xsi:type="string">ItemPage</item>
+                <item name="catalog_category_view" xsi:type="string">CollectionPage</item>
+                <item name="catalogsearch_result_index" xsi:type="string">SearchResultsPage</item>
+                <item name="catalogsearch_advanced_result" xsi:type="string">SearchResultsPage</item>
+                <item name="contact_index_index" xsi:type="string">ContactPage</item>
+                <item name="checkout_cart_index" xsi:type="string">CheckoutPage</item>
+                <item name="checkout_index_index" xsi:type="string">CheckoutPage</item>
+                <item name="wishlist_index_index" xsi:type="string">CollectionPage</item>
+            </argument>
+            <argument name="default" xsi:type="string">WebPage</argument>
+        </arguments>
+    </type>
+
+    <type name="MageObsidian\ModernFrontend\Service\ConfigManager">
+        <arguments>
+            <argument name="formatter" xsi:type="object">Magento\Framework\App\DeploymentConfig\Writer\PhpFormatter</argument>
+            <argument name="filesystemDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+
+
+    <type name="Magento\Deploy\Package\Processor\PreProcessor\Less">
+        <plugin
+            name="mage-obsidian_filter_modern_themes_less_files"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Package\Processor\FilterFilesThemePlugin"
+        />
+    </type>
+    <type name="Magento\Deploy\Package\Processor\PreProcessor\Css">
+        <plugin
+            name="mage-obsidian_filter_modern_themes_css_files"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Package\Processor\FilterFilesThemePlugin"
+        />
+    </type>
+    <type name="Magento\Deploy\Package\Processor\PostProcessor\Map">
+        <plugin
+            name="mage-obsidian_filter_modern_themes_css_files"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Package\Processor\FilterFilesThemePlugin"
+        />
+    </type>
+    <type name="Magento\Deploy\Package\Processor\PostProcessor\CssUrls">
+        <plugin
+            name="mage-obsidian_filter_modern_themes_css_files"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Package\Processor\FilterFilesThemePlugin"
+        />
+    </type>
+
+    <type name="Magento\Framework\View\Asset\PreProcessor\Pool">
+        <plugin
+            name="mage-obsidian_skip_file_preprocessors"
+            type="MageObsidian\ModernFrontend\Framework\View\Asset\PreProcessor\PoolPlugin"
+        />
+    </type>
+
+    <type name="Magento\Framework\App\DeploymentConfig\Writer">
+        <plugin
+            name="trigger_config_update"
+            type="MageObsidian\ModernFrontend\Plugin\App\DeploymentConfig\WriterPlugin"
+        />
+    </type>
+
+
+    <type name="Magento\Deploy\Package\PackageFile">
+        <plugin
+            name="validate_file"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Package\PackageFilePlugin"
+        />
+    </type>
+
+    <type name="Magento\Deploy\Service\DeployRequireJsConfig">
+        <plugin
+            name="exclude_modern_themes"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Service\DeployRequireJsConfigPlugin"
+        />
+    </type>
+
+    <type name="MageObsidian\ModernFrontend\Plugin\Deploy\Service\DeployRequireJsConfigPlugin">
+        <arguments>
+            <argument name="configManager" xsi:type="object">MageObsidian\ModernFrontend\Service\ConfigManager\Proxy</argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Deploy\Service\Bundle">
+        <plugin
+            name="exclude_modern_themes"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Service\DeployRequireJsConfigPlugin"
+        />
+    </type>
+
+    <type name="Magento\Deploy\Service\DeployStaticContent">
+        <plugin
+            name="deploy_vite_content"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Service\DeployViteContentPlugin"
+        />
+        <!--
+          The deploy cannot be trusted to report a partial run: Queue::process()
+          returns a status that is never reassigned, so workers that die still
+          leave it exiting 0. This checks the result instead of the exit code
+          and warns about whatever never reached pub/static.
+        -->
+        <plugin
+            name="verify_vite_content"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Service\VerifyViteContentPlugin"
+        />
+    </type>
+    <type name="MageObsidian\ModernFrontend\Plugin\Deploy\Service\VerifyViteContentPlugin">
+        <arguments>
+            <argument name="output" xsi:type="object">Symfony\Component\Console\Output\ConsoleOutput</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontend\Model\Deploy\ViteOutputVerifier">
+        <arguments>
+            <argument name="driver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontend\Model\Deploy\ViteOutputPublisher">
+        <arguments>
+            <argument name="driver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontend\Model\Deploy\ViteBuildRunner">
+        <arguments>
+            <argument name="output" xsi:type="object">Symfony\Component\Console\Output\ConsoleOutput</argument>
+        </arguments>
+    </type>
+    <type name="MageObsidian\ModernFrontend\Plugin\Deploy\Service\DeployViteContentPlugin">
+        <arguments>
+            <argument name="output" xsi:type="object">Symfony\Component\Console\Output\ConsoleOutput</argument>
+        </arguments>
+    </type>
+
+    <!--
+        The Vue compiler serializes $t('phrase') as a template literal,
+        $t(`phrase`), which Magento's native $t pattern (single/double quotes
+        only) does not match. Register a backtick-aware pattern so phrases from
+        compiled .vue output reach js-translation.json. Phrase must be capture
+        group 2 (group 1 is the opening delimiter) — see DataProvider::getPhrases.
+    -->
+    <preference for="MageObsidian\ModernFrontend\Service\Dev\HttpProberInterface"
+                type="MageObsidian\ModernFrontend\Service\Dev\CurlHttpProber"/>
+
+    <type name="MageObsidian\ModernFrontend\Service\Dev\DevServerProcess">
+        <arguments>
+            <argument name="fileDriver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Deploy\Model\Mode">
+        <plugin
+            name="mage-obsidian_mode_advisor"
+            type="MageObsidian\ModernFrontend\Plugin\Deploy\Model\ModePlugin"
+        />
+    </type>
+    <type name="MageObsidian\ModernFrontend\Plugin\Deploy\Model\ModePlugin">
+        <arguments>
+            <argument name="output" xsi:type="object">Symfony\Component\Console\Output\ConsoleOutput</argument>
+        </arguments>
+    </type>
+
+    <type name="MageObsidian\ModernFrontend\Service\Cms\IslandRegistry">
+        <arguments>
+            <argument name="islands" xsi:type="array">
+                <item name="icon" xsi:type="array">
+                    <item name="component" xsi:type="string">MageObsidian_ModernFrontend::elements/Icon</item>
+                    <item name="label" xsi:type="string" translate="true">Icon</item>
+                    <item name="description" xsi:type="string" translate="true">A Heroicon, the same set hero_icon() draws from in templates. Set "name" to the icon, "set" to solid or outline, and "size" to 16, 20 or 24.</item>
+                    <item name="props" xsi:type="array">
+                        <item name="name" xsi:type="string">star</item>
+                        <item name="set" xsi:type="string">solid</item>
+                        <item name="size" xsi:type="string">24</item>
+                    </item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Framework\Filter\SimpleDirective\ProcessorPool">
+        <arguments>
+            <argument name="processors" xsi:type="array">
+                <item name="island" xsi:type="object">MageObsidian\ModernFrontend\Model\Cms\IslandDirective</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Translation\Model\Js\Config">
+        <arguments>
+            <argument name="patterns" xsi:type="array">
+                <item name="mage_obsidian_t_template_literal" xsi:type="string"><![CDATA[~\$t\(\s*(`)([^`]+?)`~]]></item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="MageObsidian\ModernFrontend\Service\Cms\ContentExporter">
+        <arguments>
+            <argument name="ignoredClassPrefixes" xsi:type="array">
+                <item name="pagebuilder" xsi:type="string">pagebuilder-</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

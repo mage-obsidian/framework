@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ This file is part of the MageObsidian - ModernFrontend project.
+
+ SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ SPDX-License-Identifier: MIT
+-->
+<!--
+    CI unit suite: pure-logic tests that run on a vanilla PHP runner without a
+    Magento install (no Composer install, no marketplace auth). The two tests
+    that mock Magento framework types (ConfigManagerTest, ViteResolverTest) are
+    excluded here; they run in a real Magento root (see phpunit.xml).
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="src/Test/Unit/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnRisky="true">
+    <testsuites>
+        <testsuite name="MageObsidian ModernFrontend Standalone Unit">
+            <directory>src/Test/Unit</directory>
+            <exclude>src/Test/Unit/Framework/Module/ManagerTest.php</exclude>
+            <exclude>src/Test/Unit/Service/ConfigManagerTest.php</exclude>
+            <exclude>src/Test/Unit/ViewModel/ViteResolverTest.php</exclude>
+            <exclude>src/Test/Unit/ViewModel/SchemaOrgTest.php</exclude>
+            <exclude>src/Test/Unit/Model/SchemaOrg/CurrentPageSchemaProviderTest.php</exclude>
+            <exclude>src/Test/Unit/Model/SchemaOrg/SchemaOrgConfigTest.php</exclude>
+            <exclude>src/Test/Unit/ViewModel/ImageTest.php</exclude>
+            <exclude>src/Test/Unit/Block/I18nRuntimeTest.php</exclude>
+            <exclude>src/Test/Unit/Block/IslandsRuntimeTest.php</exclude>
+            <exclude>src/Test/Unit/Block/SectionDataRuntimeTest.php</exclude>
+            <exclude>src/Test/Unit/ViewModel/SectionDataConfigTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/Deploy/Package/PackageFilePluginTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/View/Asset/MinifyHtmlThemePluginTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/View/Result/AsyncCssThemePluginTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/View/Page/Config/NonBlockingIncludesTest.php</exclude>
+            <exclude>src/Test/Unit/Service/Theme/ObsidianThemeDetectorTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/Csp/ForceReportOnlyInHmrTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Config/ConfigProviderTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Config/Source/CheckoutLayoutTest.php</exclude>
+            <exclude>src/Test/Unit/Service/CriticalCssProviderTest.php</exclude>
+            <exclude>src/Test/Unit/ViewModel/CriticalCssTest.php</exclude>
+            <exclude>src/Test/Unit/Service/Dev/DevWorkflowTest.php</exclude>
+            <exclude>src/Test/Unit/Service/Cms/IslandRendererTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Cms/IslandDirectiveTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Config/Source/CmsIslandTest.php</exclude>
+            <exclude>src/Test/Unit/Service/Cms/ContentExporterTest.php</exclude>
+            <exclude>src/Test/Unit/Service/Cms/TailwindCliTest.php</exclude>
+            <exclude>src/Test/Unit/Service/Cms/DeltaStylesheetTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/Deploy/Service/VerifyViteContentPluginTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Deploy/ViteOutputPublisherTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Deploy/ViteOutputVerifierTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Deploy/DeployTargetsTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Config/ConfigDefaultsTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/App/DeploymentConfig/WriterPluginTest.php</exclude>
+            <exclude>src/Test/Unit/Service/ThemeList/LoaderTest.php</exclude>
+            <exclude>src/Test/Unit/Model/Deploy/ViteBuildPreflightTest.php</exclude>
+            <exclude>src/Test/Unit/Plugin/Deploy/Service/DeployViteContentPluginTest.php</exclude>
+            <exclude>src/Test/Unit/Service/Cms/CmsBaselineTest.php</exclude>
+        </testsuite>
+    </testsuites>
+</phpunit>

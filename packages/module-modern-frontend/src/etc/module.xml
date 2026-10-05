@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+ This file is part of the MageObsidian - ModernFrontend project.
+
+ SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+ SPDX-License-Identifier: MIT
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+    <module name="MageObsidian_ModernFrontend">
+        <sequence>
+            <module name="Magento_Theme"/>
+            <module name="Magento_Cms"/>
+            <module name="Magento_Widget"/>
+            <module name="Magento_Catalog"/>
+            <module name="Magento_Directory"/>
+        </sequence>
+    </module>
+</config>

@@ -1,0 +1,173 @@
+exclude: '(^|/)(generated|\.precompiled|dist|node_modules|vendor|\.artifacts|playwright-report|__mocks__|fixtures)/|/web/critical/|__tests__/magento_scenarios/'
+repos:
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.6
+    hooks:
+      - id: insert-license
+        name: SPDX header (PHP) packages/component-modern-frontend
+        files: '^packages/component-modern-frontend/.*\.php$'
+        args: [--license-filepath, packages/component-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/**| *| */', --insert-license-after-regex, '^<\?php$']
+      - id: insert-license
+        name: SPDX header (PHTML) packages/component-modern-frontend
+        files: '^packages/component-modern-frontend/.*\.phtml$'
+        args: [--license-filepath, packages/component-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<?php /**| *| */ ?>']
+      - id: insert-license
+        name: SPDX header (Twig) packages/component-modern-frontend
+        files: '^packages/component-modern-frontend/.*\.twig$'
+        args: [--license-filepath, packages/component-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '{#||#}']
+      - id: insert-license
+        name: SPDX header (Vue and HTML) packages/component-modern-frontend
+        files: '^packages/component-modern-frontend/.*\.(vue|html)$'
+        args: [--license-filepath, packages/component-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->']
+      - id: insert-license
+        name: SPDX header (XML) packages/component-modern-frontend
+        files: '^packages/component-modern-frontend/.*\.xml$'
+        args: [--license-filepath, packages/component-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->', --insert-license-after-regex, '^<\?xml.*\?>$']
+      - id: insert-license
+        name: SPDX header (TypeScript and JavaScript) packages/component-modern-frontend
+        files: '^packages/component-modern-frontend/.*\.(ts|js|mjs)$'
+        args: [--license-filepath, packages/component-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '//']
+      - id: insert-license
+        name: SPDX header (CSS) packages/component-modern-frontend
+        files: '^packages/component-modern-frontend/.*\.css$'
+        args: [--license-filepath, packages/component-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/*| *| */']
+      - id: insert-license
+        name: SPDX header (PHP) packages/js-package-utils
+        files: '^packages/js-package-utils/.*\.php$'
+        args: [--license-filepath, packages/js-package-utils/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/**| *| */', --insert-license-after-regex, '^<\?php$']
+      - id: insert-license
+        name: SPDX header (PHTML) packages/js-package-utils
+        files: '^packages/js-package-utils/.*\.phtml$'
+        args: [--license-filepath, packages/js-package-utils/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<?php /**| *| */ ?>']
+      - id: insert-license
+        name: SPDX header (Twig) packages/js-package-utils
+        files: '^packages/js-package-utils/.*\.twig$'
+        args: [--license-filepath, packages/js-package-utils/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '{#||#}']
+      - id: insert-license
+        name: SPDX header (Vue and HTML) packages/js-package-utils
+        files: '^packages/js-package-utils/.*\.(vue|html)$'
+        args: [--license-filepath, packages/js-package-utils/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->']
+      - id: insert-license
+        name: SPDX header (XML) packages/js-package-utils
+        files: '^packages/js-package-utils/.*\.xml$'
+        args: [--license-filepath, packages/js-package-utils/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->', --insert-license-after-regex, '^<\?xml.*\?>$']
+      - id: insert-license
+        name: SPDX header (TypeScript and JavaScript) packages/js-package-utils
+        files: '^packages/js-package-utils/.*\.(ts|js|mjs)$'
+        args: [--license-filepath, packages/js-package-utils/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '//']
+      - id: insert-license
+        name: SPDX header (CSS) packages/js-package-utils
+        files: '^packages/js-package-utils/.*\.css$'
+        args: [--license-filepath, packages/js-package-utils/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/*| *| */']
+      - id: insert-license
+        name: SPDX header (PHP) packages/module-modern-frontend-cli
+        files: '^packages/module-modern-frontend-cli/.*\.php$'
+        args: [--license-filepath, packages/module-modern-frontend-cli/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/**| *| */', --insert-license-after-regex, '^<\?php$']
+      - id: insert-license
+        name: SPDX header (PHTML) packages/module-modern-frontend-cli
+        files: '^packages/module-modern-frontend-cli/.*\.phtml$'
+        args: [--license-filepath, packages/module-modern-frontend-cli/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<?php /**| *| */ ?>']
+      - id: insert-license
+        name: SPDX header (Twig) packages/module-modern-frontend-cli
+        files: '^packages/module-modern-frontend-cli/.*\.twig$'
+        args: [--license-filepath, packages/module-modern-frontend-cli/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '{#||#}']
+      - id: insert-license
+        name: SPDX header (Vue and HTML) packages/module-modern-frontend-cli
+        files: '^packages/module-modern-frontend-cli/.*\.(vue|html)$'
+        args: [--license-filepath, packages/module-modern-frontend-cli/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->']
+      - id: insert-license
+        name: SPDX header (XML) packages/module-modern-frontend-cli
+        files: '^packages/module-modern-frontend-cli/.*\.xml$'
+        args: [--license-filepath, packages/module-modern-frontend-cli/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->', --insert-license-after-regex, '^<\?xml.*\?>$']
+      - id: insert-license
+        name: SPDX header (TypeScript and JavaScript) packages/module-modern-frontend-cli
+        files: '^packages/module-modern-frontend-cli/.*\.(ts|js|mjs)$'
+        args: [--license-filepath, packages/module-modern-frontend-cli/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '//']
+      - id: insert-license
+        name: SPDX header (CSS) packages/module-modern-frontend-cli
+        files: '^packages/module-modern-frontend-cli/.*\.css$'
+        args: [--license-filepath, packages/module-modern-frontend-cli/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/*| *| */']
+      - id: insert-license
+        name: SPDX header (PHP) packages/module-modern-frontend-twig
+        files: '^packages/module-modern-frontend-twig/.*\.php$'
+        args: [--license-filepath, packages/module-modern-frontend-twig/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/**| *| */', --insert-license-after-regex, '^<\?php$']
+      - id: insert-license
+        name: SPDX header (PHTML) packages/module-modern-frontend-twig
+        files: '^packages/module-modern-frontend-twig/.*\.phtml$'
+        args: [--license-filepath, packages/module-modern-frontend-twig/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<?php /**| *| */ ?>']
+      - id: insert-license
+        name: SPDX header (Twig) packages/module-modern-frontend-twig
+        files: '^packages/module-modern-frontend-twig/.*\.twig$'
+        args: [--license-filepath, packages/module-modern-frontend-twig/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '{#||#}']
+      - id: insert-license
+        name: SPDX header (Vue and HTML) packages/module-modern-frontend-twig
+        files: '^packages/module-modern-frontend-twig/.*\.(vue|html)$'
+        args: [--license-filepath, packages/module-modern-frontend-twig/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->']
+      - id: insert-license
+        name: SPDX header (XML) packages/module-modern-frontend-twig
+        files: '^packages/module-modern-frontend-twig/.*\.xml$'
+        args: [--license-filepath, packages/module-modern-frontend-twig/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->', --insert-license-after-regex, '^<\?xml.*\?>$']
+      - id: insert-license
+        name: SPDX header (TypeScript and JavaScript) packages/module-modern-frontend-twig
+        files: '^packages/module-modern-frontend-twig/.*\.(ts|js|mjs)$'
+        args: [--license-filepath, packages/module-modern-frontend-twig/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '//']
+      - id: insert-license
+        name: SPDX header (CSS) packages/module-modern-frontend-twig
+        files: '^packages/module-modern-frontend-twig/.*\.css$'
+        args: [--license-filepath, packages/module-modern-frontend-twig/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/*| *| */']
+      - id: insert-license
+        name: SPDX header (PHP) packages/module-modern-frontend
+        files: '^packages/module-modern-frontend/.*\.php$'
+        args: [--license-filepath, packages/module-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/**| *| */', --insert-license-after-regex, '^<\?php$']
+      - id: insert-license
+        name: SPDX header (PHTML) packages/module-modern-frontend
+        files: '^packages/module-modern-frontend/.*\.phtml$'
+        args: [--license-filepath, packages/module-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<?php /**| *| */ ?>']
+      - id: insert-license
+        name: SPDX header (Twig) packages/module-modern-frontend
+        files: '^packages/module-modern-frontend/.*\.twig$'
+        args: [--license-filepath, packages/module-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '{#||#}']
+      - id: insert-license
+        name: SPDX header (Vue and HTML) packages/module-modern-frontend
+        files: '^packages/module-modern-frontend/.*\.(vue|html)$'
+        args: [--license-filepath, packages/module-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->']
+      - id: insert-license
+        name: SPDX header (XML) packages/module-modern-frontend
+        files: '^packages/module-modern-frontend/.*\.xml$'
+        args: [--license-filepath, packages/module-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->', --insert-license-after-regex, '^<\?xml.*\?>$']
+      - id: insert-license
+        name: SPDX header (TypeScript and JavaScript) packages/module-modern-frontend
+        files: '^packages/module-modern-frontend/.*\.(ts|js|mjs)$'
+        args: [--license-filepath, packages/module-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '//']
+      - id: insert-license
+        name: SPDX header (CSS) packages/module-modern-frontend
+        files: '^packages/module-modern-frontend/.*\.css$'
+        args: [--license-filepath, packages/module-modern-frontend/.license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/*| *| */']
+      - id: insert-license
+        name: SPDX header (PHP) tools
+        files: '^tools/.*\.php$'
+        args: [--license-filepath, .license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/**| *| */', --insert-license-after-regex, '^<\?php$']
+      - id: insert-license
+        name: SPDX header (PHTML) tools
+        files: '^tools/.*\.phtml$'
+        args: [--license-filepath, .license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<?php /**| *| */ ?>']
+      - id: insert-license
+        name: SPDX header (Twig) tools
+        files: '^tools/.*\.twig$'
+        args: [--license-filepath, .license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '{#||#}']
+      - id: insert-license
+        name: SPDX header (Vue and HTML) tools
+        files: '^tools/.*\.(vue|html)$'
+        args: [--license-filepath, .license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->']
+      - id: insert-license
+        name: SPDX header (XML) tools
+        files: '^tools/.*\.xml$'
+        args: [--license-filepath, .license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '<!--||-->', --insert-license-after-regex, '^<\?xml.*\?>$']
+      - id: insert-license
+        name: SPDX header (TypeScript and JavaScript) tools
+        files: '^tools/.*\.(ts|js|mjs)$'
+        args: [--license-filepath, .license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '//']
+      - id: insert-license
+        name: SPDX header (CSS) tools
+        files: '^tools/.*\.css$'
+        args: [--license-filepath, .license-header.txt, --no-extra-eol, --allow-past-years, --detect-license-in-X-top-lines, '16', --comment-style, '/*| *| */']

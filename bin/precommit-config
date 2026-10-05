@@ -1,0 +1,37 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use MageObsidian\Monorepo\PreCommitConfig;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$root = dirname(__DIR__);
+$scopes = [];
+foreach (glob($root . '/packages/*/.license-header.txt') ?: [] as $header) {
+    $package = basename(dirname($header));
+    $scopes[sprintf('packages/%s/', $package)] = sprintf('packages/%s/.license-header.txt', $package);
+}
+ksort($scopes);
+if (is_file($root . '/.license-header.txt')) {
+    $scopes['tools/'] = '.license-header.txt';
+}
+
+$excludesFile = $root . '/precommit-excludes.json';
+$excludes = is_file($excludesFile)
+    ? json_decode((string) file_get_contents($excludesFile), true, 512, JSON_THROW_ON_ERROR)
+    : [];
+
+$config = PreCommitConfig::render($scopes, $excludes);
+$target = $root . '/.pre-commit-config.yaml';
+
+if (in_array('--check', $argv, true)) {
+    if (!is_file($target) || file_get_contents($target) !== $config) {
+        fwrite(STDERR, ".pre-commit-config.yaml is stale; run bin/precommit-config\n");
+        exit(1);
+    }
+    exit(0);
+}
+
+file_put_contents($target, $config);

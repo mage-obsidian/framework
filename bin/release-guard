@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use MageObsidian\Monorepo\ReleaseGuard;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$violations = ReleaseGuard::violations(dirname(__DIR__), $argv[1] ?? '');
+foreach ($violations as $violation) {
+    fwrite(STDERR, $violation . "\n");
+}
+exit($violations === [] ? 0 : 1);

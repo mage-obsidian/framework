@@ -1,0 +1,22 @@
+{
+    "name": "mage-obsidian-dev/framework",
+    "description": "Development monorepo of the MageObsidian framework. Never published; every package under packages/ is split to its own repository.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "symplify/monorepo-builder": "^12.7"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MageObsidian\\Monorepo\\": "tools/src/",
+            "MageObsidian\\Monorepo\\Test\\": "tools/tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

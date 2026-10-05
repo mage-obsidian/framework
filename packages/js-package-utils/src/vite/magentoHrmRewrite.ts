@@ -1,0 +1,48 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
+import moduleResolver from "../core/moduleResolver.ts";
+
+export default () => {
+    return {
+        name: "handle-magento-routes-middleware",
+        configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+                const url = req.url;
+
+                const components = moduleResolver.getAllJsVueFilesWithInheritanceCached();
+                const matchedKey = Object.keys(components).find((key) => url.includes(key));
+
+                if (matchedKey) {
+                    const filePath = components[matchedKey];
+                    let suffix;
+                    if (matchedKey === "lib/vue") {
+                        suffix = "/";
+                    } else if (matchedKey.startsWith("lib/")) {
+                        suffix = "/@fs";
+                        const fileExtension = filePath.split(".").pop();
+                        let mimeType = "application/node";
+                        if (
+                            fileExtension === "cjs" ||
+                            fileExtension === "mjs" ||
+                            fileExtension === "js"
+                        )
+                            mimeType = "application/javascript";
+                        if (fileExtension === "css") mimeType = "text/css";
+                        if (fileExtension === "json") mimeType = "application/json";
+                        if (fileExtension === "html") mimeType = "text/html";
+
+                        res.setHeader("Content-Type", mimeType);
+                    } else {
+                        suffix = "/@fs";
+                    }
+                    req.url = `${suffix}${filePath}`;
+                    next();
+                } else {
+                    next();
+                }
+            });
+        },
+    };
+};

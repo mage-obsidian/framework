@@ -1,0 +1,94 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
+/** Themes whose ancestry loops back on itself, as human-readable paths. */
+export function findThemeCycles(themes: Record<string, { parent?: string }>): string[] {
+    const cycles: string[] = [];
+    const settled = new Set<string>();
+
+    for (const start of Object.keys(themes)) {
+        if (settled.has(start)) continue;
+
+        const path: string[] = [];
+        const onPath = new Set<string>();
+        let name: string | undefined = start;
+
+        while (name && themes[name] && !onPath.has(name) && !settled.has(name)) {
+            path.push(name);
+            onPath.add(name);
+            name = themes[name].parent;
+        }
+
+        if (name && onPath.has(name)) {
+            cycles.push([...path.slice(path.indexOf(name)), name].join(" -> "));
+        }
+
+        for (const visited of path) settled.add(visited);
+    }
+
+    return cycles;
+}
+
+// Contract versions this build engine understands; ConfigInterface::SCHEMA_VERSION
+// on the PHP side must be one of them.
+export const SUPPORTED_SCHEMA_VERSIONS = ["1.0.0", "1.1.0"];
+export const EXPECTED_SCHEMA_VERSION = "1.1.0";
+
+// Top-level keys the engine reads off the generated contract. Kept in step with
+// the JSON schema in module-modern-frontend/src/etc.
+export const REQUIRED_CONTRACT_KEYS = [
+    "schema_version",
+    "mode",
+    "modules",
+    "themes",
+    "allModules",
+    "VUE_COMPONENTS_PATH",
+    "JS_PATH",
+    "FOLDERS_TO_WATCH",
+    "ALLOWED_EXTENSIONS",
+    "MODULE_CSS_EXTEND_FILE",
+    "MODULE_CONFIG_FILE",
+    "THEME_CONFIG_FILE",
+    "THEME_CSS_SOURCE_FILE",
+    "THEME_FILES_PATH",
+    "LIB_PATH",
+];
+
+/**
+ * Validate the parsed frontend contract.
+ *
+ * Pure: no IO, no process exit. The caller decides how to react to errors.
+ *
+ * @param {unknown} config Parsed contract object.
+ * @param {string[]} [supported] Schema versions the caller accepts.
+ * @returns {{ ok: boolean, errors: string[] }}
+ */
+export function validateContract(config, supported = SUPPORTED_SCHEMA_VERSIONS) {
+    if (config === null || typeof config !== "object" || Array.isArray(config)) {
+        return { ok: false, errors: ["Contract is not a JSON object."] };
+    }
+
+    const errors = [];
+
+    if (!supported.includes(config.schema_version)) {
+        errors.push(
+            `Schema version mismatch: this build engine supports ${supported.map((v) => `"${v}"`).join(", ")} ` +
+                `but the contract is "${config.schema_version ?? "(missing)"}".`,
+        );
+    }
+
+    for (const key of REQUIRED_CONTRACT_KEYS) {
+        if (!Object.prototype.hasOwnProperty.call(config, key)) {
+            errors.push(`Missing required key "${key}".`);
+        }
+    }
+
+    if (config.themes && typeof config.themes === "object" && !Array.isArray(config.themes)) {
+        for (const cycle of findThemeCycles(config.themes)) {
+            errors.push(`Theme inheritance is cyclic: ${cycle}.`);
+        }
+    }
+
+    return { ok: errors.length === 0, errors };
+}

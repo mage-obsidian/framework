@@ -1,0 +1,109 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
+import { vi } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+/**
+ * The contract hash must be stable while the file is unchanged and must change
+ * (via the mtime-guarded reload) when the contract is regenerated — this is what
+ * lets downstream caches invalidate on a module enable/disable in a long-lived
+ * process instead of serving results keyed only by theme.
+ */
+describe("configResolver contract hash + mtime reload", () => {
+    let tmpFile;
+
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    afterEach(() => {
+        if (tmpFile && fs.existsSync(tmpFile)) {
+            fs.rmSync(tmpFile);
+        }
+    });
+
+    const writeContract = (file, contract, mtimeSeconds) => {
+        fs.writeFileSync(file, JSON.stringify(contract));
+        fs.utimesSync(file, new Date(mtimeSeconds * 1000), new Date(mtimeSeconds * 1000));
+    };
+
+    test("hash stays stable while unchanged and changes after a regeneration", async () => {
+        tmpFile = path.join(os.tmpdir(), `obsidian-contract-${process.pid}.json`);
+        const base = {
+            schema_version: "1.0.0",
+            mode: "developer",
+            modules: { Vendor_A: { src: "/a" } },
+            themes: {},
+            allModules: ["Vendor_A"],
+            LIB_PATH: "lib",
+        };
+        writeContract(tmpFile, base, 10000);
+
+        vi.doMock("#config/default.ts", () => ({
+            __esModule: true,
+            MAGENTO_ROOT: "/srv/app",
+            DEPENDENCY_CONFIG_FILE_PATH: tmpFile,
+            OUTPUT_THEME_DIR: "web/generated",
+        }));
+        vi.doMock("#core/contractValidator.ts", () => ({
+            __esModule: true,
+            validateContract: () => ({ ok: true, errors: [] }),
+        }));
+
+        const configResolver = (await import("#core/configResolver.ts")).default;
+
+        const firstHash = configResolver.getContractHash();
+        expect(configResolver.getContractHash()).toBe(firstHash); // same mtime → cached
+
+        // Regenerate: a module appears, and mtime advances.
+        writeContract(
+            tmpFile,
+            {
+                ...base,
+                modules: { Vendor_A: { src: "/a" }, Vendor_B: { src: "/b" } },
+                allModules: ["Vendor_A", "Vendor_B"],
+            },
+            20000,
+        );
+
+        expect(configResolver.getContractHash()).not.toBe(firstHash);
+        expect(configResolver.getMagentoConfig().allModules).toEqual(["Vendor_A", "Vendor_B"]);
+    });
+
+    test("hands out absolute sources for a relative contract", async () => {
+        tmpFile = path.join(os.tmpdir(), `obsidian-contract-rel-${process.pid}.json`);
+        writeContract(
+            tmpFile,
+            {
+                schema_version: "1.1.0",
+                mode: "default",
+                modules: { Vendor_A: { src: "vendor/vendor/a" } },
+                themes: { "Vendor/t": { src: "app/design/frontend/Vendor/t", parent: null } },
+                allModules: ["Vendor_A"],
+                LIB_PATH: "lib",
+            },
+            20000,
+        );
+        vi.doMock("#config/default.ts", () => ({
+            __esModule: true,
+            MAGENTO_ROOT: "/srv/app",
+            DEPENDENCY_CONFIG_FILE_PATH: tmpFile,
+            OUTPUT_THEME_DIR: "web/generated",
+        }));
+        vi.doMock("#core/contractValidator.ts", () => ({
+            __esModule: true,
+            validateContract: () => ({ ok: true, errors: [] }),
+        }));
+
+        const configResolver = (await import("#core/configResolver.ts")).default;
+
+        expect(configResolver.getModuleDefinition("Vendor_A").src).toBe("/srv/app/vendor/vendor/a");
+        expect(configResolver.getThemeDefinition("Vendor/t").src).toBe(
+            "/srv/app/app/design/frontend/Vendor/t",
+        );
+    });
+});

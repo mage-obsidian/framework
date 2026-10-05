@@ -1,0 +1,318 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
+import { vi } from "vitest";
+import createMockConfigResolver from "../__mocks__/configResolver.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const MAGENTO_SCENARIOS_PATH = path.resolve(__dirname, "../magento_scenarios");
+
+let scenarios = [
+    {
+        scenario: "a",
+        themes: [
+            {
+                code: "Vendor/theme-a",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/js/main.js",
+                    "Vendor_ModuleNameB/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameB/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameB/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                    "Theme/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentA.vue",
+                    "Theme/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentB.vue",
+                    "Theme/js/main": "app/design/frontend/Vendor/theme-a/web/js/main.js",
+                },
+            },
+            {
+                code: "Vendor/theme-b",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/js/main.js",
+                    "Vendor_ModuleNameB/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameB/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameB/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                    "Theme/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentA.vue",
+                    "Theme/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentB.vue",
+                    "Theme/js/main": "app/design/frontend/Vendor/theme-a/web/js/main.js",
+                },
+            },
+            {
+                code: "Vendor/theme-c",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/js/main.js",
+                    "Vendor_ModuleNameB/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameB/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameB/js/main":
+                        "app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                    "Theme/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentA.vue",
+                    "Theme/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentB.vue",
+                    "Theme/js/main": "app/design/frontend/Vendor/theme-a/web/js/main.js",
+                },
+            },
+            {
+                code: "Vendor/theme-d",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/code/Vendor/ModuleNameA/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/code/Vendor/ModuleNameA/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/code/Vendor/ModuleNameA/view/frontend/web/js/main.js",
+                    "Vendor_ModuleNameB/components/ComponentA":
+                        "app/code/Vendor/ModuleNameB/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameB/components/ComponentB":
+                        "app/code/Vendor/ModuleNameB/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameB/js/main":
+                        "app/code/Vendor/ModuleNameB/view/frontend/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                },
+            },
+        ],
+    },
+    {
+        scenario: "b",
+        themes: [
+            {
+                code: "Vendor/theme-a",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/js/main.js",
+                    "Vendor_ModuleNameB/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameB/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameB/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                    "Theme/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentA.vue",
+                    "Theme/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentB.vue",
+                    "Theme/js/main": "app/design/frontend/Vendor/theme-a/web/js/main.js",
+                    "Vendor_ModuleNameNoConfig/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameNoConfig/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameNoConfig/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/js/main.js",
+                },
+            },
+            {
+                code: "Vendor/theme-b",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/js/main.js",
+                    "Vendor_ModuleNameB/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameB/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameB/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameB/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                    "Theme/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentA.vue",
+                    "Theme/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentB.vue",
+                    "Theme/js/main": "app/design/frontend/Vendor/theme-a/web/js/main.js",
+                    "Vendor_ModuleNameNoConfig/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameNoConfig/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameNoConfig/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/js/main.js",
+                },
+            },
+            {
+                code: "Vendor/theme-c",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameA/web/js/main.js",
+                    "Vendor_ModuleNameB/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameB/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameB/js/main":
+                        "app/design/frontend/Vendor/theme-c/Vendor_ModuleNameB/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                    "Theme/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentA.vue",
+                    "Theme/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/web/components/ComponentB.vue",
+                    "Theme/js/main": "app/design/frontend/Vendor/theme-a/web/js/main.js",
+                    "Vendor_ModuleNameNoConfig/components/ComponentA":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameNoConfig/components/ComponentB":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameNoConfig/js/main":
+                        "app/design/frontend/Vendor/theme-a/Vendor_ModuleNameNoConfig/web/js/main.js",
+                },
+            },
+            {
+                code: "Vendor/theme-d",
+                expected: {
+                    "Vendor_ModuleNameA/components/ComponentA":
+                        "app/code/Vendor/ModuleNameA/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameA/components/ComponentB":
+                        "app/code/Vendor/ModuleNameA/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameA/js/main":
+                        "app/code/Vendor/ModuleNameA/view/frontend/web/js/main.js",
+                    "Vendor_ModuleNameC/components/ComponentA":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentA.vue",
+                    "Vendor_ModuleNameC/components/ComponentB":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/components/ComponentB.vue",
+                    "Vendor_ModuleNameC/js/main":
+                        "app/code/Vendor/ModuleNameC/view/frontend/web/js/main.js",
+                },
+            },
+        ],
+    },
+];
+
+for (const scenario of scenarios) {
+    for (const key in scenario.themes) {
+        let themes = scenario.themes[key];
+        for (const key in themes.expected) {
+            let expected = themes.expected[key];
+            themes.expected[key] = path.resolve(MAGENTO_SCENARIOS_PATH, expected);
+        }
+    }
+}
+
+describe("getAllJsVueFilesWithInheritance", () => {
+    let moduleResolver;
+
+    beforeEach(async () => {
+        vi.resetModules();
+    });
+
+    test.each(
+        scenarios.flatMap(({ scenario, themes }) =>
+            themes.map(({ code, expected }) => [scenario, code, expected]),
+        ),
+    )('Scenario "%s", Theme "%s"', async (scenario, code, expected) => {
+        vi.doMock("#core/configResolver.ts", () => ({
+            __esModule: true,
+            default: createMockConfigResolver(scenario).default,
+        }));
+
+        const importedModule = await import("#core/moduleResolver.ts");
+        moduleResolver = importedModule.default;
+
+        const result = await moduleResolver.getAllJsVueFilesWithInheritance(code);
+
+        expect(result).toEqual(expected, `Failed for scenario "${scenario}", theme "${code}"`);
+    });
+});
+
+describe("invalidateTheme", () => {
+    beforeEach(() => {
+        vi.resetModules();
+        vi.restoreAllMocks();
+    });
+
+    // Regression: the cache key joins theme and hash with a NUL separator, but
+    // invalidateTheme once used a space, so its prefix match cleared nothing and
+    // the dev-server watcher kept serving the pre-change inheritance map. Detect a
+    // real recompute by the filesystem re-scan it must perform.
+    test("forces a filesystem re-scan on the next resolution", async () => {
+        vi.doMock("#core/configResolver.ts", () => ({
+            __esModule: true,
+            default: createMockConfigResolver("a").default,
+        }));
+
+        const moduleResolver = (await import("#core/moduleResolver.ts")).default;
+        const code = "Vendor/theme-a";
+
+        await moduleResolver.getAllJsVueFilesWithInheritance(code);
+
+        const readdir = vi.spyOn(fs.promises, "readdir");
+        await moduleResolver.getAllJsVueFilesWithInheritance(code);
+        expect(readdir).not.toHaveBeenCalled(); // served from cache
+
+        moduleResolver.invalidateTheme(code);
+        await moduleResolver.getAllJsVueFilesWithInheritance(code);
+        expect(readdir).toHaveBeenCalled(); // cache cleared -> recomputed from disk
+    });
+});

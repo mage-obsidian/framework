@@ -1,0 +1,49 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
+import moduleResolver from "../core/moduleResolver.ts";
+import path from "path";
+import configResolver from "../core/configResolver.ts";
+
+export default function customResolverPlugin() {
+    const validComponentExtensions = configResolver.getMagentoConfig().ALLOWED_EXTENSIONS;
+
+    const hasValidExtension = (filePath) =>
+        validComponentExtensions.some((ext) => filePath.endsWith(ext));
+    const hasExtension = (filePath) => !!path.extname(filePath);
+
+    const resolveComponentPath = (moduleName, filePath) => {
+        if (!filePath.startsWith("components/") && !filePath.startsWith("js/")) {
+            filePath = "components/" + filePath;
+        }
+        const fileName = path.join(path.dirname(filePath), path.parse(filePath).name);
+        return moduleResolver.getAllJsVueFilesWithInheritanceCached()[`${moduleName}/${fileName}`];
+    };
+
+    return {
+        name: "inherit-resolver",
+        resolveId: {
+            order: "pre",
+            handler(id) {
+                if (!id) {
+                    return;
+                }
+                const idParts = id.split("::");
+                if (idParts.length === 1) {
+                    return;
+                }
+                const [moduleName, filePath] = idParts;
+                if (hasExtension(filePath) && !hasValidExtension(filePath)) {
+                    return;
+                }
+                const componentSrc = resolveComponentPath(moduleName, filePath);
+                if (!componentSrc) {
+                    return;
+                }
+
+                return componentSrc;
+            },
+        },
+    };
+}

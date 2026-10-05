@@ -1,0 +1,14 @@
+# Kept as a guard: esbuild is no longer installed (vite 8 uses rolldown), but if
+# it returns it ships its binary via @esbuild/<platform>, so no postinstall.
+allowBuilds:
+    esbuild: false
+
+# Vitest accepts vite ^6 || ^7 || ^8; pin the major so the resolver cannot fall
+# back to vite 7, which depends on a vulnerable esbuild (GHSA-g7r4-m6w7-qqqr).
+# Mirrored in package.json "overrides" for npm, which CI uses and which does not
+# read this file — keep both in sync.
+overrides:
+    vite: ^8.1.5
+    nanoid: ^3.3.18
+    postcss: ^8.5.23
+    brace-expansion: ^5.0.9

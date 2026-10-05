@@ -1,0 +1,74 @@
+// This file is part of the MageObsidian - ModernFrontend project.
+//
+// SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
+// SPDX-License-Identifier: MIT
+import path from "path";
+import fs from "fs";
+import deepmerge from "deepmerge";
+import { THEME_MODULE_WEB_PATH } from "../config/default.ts";
+import configResolver from "./configResolver.ts";
+import { getThemeChain } from "./themeChain.ts";
+
+const themeConfigCache = new Map();
+const themeConfigPlainCache = new Map();
+
+function getThemeConfigPath(themeSrc) {
+    return path.join(
+        themeSrc,
+        THEME_MODULE_WEB_PATH,
+        configResolver.getMagentoConfig().THEME_CONFIG_FILE,
+    );
+}
+
+async function loadThemeConfig(themeDefinition, themeName) {
+    if (!themeDefinition) return null;
+    if (themeConfigPlainCache.has(themeName)) return themeConfigPlainCache.get(themeName);
+
+    try {
+        const configPath = getThemeConfigPath(themeDefinition.src);
+        fs.accessSync(configPath, fs.constants.F_OK);
+
+        let themeConfig = await import(pathToFileUrl(configPath));
+        themeConfig = themeConfig.default ?? themeConfig;
+
+        themeConfigPlainCache.set(themeName, themeConfig);
+        return deepmerge({}, themeConfig);
+    } catch (error) {
+        console.error(`Failed to load configuration for theme "${themeName}":`, error.message);
+        return null;
+    }
+}
+
+function pathToFileUrl(filePath) {
+    const resolvedPath = path.resolve(filePath);
+    const fileUrl = new URL(`file://${resolvedPath}`);
+    return fileUrl.href;
+}
+
+export async function getThemeConfig(themeName) {
+    if (themeConfigCache.has(themeName)) return themeConfigCache.get(themeName);
+
+    const themes = configResolver.getMagentoConfig().themes;
+    const themeDefinition = themes[themeName];
+    if (!themeDefinition) return null;
+
+    let themeConfig = await loadThemeConfig(themeDefinition, themeName);
+    if (!themeConfig) return null;
+
+    themeConfig.includeCssSourceFromParentThemes ??= true;
+    themeConfig.ignoredCssFromModules ??= [];
+    themeConfig.exposeNpmPackages ??= [];
+    themeConfig.vue ??= { runtimeOnly: false };
+
+    for (const name of getThemeChain(themeName).slice(1)) {
+        const ancestorConfig = await loadThemeConfig(themes[name], name);
+        themeConfig = deepmerge(ancestorConfig || {}, themeConfig);
+    }
+
+    themeConfigCache.set(themeName, themeConfig);
+    return themeConfig;
+}
+
+export default {
+    getThemeConfig,
+};

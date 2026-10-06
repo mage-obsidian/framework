@@ -47,6 +47,38 @@ let scenarios = [
             },
         ],
     },
+    {
+        scenario: "c",
+        themes: [
+            {
+                code: "Vendor/stack-base",
+                expected: {
+                    includeCssSourceFromParentThemes: false,
+                    ignoredCssFromModules: [],
+                    exposeNpmPackages: [],
+                    vue: { runtimeOnly: false },
+                },
+            },
+            {
+                code: "Vendor/stack-skin",
+                expected: {
+                    includeCssSourceFromParentThemes: false,
+                    ignoredCssFromModules: [],
+                    exposeNpmPackages: [],
+                    vue: { runtimeOnly: true },
+                },
+            },
+            {
+                code: "Vendor/stack-child",
+                expected: {
+                    includeCssSourceFromParentThemes: true,
+                    ignoredCssFromModules: [],
+                    exposeNpmPackages: [],
+                    vue: { runtimeOnly: true },
+                },
+            },
+        ],
+    },
 ];
 
 async function setupThemeResolver(scenario) {

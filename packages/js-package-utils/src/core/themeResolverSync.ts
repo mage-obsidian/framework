@@ -55,15 +55,18 @@ export async function getThemeConfig(themeName) {
     let themeConfig = await loadThemeConfig(themeDefinition, themeName);
     if (!themeConfig) return null;
 
-    themeConfig.includeCssSourceFromParentThemes ??= true;
-    themeConfig.ignoredCssFromModules ??= [];
-    themeConfig.exposeNpmPackages ??= [];
-    themeConfig.vue ??= { runtimeOnly: false };
+    const includeCssSourceFromParentThemes = themeConfig.includeCssSourceFromParentThemes ?? true;
 
     for (const name of getThemeChain(themeName).slice(1)) {
         const ancestorConfig = await loadThemeConfig(themes[name], name);
         themeConfig = deepmerge(ancestorConfig || {}, themeConfig);
     }
+
+    themeConfig.includeCssSourceFromParentThemes = includeCssSourceFromParentThemes;
+    themeConfig.ignoredCssFromModules ??= [];
+    themeConfig.exposeNpmPackages ??= [];
+    themeConfig.vue ??= {};
+    themeConfig.vue.runtimeOnly ??= false;
 
     themeConfigCache.set(themeName, themeConfig);
     return themeConfig;

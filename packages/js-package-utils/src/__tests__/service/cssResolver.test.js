@@ -45,6 +45,52 @@ describe("getCssImports", () => {
     });
 });
 
+describe("theme CSS chain", () => {
+    const themeImport = (theme) =>
+        `@import "${abs(`app/design/frontend/Vendor/${theme}/web/css/theme.source.css`)}";`;
+
+    async function cssImportsFor(scenario, theme) {
+        vi.resetModules();
+        vi.doMock("#core/configResolver.ts", () => ({
+            __esModule: true,
+            default: createMockConfigResolver(scenario).default,
+        }));
+        const moduleResolver = await vi.importActual("#core/moduleResolver.ts");
+        vi.doMock("#core/moduleResolver.ts", () => ({
+            ...moduleResolver,
+            getAllJsVueFilesWithInheritanceCached: vi.fn(async () => ({})),
+        }));
+        const getCssImports = (await import("#core/cssResolver.ts")).default;
+        return getCssImports(theme);
+    }
+
+    test("a child stops at the first ancestor that stands alone", async () => {
+        const out = await cssImportsFor("c", "Vendor/stack-child");
+
+        expect(out).toContain(themeImport("stack-skin"));
+        expect(out).toContain(themeImport("stack-child"));
+        expect(out).not.toContain(themeImport("stack-base"));
+        expect(out.indexOf(themeImport("stack-skin"))).toBeLessThan(
+            out.indexOf(themeImport("stack-child")),
+        );
+    });
+
+    test("a theme that stands alone imports only its own source", async () => {
+        const out = await cssImportsFor("c", "Vendor/stack-skin");
+
+        expect(out).toContain(themeImport("stack-skin"));
+        expect(out).not.toContain(themeImport("stack-base"));
+    });
+
+    test("without a standalone ancestor the whole chain is imported from the root", async () => {
+        const out = await cssImportsFor("a", "Vendor/theme-c");
+
+        const order = ["theme-a", "theme-b", "theme-c"].map((t) => out.indexOf(themeImport(t)));
+        expect(order.every((i) => i >= 0)).toBe(true);
+        expect(order).toEqual([...order].sort((x, y) => x - y));
+    });
+});
+
 describe("getTemplateSources", () => {
     beforeEach(() => {
         vi.resetModules();

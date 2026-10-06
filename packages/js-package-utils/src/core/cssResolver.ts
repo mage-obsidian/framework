@@ -13,7 +13,7 @@ import {
 } from "../config/default.ts";
 import { resolveFileByTheme, getAllJsVueFilesWithInheritanceCached } from "./moduleResolver.ts";
 import configResolver from "./configResolver.ts";
-import { getThemeChainFromRoot } from "./themeChain.ts";
+import { getThemeChain, getThemeChainFromRoot } from "./themeChain.ts";
 import fs from "node:fs/promises";
 
 const { getMagentoConfig, getModuleDefinition, getThemeDefinition, getModulesConfigArray } =
@@ -34,9 +34,12 @@ async function getThemeImports(themeName, themeConfig?) {
         themeConfig = await themeResolver.getThemeConfig(themeName);
     }
 
-    const chain = themeConfig.includeCssSourceFromParentThemes
-        ? getThemeChainFromRoot(themeName)
-        : [themeName];
+    const chain = [];
+    for (const name of getThemeChain(themeName)) {
+        chain.unshift(name);
+        const config = name === themeName ? themeConfig : await themeResolver.getThemeConfig(name);
+        if (!config?.includeCssSourceFromParentThemes) break;
+    }
 
     let imports = "";
     for (const name of chain) {

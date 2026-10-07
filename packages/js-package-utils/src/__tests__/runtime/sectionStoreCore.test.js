@@ -15,6 +15,8 @@ import {
     expiredSectionNames,
     readSectionRuntimeConfig,
     takeSectionPrefetch,
+    readScopedSections,
+    writeScopedSections,
 } from "../../runtime/sectionStoreCore.ts";
 
 describe("parseSectionStorage", () => {
@@ -357,5 +359,66 @@ describe("takeSectionPrefetch", () => {
                 __MAGE_OBSIDIAN_SECTION_PREFETCH__: { sections: ["cart"], data: "nope" },
             }),
         ).toBeNull();
+    });
+});
+
+describe("sections kept per website", () => {
+    const KEYS = { sections: "sections", version: "version", website: "website" };
+
+    const storage = (initial = {}) => {
+        const data = { ...initial };
+        return {
+            data,
+            getItem: (key) => (key in data ? data[key] : null),
+            setItem: (key, value) => {
+                data[key] = value;
+            },
+            removeItem: (key) => {
+                delete data[key];
+            },
+        };
+    };
+
+    it("writes the website id with what it caches", () => {
+        const store = storage();
+
+        writeScopedSections(store, KEYS, { cart: { count: 2 } }, 4, "v1");
+
+        expect(JSON.parse(store.data.sections)).toEqual({ cart: { count: 2 } });
+        expect(store.data.website).toBe("4");
+        expect(store.data.version).toBe("v1");
+    });
+
+    it("hands back what was cached for the same website", () => {
+        const store = storage({ sections: JSON.stringify({ cart: { count: 2 } }), website: "4" });
+
+        expect(readScopedSections(store, KEYS, 4)).toEqual({ cart: { count: 2 } });
+    });
+
+    it("discards what another website cached on the same origin, and the version that vouched for it", () => {
+        const store = storage({ sections: JSON.stringify({ cart: { count: 2 } }), version: "v1", website: "4" });
+
+        expect(readScopedSections(store, KEYS, 7)).toEqual({});
+        expect(store.data).toEqual({});
+    });
+
+    it("keeps what was cached before the website was recorded, since it cannot be told apart", () => {
+        const store = storage({ sections: JSON.stringify({ cart: { count: 2 } }) });
+
+        expect(readScopedSections(store, KEYS, 4)).toEqual({ cart: { count: 2 } });
+    });
+
+    it("keeps everything when the page does not say which website it is", () => {
+        const store = storage({ sections: JSON.stringify({ cart: { count: 2 } }), website: "4" });
+
+        expect(readScopedSections(store, KEYS, null)).toEqual({ cart: { count: 2 } });
+    });
+
+    it("does not stamp a website the page never named", () => {
+        const store = storage();
+
+        writeScopedSections(store, KEYS, {}, null);
+
+        expect(store.data).not.toHaveProperty("website");
     });
 });

@@ -302,6 +302,50 @@ export function takeSectionPrefetch(
     return pending.data;
 }
 
+export interface SectionStorage {
+    getItem(key: string): string | null;
+    setItem(key: string, value: string): void;
+    removeItem(key: string): void;
+}
+
+export interface SectionStorageKeys {
+    sections: string;
+    version: string;
+    website: string;
+}
+
+export function readScopedSections(
+    storage: SectionStorage,
+    keys: SectionStorageKeys,
+    currentWebsiteId: number | null | undefined,
+): SectionMap {
+    const stored = storage.getItem(keys.website);
+    const known = currentWebsiteId !== null && currentWebsiteId !== undefined;
+    if (known && stored !== null && stored !== "" && stored !== String(currentWebsiteId)) {
+        storage.removeItem(keys.sections);
+        storage.removeItem(keys.version);
+        storage.removeItem(keys.website);
+        return {};
+    }
+    return parseSectionStorage(storage.getItem(keys.sections));
+}
+
+export function writeScopedSections(
+    storage: SectionStorage,
+    keys: SectionStorageKeys,
+    sections: SectionMap,
+    currentWebsiteId: number | null | undefined,
+    syncedVersion?: string,
+): void {
+    storage.setItem(keys.sections, JSON.stringify(sections));
+    if (syncedVersion !== undefined) {
+        storage.setItem(keys.version, syncedVersion);
+    }
+    if (currentWebsiteId !== null && currentWebsiteId !== undefined) {
+        storage.setItem(keys.website, String(currentWebsiteId));
+    }
+}
+
 function pickObjectEntries(value: unknown): SectionMap {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         return {};

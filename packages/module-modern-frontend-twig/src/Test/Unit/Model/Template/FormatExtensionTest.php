@@ -79,6 +79,13 @@ class FormatExtensionTest extends TestCase
         $this->assertSame('', trim($this->render('{{ missing|number }}')));
     }
 
+    public function testNumberFilterReturnsANonNumericLabelUnchanged(): void
+    {
+        $this->localeFormatter->expects($this->never())->method('formatNumber');
+
+        $this->assertSame('All', trim($this->render('{{ "All"|number }}')));
+    }
+
     public function testStripTagsFilterDelegatesAndStaysEscaped(): void
     {
         // strip_tags removes markup but the remainder can still carry & or < —

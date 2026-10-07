@@ -98,6 +98,10 @@ class FormatExtension extends AbstractExtension
             return '';
         }
 
+        if (!is_numeric($value)) {
+            return (string)$value;
+        }
+
         return $this->localeFormatter->formatNumber($value + 0);
     }
 

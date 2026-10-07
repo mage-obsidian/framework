@@ -321,7 +321,9 @@ export function readScopedSections(
 ): SectionMap {
     const stored = storage.getItem(keys.website);
     const known = currentWebsiteId !== null && currentWebsiteId !== undefined;
-    if (known && stored !== null && stored !== "" && stored !== String(currentWebsiteId)) {
+    const unstamped = stored === null || stored === "";
+    const cached = storage.getItem(keys.sections) !== null;
+    if (known && ((!unstamped && stored !== String(currentWebsiteId)) || (unstamped && cached))) {
         storage.removeItem(keys.sections);
         storage.removeItem(keys.version);
         storage.removeItem(keys.website);

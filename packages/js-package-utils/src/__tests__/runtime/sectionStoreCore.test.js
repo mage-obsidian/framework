@@ -402,10 +402,17 @@ describe("sections kept per website", () => {
         expect(store.data).toEqual({});
     });
 
-    it("keeps what was cached before the website was recorded, since it cannot be told apart", () => {
-        const store = storage({ sections: JSON.stringify({ cart: { count: 2 } }) });
+    it("discards what was cached before the website was recorded, since it cannot be vouched for", () => {
+        const store = storage({ sections: JSON.stringify({ cart: { count: 2 } }), version: "v1" });
 
-        expect(readScopedSections(store, KEYS, 4)).toEqual({ cart: { count: 2 } });
+        expect(readScopedSections(store, KEYS, 4)).toEqual({});
+        expect(store.data).toEqual({});
+    });
+
+    it("has nothing to discard when nothing was cached", () => {
+        const store = storage();
+
+        expect(readScopedSections(store, KEYS, 4)).toEqual({});
     });
 
     it("keeps everything when the page does not say which website it is", () => {

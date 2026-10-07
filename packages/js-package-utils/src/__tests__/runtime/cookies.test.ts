@@ -123,6 +123,36 @@ describe("writeCookie and deleteCookie", () => {
         expect(written[0]).toContain("path=/shop");
         expect(written[0]).toContain("domain=.shop.test");
     });
+
+    it("also deletes the variant a server wrote without a domain, which the browser keeps as another cookie", () => {
+        const written: string[] = [];
+        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+
+        deleteCookie("mage-messages", { config: config({ path: "/shop" }) }, doc);
+
+        expect(written).toHaveLength(2);
+        expect(written[1]).toContain("mage-messages=;");
+        expect(written[1]).toContain("path=/shop");
+        expect(written[1]).not.toContain("domain=");
+    });
+
+    it("writes one deletion when the store configures no domain", () => {
+        const written: string[] = [];
+        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+
+        deleteCookie("mage-messages", { config: config({ domain: "" }) }, doc);
+
+        expect(written).toHaveLength(1);
+    });
+
+    it("writes a host-only cookie when the caller asks for no domain, as the server does for the session marker", () => {
+        const written: string[] = [];
+        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+
+        writeCookie("mage-cache-sessid", "1", { config: config(), domain: "" }, doc);
+
+        expect(written).toEqual(["mage-cache-sessid=1; path=/; secure; samesite=lax"]);
+    });
 });
 
 const jar = (keepsWrites = true) => {

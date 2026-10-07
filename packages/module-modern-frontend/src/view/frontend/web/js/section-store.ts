@@ -117,7 +117,7 @@ export function createSectionStore(config: SectionStoreConfig) {
             return;
         }
         const https = typeof location !== 'undefined' && location.protocol === 'https:';
-        writeCookie(sessionCookie, '1', { secure: siteConfig() ? undefined : https });
+        writeCookie(sessionCookie, '1', { secure: siteConfig() ? undefined : https, domain: '' });
     }
 
     function readSyncedVersion(): string {

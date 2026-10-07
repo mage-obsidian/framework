@@ -23,6 +23,7 @@ export interface CookieOptions {
     config?: SiteConfig | null;
     maxAgeSeconds?: number;
     path?: string;
+    domain?: string;
     secure?: boolean;
     sameSite?: string;
     now?: number;
@@ -89,8 +90,9 @@ export function resetSiteConfig(): void {
 const attributes = (options: CookieOptions): string[] => {
     const cookie = options.config?.cookie;
     const parts = [`path=${options.path ?? cookie?.path ?? "/"}`];
-    if (cookie?.domain) {
-        parts.push(`domain=${cookie.domain}`);
+    const domain = options.domain ?? cookie?.domain;
+    if (domain) {
+        parts.push(`domain=${domain}`);
     }
     if (options.secure ?? cookie?.secure ?? false) {
         parts.push("secure");
@@ -130,7 +132,13 @@ export function deleteCookie(
         return;
     }
     const merged = { config: siteConfig(), ...options };
-    jar.cookie = [`${name}=`, "max-age=0", "expires=Thu, 01 Jan 1970 00:00:00 GMT", ...attributes(merged)].join("; ");
+    const expire = (target: CookieOptions): void => {
+        jar.cookie = [`${name}=`, "max-age=0", "expires=Thu, 01 Jan 1970 00:00:00 GMT", ...attributes(target)].join("; ");
+    };
+    expire(merged);
+    if (merged.config?.cookie?.domain) {
+        expire({ ...merged, config: { ...merged.config, cookie: { ...merged.config.cookie, domain: "" } } });
+    }
 }
 
 const PROBE = "mage-obsidian-cookie-probe";

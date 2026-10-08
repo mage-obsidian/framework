@@ -45,6 +45,27 @@ describe("parseSiteConfig", () => {
         });
     });
 
+    it("reads the store view and the currency when the block names them", () => {
+        const parsed = parseSiteConfig(JSON.stringify({ ...config(), storeId: 3, currency: "EUR" }));
+
+        expect(parsed?.storeId).toBe(3);
+        expect(parsed?.currency).toBe("EUR");
+    });
+
+    it("leaves the store view and the currency out when the block does not carry them", () => {
+        const parsed = parseSiteConfig(JSON.stringify(config()));
+
+        expect(parsed).not.toHaveProperty("storeId");
+        expect(parsed).not.toHaveProperty("currency");
+    });
+
+    it("ignores a store view or currency of the wrong shape", () => {
+        const parsed = parseSiteConfig(JSON.stringify({ ...config(), storeId: "x", currency: 5 }));
+
+        expect(parsed).not.toHaveProperty("storeId");
+        expect(parsed).not.toHaveProperty("currency");
+    });
+
     it("keeps the page that explains what to do without cookies", () => {
         expect(parseSiteConfig(JSON.stringify(config()))?.noCookiesUrl).toBe("https://shop.test/cookie/index/noCookies/");
     });

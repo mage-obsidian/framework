@@ -16,6 +16,8 @@ export interface SiteConfig {
     version: 1;
     cookie: SiteCookieConfig;
     websiteId: number;
+    storeId?: number;
+    currency?: string;
     noCookiesUrl: string;
 }
 
@@ -51,6 +53,8 @@ export function parseSiteConfig(raw: string | null | undefined): SiteConfig | nu
     const cookie = parsed.cookie;
     const lifetime = Number(cookie.lifetime);
     const websiteId = Number(parsed.websiteId);
+    const storeId = parsed.storeId;
+    const currency = parsed.currency;
     return {
         version: 1,
         cookie: {
@@ -61,6 +65,8 @@ export function parseSiteConfig(raw: string | null | undefined): SiteConfig | nu
             sameSite: typeof cookie.sameSite === "string" && cookie.sameSite !== "" ? cookie.sameSite : "lax",
         },
         websiteId: Number.isFinite(websiteId) ? websiteId : 0,
+        ...(typeof storeId === "number" && Number.isFinite(storeId) ? { storeId } : {}),
+        ...(typeof currency === "string" && currency !== "" ? { currency } : {}),
         noCookiesUrl: typeof parsed.noCookiesUrl === "string" ? parsed.noCookiesUrl : "",
     };
 }

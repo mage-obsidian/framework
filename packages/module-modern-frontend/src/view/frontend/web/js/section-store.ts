@@ -34,6 +34,7 @@ import {
     expiredSectionNames,
     takeSectionPrefetch,
     readScopedSections,
+    sectionScope,
     writeScopedSections,
     type SectionData,
     type SectionMap,
@@ -94,15 +95,15 @@ export function createSectionStore(config: SectionStoreConfig) {
 
     const storageKeys = { sections: storageKey, version: versionKey, website: `${storageKey}-website` };
 
-    function currentWebsiteId(): number | null {
-        return siteConfig()?.websiteId ?? null;
+    function currentScope(): string | null {
+        return sectionScope(siteConfig());
     }
 
     function readStorage(): SectionMap {
         if (typeof localStorage === 'undefined') {
             return {};
         }
-        return readScopedSections(localStorage, storageKeys, currentWebsiteId());
+        return readScopedSections(localStorage, storageKeys, currentScope());
     }
 
     /** The current version the producer advertises via cookie. */
@@ -138,7 +139,7 @@ export function createSectionStore(config: SectionStoreConfig) {
             return;
         }
         try {
-            writeScopedSections(localStorage, storageKeys, sections, currentWebsiteId(), syncedVersion);
+            writeScopedSections(localStorage, storageKeys, sections, currentScope(), syncedVersion);
         } catch {
             // Storage may be full or unavailable (private mode); the in-memory
             // snapshot still works for this page.

@@ -314,10 +314,28 @@ export interface SectionStorageKeys {
     website: string;
 }
 
+export interface SectionScopeSource {
+    websiteId?: number | null;
+    storeId?: number | null;
+    currency?: string | null;
+}
+
+export type SectionScope = string | number | null | undefined;
+
+export function sectionScope(source: SectionScopeSource | null | undefined): string | null {
+    if (!source || source.websiteId === null || source.websiteId === undefined) {
+        return null;
+    }
+    if (!source.storeId && !source.currency) {
+        return String(source.websiteId);
+    }
+    return `${source.websiteId}|${source.storeId ?? ""}|${source.currency ?? ""}`;
+}
+
 export function readScopedSections(
     storage: SectionStorage,
     keys: SectionStorageKeys,
-    currentWebsiteId: number | null | undefined,
+    currentWebsiteId: SectionScope,
 ): SectionMap {
     const stored = storage.getItem(keys.website);
     const known = currentWebsiteId !== null && currentWebsiteId !== undefined;
@@ -336,7 +354,7 @@ export function writeScopedSections(
     storage: SectionStorage,
     keys: SectionStorageKeys,
     sections: SectionMap,
-    currentWebsiteId: number | null | undefined,
+    currentWebsiteId: SectionScope,
     syncedVersion?: string,
 ): void {
     storage.setItem(keys.sections, JSON.stringify(sections));

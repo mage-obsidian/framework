@@ -64,4 +64,29 @@ class ScriptTagTest extends TestCase
 
         $this->scriptTag->module('Vendor_Module::js/x');
     }
+
+    public function testItAddsIntegrityAndCrossoriginWhenTheResolverHasAHash(): void
+    {
+        $this->viteResolver->method('getViteFileUrl')->willReturn('/x.js');
+        $this->viteResolver->method('getIntegrityAttributes')
+            ->with('Vendor_Module::js/x')
+            ->willReturn(['integrity' => 'sha384-x', 'crossorigin' => 'anonymous']);
+
+        $this->secureRenderer->expects($this->once())
+            ->method('renderTag')
+            ->with(
+                'script',
+                [
+                    'type' => 'module',
+                    'src' => '/x.js',
+                    'fetchpriority' => 'low',
+                    'integrity' => 'sha384-x',
+                    'crossorigin' => 'anonymous',
+                ],
+                '',
+                false
+            );
+
+        $this->scriptTag->module('Vendor_Module::js/x');
+    }
 }

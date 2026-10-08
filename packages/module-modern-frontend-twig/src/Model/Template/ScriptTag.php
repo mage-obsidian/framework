@@ -48,7 +48,7 @@ class ScriptTag
                 'type' => 'module',
                 'src' => $this->viteResolver->getViteFileUrl($path),
                 'fetchpriority' => 'low',
-            ],
+            ] + $this->viteResolver->getIntegrityAttributes($path),
             '',
             false
         );

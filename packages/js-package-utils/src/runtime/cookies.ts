@@ -62,7 +62,10 @@ export function parseSiteConfig(raw: string | null | undefined): SiteConfig | nu
             path: typeof cookie.path === "string" && cookie.path !== "" ? cookie.path : "/",
             lifetime: Number.isFinite(lifetime) && lifetime > 0 ? lifetime : 0,
             secure: cookie.secure === true,
-            sameSite: typeof cookie.sameSite === "string" && cookie.sameSite !== "" ? cookie.sameSite : "lax",
+            sameSite:
+                typeof cookie.sameSite === "string" && cookie.sameSite !== ""
+                    ? cookie.sameSite
+                    : "lax",
         },
         websiteId: Number.isFinite(websiteId) ? websiteId : 0,
         ...(typeof storeId === "number" && Number.isFinite(storeId) ? { storeId } : {}),
@@ -139,11 +142,19 @@ export function deleteCookie(
     }
     const merged = { config: siteConfig(), ...options };
     const expire = (target: CookieOptions): void => {
-        jar.cookie = [`${name}=`, "max-age=0", "expires=Thu, 01 Jan 1970 00:00:00 GMT", ...attributes(target)].join("; ");
+        jar.cookie = [
+            `${name}=`,
+            "max-age=0",
+            "expires=Thu, 01 Jan 1970 00:00:00 GMT",
+            ...attributes(target),
+        ].join("; ");
     };
     expire(merged);
     if (merged.config?.cookie?.domain) {
-        expire({ ...merged, config: { ...merged.config, cookie: { ...merged.config.cookie, domain: "" } } });
+        expire({
+            ...merged,
+            config: { ...merged.config, cookie: { ...merged.config.cookie, domain: "" } },
+        });
     }
 }
 
@@ -151,7 +162,9 @@ const PROBE = "mage-obsidian-cookie-probe";
 
 export function cookiesWork(
     jar: CookieJar | undefined = typeof document !== "undefined" ? document : undefined,
-    nav: Pick<Navigator, "cookieEnabled"> | undefined = typeof navigator !== "undefined" ? navigator : undefined,
+    nav: Pick<Navigator, "cookieEnabled"> | undefined = typeof navigator !== "undefined"
+        ? navigator
+        : undefined,
 ): boolean {
     if (!jar || nav?.cookieEnabled === false) {
         return false;

@@ -397,7 +397,11 @@ describe("sections kept per website", () => {
     });
 
     it("discards what another website cached on the same origin, and the version that vouched for it", () => {
-        const store = storage({ sections: JSON.stringify({ cart: { count: 2 } }), version: "v1", website: "4" });
+        const store = storage({
+            sections: JSON.stringify({ cart: { count: 2 } }),
+            version: "v1",
+            website: "4",
+        });
 
         expect(readScopedSections(store, KEYS, 7)).toEqual({});
         expect(store.data).toEqual({});
@@ -470,25 +474,47 @@ describe("sections kept per website, view and currency", () => {
     };
 
     const cached = (scope) =>
-        storage({ sections: JSON.stringify({ cart: { subtotal: "$10" } }), version: "v1", website: scope });
+        storage({
+            sections: JSON.stringify({ cart: { subtotal: "$10" } }),
+            version: "v1",
+            website: scope,
+        });
 
     it("discards the cart cached in dollars once the page is in euros", () => {
         const store = cached("1|1|USD");
 
-        expect(readScopedSections(store, KEYS, sectionScope({ websiteId: 1, storeId: 1, currency: "EUR" }))).toEqual({});
+        expect(
+            readScopedSections(
+                store,
+                KEYS,
+                sectionScope({ websiteId: 1, storeId: 1, currency: "EUR" }),
+            ),
+        ).toEqual({});
         expect(store.data).toEqual({});
     });
 
     it("discards what another store view cached", () => {
         const store = cached("1|1|USD");
 
-        expect(readScopedSections(store, KEYS, sectionScope({ websiteId: 1, storeId: 2, currency: "USD" }))).toEqual({});
+        expect(
+            readScopedSections(
+                store,
+                KEYS,
+                sectionScope({ websiteId: 1, storeId: 2, currency: "USD" }),
+            ),
+        ).toEqual({});
     });
 
     it("keeps what was cached for the same website, view and currency", () => {
         const store = cached("1|1|USD");
 
-        expect(readScopedSections(store, KEYS, sectionScope({ websiteId: 1, storeId: 1, currency: "USD" }))).toEqual({
+        expect(
+            readScopedSections(
+                store,
+                KEYS,
+                sectionScope({ websiteId: 1, storeId: 1, currency: "USD" }),
+            ),
+        ).toEqual({
             cart: { subtotal: "$10" },
         });
     });
@@ -496,14 +522,22 @@ describe("sections kept per website, view and currency", () => {
     it("behaves as before when the page names only the website", () => {
         const store = cached("1");
 
-        expect(readScopedSections(store, KEYS, sectionScope({ websiteId: 1 }))).toEqual({ cart: { subtotal: "$10" } });
+        expect(readScopedSections(store, KEYS, sectionScope({ websiteId: 1 }))).toEqual({
+            cart: { subtotal: "$10" },
+        });
         expect(readScopedSections(cached("1"), KEYS, sectionScope({ websiteId: 2 }))).toEqual({});
     });
 
     it("stamps the composite scope with what it caches", () => {
         const store = storage();
 
-        writeScopedSections(store, KEYS, { cart: {} }, sectionScope({ websiteId: 1, storeId: 1, currency: "EUR" }), "v2");
+        writeScopedSections(
+            store,
+            KEYS,
+            { cart: {} },
+            sectionScope({ websiteId: 1, storeId: 1, currency: "EUR" }),
+            "v2",
+        );
 
         expect(store.data.website).toBe("1|1|EUR");
     });

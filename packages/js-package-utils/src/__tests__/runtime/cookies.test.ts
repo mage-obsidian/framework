@@ -16,7 +16,14 @@ import {
 
 const config = (overrides: Partial<SiteConfig["cookie"]> = {}, websiteId = 1): SiteConfig => ({
     version: 1,
-    cookie: { domain: ".shop.test", path: "/", lifetime: 3600, secure: true, sameSite: "lax", ...overrides },
+    cookie: {
+        domain: ".shop.test",
+        path: "/",
+        lifetime: 3600,
+        secure: true,
+        sameSite: "lax",
+        ...overrides,
+    },
     websiteId,
     noCookiesUrl: "https://shop.test/cookie/index/noCookies/",
 });
@@ -35,7 +42,9 @@ describe("parseSiteConfig", () => {
     });
 
     it("fills what a partial block leaves out", () => {
-        const parsed = parseSiteConfig(JSON.stringify({ version: 1, cookie: { domain: ".a.test" }, websiteId: 2 }));
+        const parsed = parseSiteConfig(
+            JSON.stringify({ version: 1, cookie: { domain: ".a.test" }, websiteId: 2 }),
+        );
 
         expect(parsed).toEqual({
             version: 1,
@@ -46,7 +55,9 @@ describe("parseSiteConfig", () => {
     });
 
     it("reads the store view and the currency when the block names them", () => {
-        const parsed = parseSiteConfig(JSON.stringify({ ...config(), storeId: 3, currency: "EUR" }));
+        const parsed = parseSiteConfig(
+            JSON.stringify({ ...config(), storeId: 3, currency: "EUR" }),
+        );
 
         expect(parsed?.storeId).toBe(3);
         expect(parsed?.currency).toBe("EUR");
@@ -67,13 +78,20 @@ describe("parseSiteConfig", () => {
     });
 
     it("keeps the page that explains what to do without cookies", () => {
-        expect(parseSiteConfig(JSON.stringify(config()))?.noCookiesUrl).toBe("https://shop.test/cookie/index/noCookies/");
+        expect(parseSiteConfig(JSON.stringify(config()))?.noCookiesUrl).toBe(
+            "https://shop.test/cookie/index/noCookies/",
+        );
     });
 });
 
 describe("readSiteConfig", () => {
     it("takes the block from the document by its id", () => {
-        const doc = { getElementById: (id: string) => (id === "mage-obsidian-site-config" ? { textContent: JSON.stringify(config()) } : null) };
+        const doc = {
+            getElementById: (id: string) =>
+                id === "mage-obsidian-site-config"
+                    ? { textContent: JSON.stringify(config()) }
+                    : null,
+        };
 
         expect(readSiteConfig(doc)).toEqual(config());
     });
@@ -92,22 +110,32 @@ describe("serializeCookie", () => {
     });
 
     it("leaves the domain out when the cookie is host-only", () => {
-        expect(serializeCookie("a", "b", { config: config({ domain: "" }) })).not.toContain("domain=");
+        expect(serializeCookie("a", "b", { config: config({ domain: "" }) })).not.toContain(
+            "domain=",
+        );
     });
 
     it("leaves Secure out when the store does not ask for it", () => {
-        expect(serializeCookie("a", "b", { config: config({ secure: false }) })).not.toContain("secure");
+        expect(serializeCookie("a", "b", { config: config({ secure: false }) })).not.toContain(
+            "secure",
+        );
     });
 
     it("adds an expiry when a lifetime is given", () => {
-        const text = serializeCookie("a", "b", { config: config(), maxAgeSeconds: 60, now: Date.UTC(2026, 0, 1) });
+        const text = serializeCookie("a", "b", {
+            config: config(),
+            maxAgeSeconds: 60,
+            now: Date.UTC(2026, 0, 1),
+        });
 
         expect(text).toContain("max-age=60");
         expect(text).toContain("expires=Thu, 01 Jan 2026 00:01:00 GMT");
     });
 
     it("lets the caller name the path, which is how one cookie is cleared from every path it may sit on", () => {
-        expect(serializeCookie("a", "b", { config: config({ path: "/shop" }), path: "/shop/x" })).toContain("path=/shop/x");
+        expect(
+            serializeCookie("a", "b", { config: config({ path: "/shop" }), path: "/shop/x" }),
+        ).toContain("path=/shop/x");
     });
 
     it("falls back to a plain Lax cookie on the root path with no configuration", () => {
@@ -126,7 +154,11 @@ describe("serializeCookie", () => {
 describe("writeCookie and deleteCookie", () => {
     it("writes through the document's cookie setter", () => {
         const written: string[] = [];
-        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+        const doc = {
+            set cookie(value: string) {
+                written.push(value);
+            },
+        } as unknown as Pick<Document, "cookie">;
 
         writeCookie("form_key", "abc", { config: config() }, doc);
 
@@ -135,7 +167,11 @@ describe("writeCookie and deleteCookie", () => {
 
     it("deletes with the same domain and path, which is the only way the browser matches it", () => {
         const written: string[] = [];
-        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+        const doc = {
+            set cookie(value: string) {
+                written.push(value);
+            },
+        } as unknown as Pick<Document, "cookie">;
 
         deleteCookie("mage-messages", { config: config({ path: "/shop" }) }, doc);
 
@@ -147,7 +183,11 @@ describe("writeCookie and deleteCookie", () => {
 
     it("also deletes the variant a server wrote without a domain, which the browser keeps as another cookie", () => {
         const written: string[] = [];
-        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+        const doc = {
+            set cookie(value: string) {
+                written.push(value);
+            },
+        } as unknown as Pick<Document, "cookie">;
 
         deleteCookie("mage-messages", { config: config({ path: "/shop" }) }, doc);
 
@@ -159,7 +199,11 @@ describe("writeCookie and deleteCookie", () => {
 
     it("writes one deletion when the store configures no domain", () => {
         const written: string[] = [];
-        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+        const doc = {
+            set cookie(value: string) {
+                written.push(value);
+            },
+        } as unknown as Pick<Document, "cookie">;
 
         deleteCookie("mage-messages", { config: config({ domain: "" }) }, doc);
 
@@ -168,7 +212,11 @@ describe("writeCookie and deleteCookie", () => {
 
     it("writes a host-only cookie when the caller asks for no domain, as the server does for the session marker", () => {
         const written: string[] = [];
-        const doc = { set cookie(value: string) { written.push(value); } } as unknown as Pick<Document, "cookie">;
+        const doc = {
+            set cookie(value: string) {
+                written.push(value);
+            },
+        } as unknown as Pick<Document, "cookie">;
 
         writeCookie("mage-cache-sessid", "1", { config: config(), domain: "" }, doc);
 
@@ -224,14 +272,28 @@ describe("requireCookies", () => {
     it("lets the action through when cookies work", () => {
         const visited: string[] = [];
 
-        expect(requireCookies({ jar: jar(), nav: { cookieEnabled: true }, config: config(), navigate: (url) => visited.push(url) })).toBe(true);
+        expect(
+            requireCookies({
+                jar: jar(),
+                nav: { cookieEnabled: true },
+                config: config(),
+                navigate: (url) => visited.push(url),
+            }),
+        ).toBe(true);
         expect(visited).toEqual([]);
     });
 
     it("sends the shopper to the page that explains it when they do not", () => {
         const visited: string[] = [];
 
-        expect(requireCookies({ jar: jar(false), nav: { cookieEnabled: true }, config: config(), navigate: (url) => visited.push(url) })).toBe(false);
+        expect(
+            requireCookies({
+                jar: jar(false),
+                nav: { cookieEnabled: true },
+                config: config(),
+                navigate: (url) => visited.push(url),
+            }),
+        ).toBe(false);
         expect(visited).toEqual(["https://shop.test/cookie/index/noCookies/"]);
     });
 
@@ -239,7 +301,14 @@ describe("requireCookies", () => {
         const visited: string[] = [];
         const bare = { ...config(), noCookiesUrl: "" };
 
-        expect(requireCookies({ jar: jar(false), nav: { cookieEnabled: false }, config: bare, navigate: (url) => visited.push(url) })).toBe(true);
+        expect(
+            requireCookies({
+                jar: jar(false),
+                nav: { cookieEnabled: false },
+                config: bare,
+                navigate: (url) => visited.push(url),
+            }),
+        ).toBe(true);
         expect(visited).toEqual([]);
     });
 });

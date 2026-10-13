@@ -24,10 +24,10 @@ async function loadThemeConfig(themeDefinition, themeName) {
     if (!themeDefinition) return null;
     if (themeConfigPlainCache.has(themeName)) return themeConfigPlainCache.get(themeName);
 
-    try {
-        const configPath = getThemeConfigPath(themeDefinition.src);
-        fs.accessSync(configPath, fs.constants.F_OK);
+    const configPath = getThemeConfigPath(themeDefinition.src);
+    if (!fs.existsSync(configPath)) return {};
 
+    try {
         let themeConfig = await import(pathToFileUrl(configPath));
         themeConfig = themeConfig.default ?? themeConfig;
 

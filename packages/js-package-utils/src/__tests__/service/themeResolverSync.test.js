@@ -77,6 +77,15 @@ let scenarios = [
                     vue: { runtimeOnly: true },
                 },
             },
+            {
+                code: "Vendor/stack-bare",
+                expected: {
+                    includeCssSourceFromParentThemes: true,
+                    ignoredCssFromModules: [],
+                    exposeNpmPackages: [],
+                    vue: { runtimeOnly: true },
+                },
+            },
         ],
     },
 ];

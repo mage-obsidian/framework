@@ -21,6 +21,10 @@
         "Vendor/stack-child": {
             "src": "magento_scenarios/app/design/frontend/Vendor/stack-child",
             "parent": "Vendor/stack-skin"
+        },
+        "Vendor/stack-bare": {
+            "src": "magento_scenarios/app/design/frontend/Vendor/stack-bare",
+            "parent": "Vendor/stack-skin"
         }
     },
     "allModules": [

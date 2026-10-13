@@ -75,6 +75,14 @@ describe("theme CSS chain", () => {
         );
     });
 
+    test("a child without a theme.config.js builds as one with an empty config", async () => {
+        const out = await cssImportsFor("c", "Vendor/stack-bare");
+
+        expect(out).toContain(themeImport("stack-skin"));
+        expect(out).toContain(themeImport("stack-bare"));
+        expect(out).not.toContain(themeImport("stack-base"));
+    });
+
     test("a theme that stands alone imports only its own source", async () => {
         const out = await cssImportsFor("c", "Vendor/stack-skin");
 

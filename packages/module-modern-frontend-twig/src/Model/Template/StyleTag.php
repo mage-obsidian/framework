@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace MageObsidian\ModernFrontendTwig\Model\Template;
 
 use Magento\Framework\View\Helper\SecureHtmlRenderer;
+use MageObsidian\ModernFrontend\Service\Csp\InlineStylePolicy;
 
 /**
  * Emits an inline <style> through SecureHtmlRenderer.
@@ -23,11 +24,15 @@ use Magento\Framework\View\Helper\SecureHtmlRenderer;
  */
 class StyleTag
 {
+    private const string ADOPT = '(function(d,c,a){var S=window.CSSStyleSheet;try{if(typeof S==="function"&&"adoptedStyleSheets" in d){var s=new S();s.replaceSync(c);d.adoptedStyleSheets=Array.prototype.slice.call(d.adoptedStyleSheets).concat([s]);return;}}catch(e){}var t=d.createElement("style");for(var k in a){t.setAttribute(k,a[k]);}t.appendChild(d.createTextNode(c));(d.head||d.documentElement).appendChild(t);})(document,%s,%s);';
+
     /**
      * @param SecureHtmlRenderer $secureRenderer
      */
-    public function __construct(private readonly SecureHtmlRenderer $secureRenderer)
-    {
+    public function __construct(
+        private readonly SecureHtmlRenderer $secureRenderer,
+        private readonly InlineStylePolicy $inlineStylePolicy
+    ) {
     }
 
     /**
@@ -72,6 +77,17 @@ class StyleTag
             return '';
         }
 
+        if ($this->inlineStylePolicy->allowsInlineStyles()) {
+            return $this->secureRenderer->renderTag('script', [], $this->adoption($css, $attributes), false);
+        }
+
         return $this->secureRenderer->renderTag('style', $attributes, $css, false);
+    }
+
+    private function adoption(string $css, array $attributes): string
+    {
+        $flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR;
+
+        return sprintf(self::ADOPT, json_encode($css, $flags), json_encode((object)$attributes, $flags));
     }
 }

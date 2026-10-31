@@ -46,14 +46,6 @@
         <plugin name="mageObsidian_applyStrictInlinePolicy"
                 type="MageObsidian\ModernFrontend\Plugin\Csp\ApplyStrictInlinePolicy"/>
     </type>
-    <type name="MageObsidian\ModernFrontend\Plugin\Csp\ApplyStrictInlinePolicy">
-        <arguments>
-            <argument name="inlineStylePages" xsi:type="array">
-                <item name="checkout" xsi:type="string">checkout_index_index</item>
-                <item name="multishipping_billing" xsi:type="string">multishipping_checkout_billing</item>
-            </argument>
-        </arguments>
-    </type>
     <type name="Magento\Csp\Helper\InlineUtil">
         <plugin name="mageObsidian_authorizeCacheableScriptsByHash"
                 type="MageObsidian\ModernFrontend\Plugin\Csp\AuthorizeCacheableScriptsByHash"/>

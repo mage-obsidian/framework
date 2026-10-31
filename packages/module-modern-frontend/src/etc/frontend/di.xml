@@ -54,6 +54,18 @@
             </argument>
         </arguments>
     </type>
+    <type name="Magento\Csp\Helper\InlineUtil">
+        <plugin name="mageObsidian_authorizeCacheableScriptsByHash"
+                type="MageObsidian\ModernFrontend\Plugin\Csp\AuthorizeCacheableScriptsByHash"/>
+    </type>
+    <type name="Magento\Framework\View\Layout">
+        <plugin name="mageObsidian_recordLayoutCacheability"
+                type="MageObsidian\ModernFrontend\Plugin\Csp\RecordLayoutCacheability"/>
+    </type>
+    <type name="Magento\Framework\App\PageCache\Kernel">
+        <plugin name="mageObsidian_keepPoliciesWithBuiltinPageCache"
+                type="MageObsidian\ModernFrontend\Plugin\Csp\KeepPoliciesWithBuiltinPageCache"/>
+    </type>
     <type name="MageObsidian\ModernFrontend\Service\Csp\PaymentPages">
         <arguments>
             <argument name="fallbackActions" xsi:type="array">

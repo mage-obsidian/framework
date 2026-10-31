@@ -41,6 +41,12 @@
     <type name="Magento\Csp\Api\ModeConfigManagerInterface">
         <plugin name="mageObsidian_forceReportOnlyCspInHmr"
                 type="MageObsidian\ModernFrontend\Plugin\Csp\ForceReportOnlyInHmr"/>
+        <plugin name="mageObsidian_enforceRecommendedCspPolicy"
+                type="MageObsidian\ModernFrontend\Plugin\Csp\EnforceRecommendedPolicy"/>
+    </type>
+    <type name="Magento\Csp\Model\CompositePolicyCollector">
+        <plugin name="mageObsidian_applyRecommendedCspPolicy"
+                type="MageObsidian\ModernFrontend\Plugin\Csp\ApplyRecommendedPolicy"/>
     </type>
     <type name="Magento\Csp\Model\Collector\ConfigCollector">
         <plugin name="mageObsidian_applyStrictInlinePolicy"

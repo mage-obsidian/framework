@@ -14,6 +14,8 @@
  * plugin (shipped as a module web asset) wraps these primitives.
  */
 
+import { PageConfig, readPageConfig } from "./pageConfig.ts";
+
 export interface I18nConfig {
     locale?: string;
     dictionaryUrl?: string;
@@ -33,6 +35,8 @@ declare global {
 }
 
 const PLACEHOLDER = /%(\d+)/g;
+
+export const DEFAULT_LOCALE = "en_US";
 
 /**
  * Replace `%1`, `%2`, … with positional args. An out-of-range placeholder is
@@ -63,15 +67,16 @@ export function translatePhrase(
 }
 
 /**
- * Read the runtime i18n config published by PHP as `window.__MAGE_OBSIDIAN_I18N__`.
+ * Read the runtime i18n config the server publishes as a data block, or as
+ * `window.__MAGE_OBSIDIAN_I18N__` on a server from before the data blocks.
  * Returns sane defaults when absent so the layer degrades to passthrough.
  */
 export function readI18nConfig(
     scope: I18nScope | undefined = typeof window !== "undefined" ? window : undefined,
 ): { locale: string; dictionaryUrl: string | null } {
-    const config = scope && scope.__MAGE_OBSIDIAN_I18N__;
+    const config = readPageConfig(PageConfig.I18n, scope) as I18nConfig | null | undefined;
     return {
-        locale: (config && config.locale) || "en_US",
+        locale: (config && config.locale) || DEFAULT_LOCALE,
         dictionaryUrl: (config && config.dictionaryUrl) || null,
     };
 }

@@ -2,6 +2,8 @@
 //
 // SPDX-FileCopyrightText: 2024 Jeanmarcos Juarez
 // SPDX-License-Identifier: MIT
+import { PageConfig, readPageConfig } from "./pageConfig.ts";
+
 export interface UxRuntimeConfig {
     optimistic: boolean;
     summaryCountsQty: boolean;
@@ -24,7 +26,7 @@ const DEFAULTS: UxRuntimeConfig = { optimistic: true, summaryCountsQty: true };
 export function readUxRuntimeConfig(
     scope: UxRuntimeScope | undefined = typeof window !== "undefined" ? window : undefined,
 ): UxRuntimeConfig {
-    const config = scope && scope.__MAGE_OBSIDIAN_UX__;
+    const config = readPageConfig(PageConfig.Ux, scope) as UxRuntimeGlobal | null | undefined;
     if (!config || typeof config !== "object") {
         return DEFAULTS;
     }

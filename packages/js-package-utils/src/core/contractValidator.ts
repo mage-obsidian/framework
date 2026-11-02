@@ -32,8 +32,8 @@ export function findThemeCycles(themes: Record<string, { parent?: string }>): st
 
 // Contract versions this build engine understands; ConfigInterface::SCHEMA_VERSION
 // on the PHP side must be one of them.
-export const SUPPORTED_SCHEMA_VERSIONS = ["1.0.0", "1.1.0"];
-export const EXPECTED_SCHEMA_VERSION = "1.1.0";
+export const SUPPORTED_SCHEMA_VERSIONS = ["1.0.0", "1.1.0", "1.2.0"];
+export const EXPECTED_SCHEMA_VERSION = "1.2.0";
 
 // Top-level keys the engine reads off the generated contract. Kept in step with
 // the JSON schema in module-modern-frontend/src/etc.

@@ -47,7 +47,7 @@ describe("validateContract", () => {
         const result = validateContract(makeValidContract({ schema_version: "0.9.0" }));
         expect(result.ok).toBe(false);
         expect(result.errors).toEqual(
-            expect.arrayContaining([expect.stringContaining('supports "1.0.0", "1.1.0"')]),
+            expect.arrayContaining([expect.stringContaining('supports "1.0.0", "1.1.0", "1.2.0"')]),
         );
     });
 
@@ -114,7 +114,27 @@ describe("validateContract", () => {
         );
     });
 
-    test.each(["1.0.0", "1.1.0"])("accepts the supported schema version %s", (version) => {
+    test.each(["1.0.0", "1.1.0", "1.2.0"])("accepts the supported schema version %s", (version) => {
         expect(validateContract(makeValidContract({ schema_version: version })).ok).toBe(true);
+    });
+
+    it("expects the contract that carries the runtime configuration as data blocks", () => {
+        expect(EXPECTED_SCHEMA_VERSION).toBe("1.2.0");
+    });
+
+    it("keeps a contract from before the data blocks valid, so the engine can ship first", () => {
+        expect(validateContract(makeValidContract({ schema_version: "1.1.0" })).ok).toBe(true);
+    });
+
+    it("lets an engine that predates the data blocks refuse the contract that needs them", () => {
+        const result = validateContract(makeValidContract({ schema_version: "1.2.0" }), [
+            "1.0.0",
+            "1.1.0",
+        ]);
+
+        expect(result.ok).toBe(false);
+        expect(result.errors).toEqual(
+            expect.arrayContaining([expect.stringContaining("Schema version mismatch")]),
+        );
     });
 });

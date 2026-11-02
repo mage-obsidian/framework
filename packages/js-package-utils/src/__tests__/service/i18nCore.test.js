@@ -64,7 +64,28 @@ describe("translatePhrase", () => {
     });
 });
 
+function pageWithBlock(name, json) {
+    return {
+        document: {
+            querySelector: (selector) =>
+                selector.includes(`data-mage-obsidian-config="${name}"`)
+                    ? { textContent: json }
+                    : null,
+            querySelectorAll: () => [],
+        },
+    };
+}
+
 describe("readI18nConfig", () => {
+    it("reads the data block the server emitted", () => {
+        expect(
+            readI18nConfig(pageWithBlock("i18n", '{"locale":"es_ES","dictionaryUrl":"/d.json"}')),
+        ).toEqual({
+            locale: "es_ES",
+            dictionaryUrl: "/d.json",
+        });
+    });
+
     it("returns defaults when the global is absent", () => {
         expect(readI18nConfig({})).toEqual({ locale: "en_US", dictionaryUrl: null });
     });

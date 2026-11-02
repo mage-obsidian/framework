@@ -221,7 +221,30 @@ describe("expiredSectionNames", () => {
     });
 });
 
+function pageWithBlock(name, json) {
+    return {
+        document: {
+            querySelector: (selector) =>
+                selector.includes(`data-mage-obsidian-config="${name}"`)
+                    ? { textContent: json }
+                    : null,
+            querySelectorAll: () => [],
+        },
+    };
+}
+
 describe("readSectionRuntimeConfig", () => {
+    it("reads the data block the server emitted", () => {
+        expect(
+            readSectionRuntimeConfig(
+                pageWithBlock("sections", '{"lifetime":3600,"expirable":["cart"]}'),
+            ),
+        ).toEqual({
+            lifetimeSeconds: 3600,
+            expirableSections: ["cart"],
+        });
+    });
+
     it("reads the lifetime (seconds) and expirable names from the scope global", () => {
         const scope = { __MAGE_OBSIDIAN_SECTIONS__: { lifetime: 3600, expirable: ["cart"] } };
         expect(readSectionRuntimeConfig(scope)).toEqual({

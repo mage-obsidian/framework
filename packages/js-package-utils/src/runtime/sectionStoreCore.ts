@@ -16,6 +16,8 @@
  * unit-testable in isolation.
  */
 
+import { PageConfig, readPageConfig } from "./pageConfig.ts";
+
 export type SectionData = Record<string, unknown>;
 export type SectionMap = Record<string, SectionData>;
 
@@ -29,8 +31,10 @@ export interface SectionRuntimeConfig {
     expirableSections: string[];
 }
 
+type SectionRuntimeGlobal = { lifetime?: unknown; expirable?: unknown };
+
 interface SectionRuntimeScope {
-    __MAGE_OBSIDIAN_SECTIONS__?: { lifetime?: unknown; expirable?: unknown };
+    __MAGE_OBSIDIAN_SECTIONS__?: SectionRuntimeGlobal;
 }
 
 export interface SectionPrefetch {
@@ -45,7 +49,7 @@ interface SectionPrefetchScope {
 // Published by PHP on the page before the ESM runtime loads.
 declare global {
     interface Window {
-        __MAGE_OBSIDIAN_SECTIONS__?: { lifetime?: unknown; expirable?: unknown };
+        __MAGE_OBSIDIAN_SECTIONS__?: SectionRuntimeGlobal;
         __MAGE_OBSIDIAN_SECTION_PREFETCH__?: SectionPrefetch;
     }
 }
@@ -259,7 +263,8 @@ export function expiredSectionNames(
 export function readSectionRuntimeConfig(
     scope: SectionRuntimeScope | undefined = typeof window !== "undefined" ? window : undefined,
 ): SectionRuntimeConfig {
-    const config = scope && scope.__MAGE_OBSIDIAN_SECTIONS__;
+    const config = readPageConfig(PageConfig.Sections, scope) as
+        SectionRuntimeGlobal | null | undefined;
     const lifetime = Number(config && config.lifetime);
     const expirable = config && config.expirable;
     return {

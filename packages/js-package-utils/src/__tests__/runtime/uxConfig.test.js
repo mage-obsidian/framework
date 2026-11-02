@@ -5,7 +5,30 @@
 import { describe, it, expect } from "vitest";
 import { readUxRuntimeConfig } from "../../runtime/uxConfig.ts";
 
+function pageWithBlock(name, json) {
+    return {
+        document: {
+            querySelector: (selector) =>
+                selector.includes(`data-mage-obsidian-config="${name}"`)
+                    ? { textContent: json }
+                    : null,
+            querySelectorAll: () => [],
+        },
+    };
+}
+
 describe("readUxRuntimeConfig", () => {
+    it("reads the data block the server emitted", () => {
+        expect(
+            readUxRuntimeConfig(
+                pageWithBlock("ux", '{"optimistic":false,"summaryCountsQty":false}'),
+            ),
+        ).toEqual({
+            optimistic: false,
+            summaryCountsQty: false,
+        });
+    });
+
     it("reads what the page published", () => {
         expect(
             readUxRuntimeConfig({
